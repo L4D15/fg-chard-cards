@@ -99,12 +99,16 @@
 		<color value="#222222" />
 	</font>
 	<font name="cc_success">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#2E7D32" />
 	</font>
 	<font name="cc_failure">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#B22E2E" />
+	</font>
+	<font name="cc_outcome">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<color value="#8A7340" />
 	</font>
 	<font name="cc_die">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />

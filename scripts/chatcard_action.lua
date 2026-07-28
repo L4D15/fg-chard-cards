@@ -15,10 +15,8 @@ function setData(t)
 
 	-- Empty body lines collapse so they don't inflate the card height;
 	-- the card then hugs whichever column is actually taller.
-	line1.setValue(t.sLine1 or "");
-	line1.setAnchoredHeight(((t.sLine1 or "") ~= "") and 19 or 0);
-	line2.setValue(t.sLine2 or "");
-	line2.setAnchoredHeight(((t.sLine2 or "") ~= "") and 19 or 0);
+	setBodyLine(line1, t.sLine1 or "");
+	setBodyLine(line2, t.sLine2 or "");
 
 	total.setValue(t.sTotal or "");
 
@@ -30,7 +28,7 @@ function setData(t)
 	elseif sOutcome == "Failure" or sOutcome == "Fumble" then
 		outcome.setFont("cc_failure");
 	else
-		outcome.setFont("cc_subtitle");
+		outcome.setFont("cc_outcome");
 	end
 
 	local sType = t.sCardType or "roll";
@@ -67,6 +65,44 @@ function setData(t)
 	local nBoxHeight = math.max(nBoxContent + 8, nLeftExtent - 26);
 	resultbox.setAnchoredHeight(nBoxHeight);
 	boxpad.setAnchoredHeight(math.floor((nBoxHeight - nBoxContent) / 2));
+end
+
+-- Fill a body line ("Target: Elara (AC 13)") with two widgets: the
+-- "Label:" part in bold and the value after it in the regular body font.
+-- Widgets are positioned by their center, so each is measured first.
+function setBodyLine(cLine, sText)
+	if sText == "" then
+		cLine.setAnchoredHeight(0);
+		return;
+	end
+	cLine.setAnchoredHeight(19);
+
+	local sLabel, sValue = sText:match("^([^:]+:)%s*(.*)$");
+	if not sLabel then
+		sLabel = sText;
+		sValue = "";
+	end
+
+	local wLabel = cLine.addTextWidget({
+		font = "cc_bodybold", text = sLabel,
+		position = "topleft", y = 9,
+	});
+	local nLabelWidth = 0;
+	if wLabel then
+		nLabelWidth = wLabel.getSize() or 0;
+		wLabel.setPosition("topleft", math.floor(nLabelWidth / 2), 9);
+	end
+
+	if sValue ~= "" then
+		local wValue = cLine.addTextWidget({
+			font = "cc_body", text = sValue,
+			position = "topleft", y = 9,
+		});
+		if wValue then
+			local nValueWidth = wValue.getSize() or 0;
+			wValue.setPosition("topleft", nLabelWidth + 4 + math.floor(nValueWidth / 2), 9);
+		end
+	end
 end
 
 -- Known die shapes; anything else (custom dice) falls back to the square

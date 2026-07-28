@@ -171,25 +171,22 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Body lines, left of the result box -->
-			<stringcontrol name="line1">
+			<!-- Body lines, left of the result box; filled from Lua with a
+			     bold "Label:" widget and a regular value widget -->
+			<genericcontrol name="line1">
 				<anchored height="19">
 					<top parent="subtitle" anchor="bottom" offset="4" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
-				<font>cc_body</font>
-				<readonly />
-			</stringcontrol>
-			<stringcontrol name="line2">
+			</genericcontrol>
+			<genericcontrol name="line2">
 				<anchored height="19">
 					<top parent="line1" anchor="bottom" offset="2" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
-				<font>cc_body</font>
-				<readonly />
-			</stringcontrol>
+			</genericcontrol>
 
 			<!-- Keyword chips -->
 			<cc_chip name="chip1">
