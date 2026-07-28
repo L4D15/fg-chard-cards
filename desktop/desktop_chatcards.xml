@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root>
+	<!-- Override of CoreRPG's chat window (desktop/desktop_classes.xml).
+	     The engine's compiled chatwindow control ("chat") is kept but hidden:
+	     the chat entry box requires it, and feeding it keeps /log export and
+	     compatibility with other extensions working. The visible display is
+	     our own windowlist of card windows. -->
+	<windowclass name="chat">
+		<frame>chatbox</frame>
+		<noclose />
+		<sizelimits>
+			<dynamic />
+			<minimum width="350" height="350" />
+		</sizelimits>
+		<script>
+			function onInit()
+				onLockStateChanged();
+				ChatCardsManager.setCardList(cards);
+			end
+			function onClose()
+				ChatCardsManager.setCardList(nil);
+			end
+			function onLockStateChanged()
+				resize.setVisible(not getLockState());
+			end
+		</script>
+		<sheetdata>
+			<anchor_content_chatbox_top />
+
+			<anchor_content_chatbox_bottom />
+			<basicchatentry name="entry" />
+			<basicchatentryscroll name="scrollbar_entry" />
+			<basicchatentrymode name="mode" />
+
+			<area_content_bottom name="area_controls">
+				<anchored height="30" />
+			</area_content_bottom>
+			<chat_speaker_combo name="speaker" />
+			<chat_speaker_icon name="speakericon" />
+			<chat_language_combo name="language" />
+			<chat_language_icon name="languageicon" />
+
+			<!-- Engine chat display: still receives every message, but hidden -->
+			<chatwindow name="chat">
+				<anchored to="contentanchor" width="1" height="1">
+					<top offset="0" />
+					<left offset="0" />
+				</anchored>
+				<invisible />
+			</chatwindow>
+
+			<!-- Card display -->
+			<windowlist name="cards">
+				<anchored to="contentanchor">
+					<left offset="8" />
+					<right offset="-24" />
+					<top relation="current" offset="5" />
+					<bottom parent="bottomanchor" relation="current" offset="-5" />
+				</anchored>
+				<droptypes>
+					<type>dice</type>
+					<type>number</type>
+					<type>string</type>
+				</droptypes>
+				<script>
+					function onDragStart(_, _, _, draginfo)
+						return ActionsManager.onChatDragStart(draginfo);
+					end
+					function onDrop(_, _, draginfo)
+						if ChatManager.onDrop(draginfo) then
+							return true;
+						end
+						if ActionsManager.actionDrop(draginfo) then
+							return true;
+						end
+					end
+				</script>
+			</windowlist>
+			<scrollbar_content_base name="cardsscroll">
+				<anchored to="cards" />
+				<target>cards</target>
+			</scrollbar_content_base>
+
+			<basicchatwindowstatus name="chatstatus">
+				<anchored to="cards" position="insidetopright" width="60" height="61" />
+			</basicchatwindowstatus>
+
+			<resize_chatbox name="resize" />
+		</sheetdata>
+	</windowclass>
+</root>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root>
+	<!-- One-line gold banner: "Turn: X", "Y takes 7 damage", system messages -->
+	<windowclass name="chatcard_banner">
+		<margins control="0,2,0,2" />
+		<script>
+			function setData(t)
+				text.setValue(t.sText or "");
+			end
+		</script>
+		<sheetdata>
+			<genericcontrol name="bg">
+				<anchored>
+					<top offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+					<bottom offset="0" />
+				</anchored>
+				<frame name="cc_banner" />
+			</genericcontrol>
+			<stringcontrol name="text">
+				<anchored>
+					<top offset="8" />
+					<left offset="14" />
+					<right offset="-14" />
+				</anchored>
+				<font>cc_bannertext</font>
+				<multilinespacing>18</multilinespacing>
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="text" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<!-- Speech / emote / OOC: portrait, name, subtitle, framed text body -->
+	<windowclass name="chatcard_speech">
+		<margins control="0,2,0,2" />
+		<script>
+			function setData(t)
+				name.setValue(t.sName or "");
+				subtitle.setValue(t.sSub or "");
+				text.setValue(t.sText or "");
+				portrait.setIdentity(t.sIdentity);
+			end
+		</script>
+		<sheetdata>
+			<genericcontrol name="bg">
+				<anchored>
+					<top offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+					<bottom offset="0" />
+				</anchored>
+				<frame name="cc_card" />
+			</genericcontrol>
+			<cc_portrait name="portrait">
+				<anchored position="insidetopleft" offset="8,8" />
+			</cc_portrait>
+			<genericcontrol name="namebar">
+				<anchored height="26">
+					<top offset="8" />
+					<left offset="56" />
+					<right offset="-8" />
+				</anchored>
+				<frame name="cc_header" />
+			</genericcontrol>
+			<stringcontrol name="name">
+				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<font>cc_name</font>
+			</stringcontrol>
+			<stringcontrol name="subtitle">
+				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
+				<font>cc_subtitle</font>
+			</stringcontrol>
+			<stringcontrol name="text">
+				<anchored>
+					<top parent="subtitle" anchor="bottom" offset="6" />
+					<left offset="10" />
+					<right offset="-10" />
+				</anchored>
+				<font>cc_body</font>
+				<frame name="cc_panel" offset="8,6,8,6" />
+				<multilinespacing>19</multilinespacing>
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="text" position="belowleft" height="12" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<!-- Action card: attack / damage / generic roll. Header title, body lines,
+	     keyword chips, and a result box (formula, big total, outcome). -->
+	<windowclass name="chatcard_action">
+		<margins control="0,2,0,2" />
+		<script file="scripts/chatcard_action.lua" />
+		<sheetdata>
+			<genericcontrol name="bg">
+				<anchored>
+					<top offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+					<bottom offset="0" />
+				</anchored>
+				<frame name="cc_card" />
+			</genericcontrol>
+			<cc_portrait name="portrait">
+				<anchored position="insidetopleft" offset="8,8" />
+			</cc_portrait>
+			<genericcontrol name="namebar">
+				<anchored height="26">
+					<top offset="8" />
+					<left offset="56" />
+					<right offset="-8" />
+				</anchored>
+				<frame name="cc_header" />
+			</genericcontrol>
+			<stringcontrol name="name">
+				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<font>cc_name</font>
+			</stringcontrol>
+			<stringcontrol name="title">
+				<anchored to="namebar" position="insidetopright" offset="10,4" />
+				<font>cc_headertitle</font>
+			</stringcontrol>
+			<stringcontrol name="subtitle">
+				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
+				<font>cc_subtitle</font>
+			</stringcontrol>
+
+			<!-- Result box, right side -->
+			<genericcontrol name="resultbox">
+				<anchored width="110" height="72">
+					<top parent="namebar" anchor="bottom" offset="6" />
+					<right offset="-10" />
+				</anchored>
+				<frame name="cc_resultbox" />
+			</genericcontrol>
+			<stringcontrol name="formula">
+				<anchored to="resultbox" height="20">
+					<top offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+				</anchored>
+				<font>cc_formula</font>
+				<frame name="cc_resultheader" offset="6,3,6,3" />
+				<center />
+			</stringcontrol>
+			<stringcontrol name="total">
+				<anchored to="resultbox" position="insidetop" offset="0,24" />
+				<font>cc_total</font>
+				<center />
+			</stringcontrol>
+			<stringcontrol name="outcome">
+				<anchored to="resultbox" position="insidebottom" offset="0,4" />
+				<font>cc_success</font>
+				<center />
+			</stringcontrol>
+
+			<!-- Body lines, left of the result box -->
+			<stringcontrol name="line1">
+				<anchored height="19">
+					<top parent="subtitle" anchor="bottom" offset="4" />
+					<left offset="12" />
+					<right parent="resultbox" anchor="left" offset="-8" />
+				</anchored>
+				<font>cc_body</font>
+			</stringcontrol>
+			<stringcontrol name="line2">
+				<anchored height="19">
+					<top parent="line1" anchor="bottom" offset="2" />
+					<left offset="12" />
+					<right parent="resultbox" anchor="left" offset="-8" />
+				</anchored>
+				<font>cc_body</font>
+			</stringcontrol>
+
+			<!-- Keyword chips -->
+			<cc_chip name="chip1">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="6" />
+					<left offset="12" />
+				</anchored>
+			</cc_chip>
+			<cc_chip name="chip2">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="6" />
+					<left parent="chip1" anchor="right" offset="6" />
+				</anchored>
+			</cc_chip>
+			<cc_chip name="chip3">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="6" />
+					<left parent="chip2" anchor="right" offset="6" />
+				</anchored>
+			</cc_chip>
+
+			<genericcontrol name="sizer">
+				<anchored to="chip1" position="belowleft" height="12" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+</root>

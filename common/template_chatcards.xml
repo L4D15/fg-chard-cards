@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root>
+	<!-- Small pill-shaped keyword chip; set text from Lua -->
+	<template name="cc_chip">
+		<stringcontrol>
+			<anchored height="20" />
+			<font>cc_chip</font>
+			<center />
+			<script>
+				function setText(sText, bRed)
+					if (sText or "") == "" then
+						setVisible(false);
+						return;
+					end
+					setFrame(bRed and "cc_chip_red" or "cc_chip_gold", 8, 3, 8, 3);
+					setValue(sText);
+					-- Rough width fit for placeholder art; refine once in-app
+					setAnchoredWidth(18 + (#sText * 7));
+					setVisible(true);
+				end
+			</script>
+		</stringcontrol>
+	</template>
+
+	<!-- Portrait box shown at the top-left of cards -->
+	<template name="cc_portrait">
+		<genericcontrol>
+			<anchored width="44" height="44" />
+			<frame name="cc_portraitframe" />
+			<script>
+				function setIdentity(sIdentity)
+					if (sIdentity or "") ~= "" then
+						setIcon("portrait_" .. sIdentity .. "_chat");
+					end
+				end
+			</script>
+		</genericcontrol>
+	</template>
+</root>

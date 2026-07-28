@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root>
+	<!-- ===== FRAMES (placeholder 9-slice art; swap the PNGs to restyle) ===== -->
+	<framedef name="cc_card">
+		<bitmap file="graphics/frames/cc_card.png" />
+		<offset>12,12,12,12</offset>
+	</framedef>
+	<framedef name="cc_header">
+		<bitmap file="graphics/frames/cc_header.png" />
+		<offset>8,6,8,6</offset>
+	</framedef>
+	<framedef name="cc_panel">
+		<bitmap file="graphics/frames/cc_panel.png" />
+		<offset>8,8,8,8</offset>
+	</framedef>
+	<framedef name="cc_resultbox">
+		<bitmap file="graphics/frames/cc_resultbox.png" />
+		<offset>8,8,8,8</offset>
+	</framedef>
+	<framedef name="cc_resultheader">
+		<bitmap file="graphics/frames/cc_resultheader.png" />
+		<offset>6,5,6,5</offset>
+	</framedef>
+	<framedef name="cc_chip_red">
+		<bitmap file="graphics/frames/cc_chip_red.png" />
+		<offset>10,6,10,6</offset>
+	</framedef>
+	<framedef name="cc_chip_gold">
+		<bitmap file="graphics/frames/cc_chip_gold.png" />
+		<offset>10,6,10,6</offset>
+	</framedef>
+	<framedef name="cc_banner">
+		<bitmap file="graphics/frames/cc_banner.png" />
+		<offset>12,10,12,10</offset>
+	</framedef>
+	<framedef name="cc_portraitframe">
+		<bitmap file="graphics/frames/cc_portraitframe.png" />
+		<offset>6,6,6,6</offset>
+	</framedef>
+
+	<!-- ===== FONTS ===== -->
+	<font name="cc_name">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="17" />
+		<color value="#3B2A12" />
+	</font>
+	<font name="cc_headertitle">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
+		<color value="#FFFFFF" />
+	</font>
+	<font name="cc_subtitle">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
+		<color value="#8A7340" />
+	</font>
+	<font name="cc_body">
+		<ttf file="graphics/fonts/NotoSans-Regular.ttf" name="Noto Sans" size="14" />
+		<color value="#1A1A1A" />
+	</font>
+	<font name="cc_bodybold">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
+		<color value="#1A1A1A" />
+	</font>
+	<font name="cc_chip">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<color value="#FFFFFF" />
+	</font>
+	<font name="cc_formula">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="13" />
+		<color value="#FFFFFF" />
+	</font>
+	<font name="cc_total">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="26" />
+		<color value="#222222" />
+	</font>
+	<font name="cc_success">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<color value="#2E7D32" />
+	</font>
+	<font name="cc_failure">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<color value="#B22E2E" />
+	</font>
+	<font name="cc_bannertext">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
+		<color value="#3B2A12" />
+	</font>
+</root>
