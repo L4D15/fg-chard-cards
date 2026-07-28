@@ -132,6 +132,29 @@ support a top-level `<frame>` instead — same pattern CoreRPG's combat tracker
 entries use (`<frame>ctentrybox</frame>`) — so each card class declares its
 background frame there.
 
+### 2026-07-28 — Inter-card spacing lives in the frame art
+FG has no list row-spacing property, and windowclass frames stretch over the
+window's margin area, so margins alone produce touching borders. The 8px gap
+is baked into `cc_card.png` / `cc_banner.png` as a fully transparent bottom
+band kept inside the bottom 9-slice slice (framedef offsets `12,12,12,20`
+and `12,10,12,18`). Replacement art must keep this gutter (or the offsets
+must be adjusted).
+
+### 2026-07-28 — Portrait pipeline: three layers + custom portrait set
+The avatar area is three stacked controls: token layer (NPC `picture` /
+`token` art), icon layer (PC portraits, GM badge, "?"), and a border-only
+frame drawn on top. Avatar layers are 38x38 at +3,+3 — the inner area of the
+44x44 frame — so art never pokes past the border (token controls cannot be
+masked; an opaque-cornered masking frame was tried and rejected on looks).
+PC portraits come from our own `ccard` portraitset (transparent base,
+full-size rounded mask): CoreRPG's `chat`/`charlist` sets bake a dark ring
+and inset into their generated icons, so those are rerouted to `ccard`.
+
+### 2026-07-28 — Unified gold #B49D5D
+Header bars, banners, card borders, avatar border, result box, and gold
+chips all use #B49D5D (from the mockup), defined once as `GOLD` in
+`Design/gen_frames.py`.
+
 ### 2026-07-28 — Git flow branching
 We follow git flow: day-to-day work happens on **develop**, each feature gets
 its own **feature branch** off develop (merged back when done), and **master**
