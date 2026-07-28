@@ -23,22 +23,21 @@
 		</stringcontrol>
 	</template>
 
-	<!-- Portrait box shown at the top-left of cards -->
+	<!-- Portrait box shown at the top-left of cards: gold frame + icon layer.
+	     Set via ChatCardsManager.setCardPortrait, together with the token
+	     layer below (cc_portrait_token must be declared before it). -->
 	<template name="cc_portrait">
 		<genericcontrol>
 			<anchored width="44" height="44" />
 			<frame name="cc_portraitframe" />
-			<script>
-				function setIdentity(sIdentity, bGM)
-					if (sIdentity or "") ~= "" then
-						setIcon("portrait_" .. sIdentity .. "_chat");
-					elseif bGM then
-						setIcon("cc_portrait_gm");
-					else
-						setIcon("cc_portrait_unknown");
-					end
-				end
-			</script>
 		</genericcontrol>
+	</template>
+
+	<!-- Token layer: renders NPC token/picture assets under the frame -->
+	<template name="cc_portrait_token">
+		<tokencontrol>
+			<anchored width="36" height="36" />
+			<invisible />
+		</tokencontrol>
 	</template>
 </root>

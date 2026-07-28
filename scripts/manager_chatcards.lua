@@ -92,6 +92,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sTitle = "Dice Roll";
 	end
 
+	local tPortrait = getActorPortrait(rActor);
 	sendCardOOB({
 		sCardType = "roll",
 		sName = sName or "",
@@ -100,7 +101,8 @@ function sendGenericRollCard(rSource, rRoll)
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "",
-		sIdentity = getIdentityFromActor(rActor),
+		sIconAsset = tPortrait.sIconAsset,
+		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
 	});
 end
@@ -157,13 +159,14 @@ function onReceiveMessage(msg)
 	end
 
 	if _tSpeechModes[msg.mode or ""] and (msg.sender or "") ~= "" then
-		local sIdentity = getIdentityFromMessage(msg);
-		local bGM = (sIdentity == "") and (msg.sender == ChatIdentityManager.getGMIdentity());
+		local tPortrait = getMessagePortrait(msg);
+		local bGM = tPortrait.bGM or (msg.sender == ChatIdentityManager.getGMIdentity());
 		addCard("chatcard_speech", {
 			sName = msg.sender,
 			sSub = "",
 			sText = sText,
-			sIdentity = sIdentity,
+			sIconAsset = tPortrait.sIconAsset,
+			sTokenAsset = tPortrait.sTokenAsset,
 			sIsGM = bGM and "1" or "",
 		});
 		return;
@@ -230,28 +233,78 @@ function buildDiceFormula(aDice, nMod)
 	return s;
 end
 
--- Best-effort portrait lookup: PC identities have auto-registered chat
--- portrait icons ("portrait_<identity>_chat"); anything else gets none.
-function getIdentityFromMessage(msg)
-	if msg.assets then
-		for _, tAsset in ipairs(msg.assets) do
-			if type(tAsset) == "table" and tAsset.sActorPath then
-				local sIdentity = tAsset.sActorPath:match("^charsheet%.(.+)$");
-				if sIdentity then
-					return sIdentity;
-				end
-			end
-		end
+-- ===== Portraits =====
+-- Cards show, in priority order: character portrait -> token/picture ->
+-- GM badge (for the GM) -> "?" fallback.
+
+-- Resolve portrait fields for an actor (used on the rolling client before
+-- broadcasting a card OOB; all fields are plain strings).
+function getActorPortrait(rActor)
+	local t = { sIconAsset = "", sTokenAsset = "" };
+	if not rActor then
+		return t;
 	end
-	return "";
+	local nodeActor = ActorManager.getCreatureNode(rActor);
+	if not nodeActor then
+		return t;
+	end
+	if ActorManager.isPC(rActor) then
+		-- PC portraits are auto-registered icons per identity
+		t.sIconAsset = "portrait_" .. DB.getName(nodeActor) .. "_chat";
+	else
+		local sToken = DB.getValue(nodeActor, "picture", "");
+		if (sToken or "") == "" then
+			sToken = DB.getValue(nodeActor, "token", "");
+		end
+		if (sToken or "") == "" then
+			sToken = DB.getValue(nodeActor, "token3Dflat", "");
+		end
+		t.sTokenAsset = UtilityManager.resolveDisplayToken(sToken, ActorManager.getDisplayName(rActor)) or "";
+	end
+	return t;
 end
 
-function getIdentityFromActor(rActor)
-	if rActor and ActorManager.isPC(rActor) then
-		local nodeActor = ActorManager.getCreatureNode(rActor);
-		if nodeActor then
-			return DB.getName(nodeActor);
+-- Resolve portrait fields from a received chat message: prefer the message's
+-- own asset (what native chat would draw), fall back to a CT/NPC-record
+-- lookup by sender name.
+function getMessagePortrait(msg)
+	local tAsset = msg.assets and msg.assets[1];
+	if type(tAsset) ~= "table" or ((tAsset.name or "") == "") then
+		tAsset = ChatIdentityManager.getAssetByName(msg.sender or "");
+	end
+
+	local t = { sIconAsset = "", sTokenAsset = "", bGM = false };
+	if type(tAsset) == "table" and (tAsset.name or "") ~= "" then
+		if tAsset.type == "icon" then
+			if tAsset.name == "portrait_gm_token" then
+				t.bGM = true;
+			else
+				t.sIconAsset = tAsset.name;
+			end
+		else
+			t.sTokenAsset = tAsset.name;
 		end
 	end
-	return "";
+	return t;
+end
+
+-- Apply portrait data to a card's icon + token controls (card side; the
+-- data table carries stringified OOB fields).
+function setCardPortrait(cIcon, cToken, t)
+	local sIcon = t.sIconAsset or "";
+	local sToken = t.sTokenAsset or "";
+	if sIcon ~= "" then
+		cIcon.setIcon(sIcon);
+		cToken.setVisible(false);
+	elseif sToken ~= "" then
+		cIcon.setIcon("");
+		cToken.setPrototype(sToken);
+		cToken.setVisible(true);
+	elseif t.sIsGM == "1" then
+		cIcon.setIcon("cc_portrait_gm");
+		cToken.setVisible(false);
+	else
+		cIcon.setIcon("cc_portrait_unknown");
+		cToken.setVisible(false);
+	end
 end
