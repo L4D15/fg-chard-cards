@@ -9,6 +9,7 @@ OOB_MSGTYPE_CHATCARD = "chatcards_card";
 
 local MAX_CARDS = 150;
 local _cList = nil;
+local _tPending = {};
 
 function onInit()
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
@@ -17,12 +18,22 @@ end
 
 function setCardList(cList)
 	_cList = cList;
+	if _cList then
+		local tQueued = _tPending;
+		_tPending = {};
+		for _, tEntry in ipairs(tQueued) do
+			addCard(tEntry.sClass, tEntry.tData);
+		end
+	end
 end
 
 -- ===== Card creation =====
 
 function addCard(sClass, tData)
+	-- Messages delivered before the chat window exists (e.g. ruleset
+	-- announcements at load) are queued and flushed by setCardList.
 	if not _cList then
+		table.insert(_tPending, { sClass = sClass, tData = tData });
 		return;
 	end
 	local w = _cList.createWindowWithClass(sClass);
@@ -63,7 +74,7 @@ end
 local _tSpeechModes = { chat = true, emote = true, ooc = true, whisper = true, story = true };
 
 function onReceiveMessage(msg)
-	if not msg or not _cList then
+	if not msg then
 		return;
 	end
 	if msg.secret then
@@ -82,6 +93,18 @@ function onReceiveMessage(msg)
 		return;
 	end
 
+	-- Apply-result messages from ActionCore.applyMessage use mixed case
+	-- ("[Attack (M)] Rapier [22] -> [Ireena] [HIT]"), unlike the uppercase
+	-- roll tags. The attack card already shows the outcome, so drop those;
+	-- damage applications become a "takes N damage" banner.
+	if sText:match("^%[Attack[%s#%(%]]") then
+		return;
+	end
+	if sText:match("^%[Damage[%s#%(%]]") then
+		addDamageApplyBanner(sText);
+		return;
+	end
+
 	if _tSpeechModes[msg.mode or ""] and (msg.sender or "") ~= "" then
 		addCard("chatcard_speech", {
 			sName = msg.sender,
@@ -94,6 +117,23 @@ function onReceiveMessage(msg)
 
 	if sText ~= "" then
 		addBanner(sText);
+	end
+end
+
+-- "[Damage (M)] Rapier [7] -> [Ireena Kolyana] [WOUNDED]" ->
+-- "Ireena Kolyana takes 7 damage". GM sees the total; players receive the
+-- short form without it, so the amount is optional.
+function addDamageApplyBanner(sText)
+	local sTarget = sText:match("%->%s*%[([^%]]+)%]");
+	if not sTarget then
+		addBanner(sText);
+		return;
+	end
+	local nValue = tonumber(sText:match("%[(%-?%d+)%]"));
+	if nValue then
+		addBanner(string.format("%s takes %d damage", sTarget, nValue));
+	else
+		addBanner(string.format("%s takes damage", sTarget));
 	end
 end
 
