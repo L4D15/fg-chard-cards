@@ -45,9 +45,14 @@ function setData(t)
 	-- 20 formula strip + 2 gap + dice rows + 30 total + 16 outcome + 4 pad
 	local nBoxHeight = 72 + nDiceHeight;
 	resultbox.setAnchoredHeight(nBoxHeight);
-	-- Mirror the box height into the top-anchored flow so the card is
-	-- always tall enough for the bottom-anchored box.
-	resultspacer.setAnchoredHeight(nBoxHeight);
+
+	-- Fixed extent of the left column (namebar 26 + 2 + subtitle 18 + 4 +
+	-- line1 19 + 2 + line2 19 + 6 + chips 20 + sizer 12) — keep in sync
+	-- with the windowclass anchors.
+	local LEFT_COLUMN_HEIGHT = 128;
+	-- The box needs at least the header above it (namebar 26 + 6 gap).
+	local nCardHeight = math.max(LEFT_COLUMN_HEIGHT, 32 + nBoxHeight);
+	boxpusher.setAnchoredHeight(nCardHeight - nBoxHeight);
 end
 
 -- Render individual die results ("d20:15;gd20:15;d6:3:x", ':x' = dropped)
