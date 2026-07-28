@@ -6,6 +6,9 @@ Replaces the visible chat log with a scrolling list of custom card windows
 the engine's real chat display alive but hidden, so `/log` export and other
 extensions keep working.
 
+Design documentation — reference mockup, architecture diagram, and the
+decision log — lives in [`Design/`](Design/README.md).
+
 ## Architecture
 
 - **`desktop/desktop_chatcards.xml`** — overrides CoreRPG's `chat` windowclass.
