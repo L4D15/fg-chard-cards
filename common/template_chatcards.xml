@@ -11,12 +11,16 @@
 				function setText(sText, bRed)
 					if (sText or "") == "" then
 						setVisible(false);
+						-- collapse so empty chip rows don't inflate the card
+						setAnchoredHeight(0);
+						setAnchoredWidth(0);
 						return;
 					end
 					setFrame(bRed and "cc_chip_red" or "cc_chip_gold", 8, 3, 8, 3);
 					setValue(sText);
 					-- Rough width fit for placeholder art; refine once in-app
 					setAnchoredWidth(18 + (#sText * 7));
+					setAnchoredHeight(20);
 					setVisible(true);
 				end
 			</script>

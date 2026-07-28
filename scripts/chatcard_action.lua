@@ -13,8 +13,12 @@ function setData(t)
 	title.setValue(t.sTitle or "");
 	ChatCardsManager.setCardPortrait(porticon, tokenview, t);
 
+	-- Empty body lines collapse so they don't inflate the card height;
+	-- the card then hugs whichever column is actually taller.
 	line1.setValue(t.sLine1 or "");
+	line1.setAnchoredHeight(((t.sLine1 or "") ~= "") and 19 or 0);
 	line2.setValue(t.sLine2 or "");
+	line2.setAnchoredHeight(((t.sLine2 or "") ~= "") and 19 or 0);
 
 	total.setValue(t.sTotal or "");
 
