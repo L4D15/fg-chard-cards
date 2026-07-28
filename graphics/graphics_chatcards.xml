@@ -27,11 +27,11 @@
 	</framedef>
 	<framedef name="cc_chip_red">
 		<bitmap file="graphics/frames/cc_chip_red.png" />
-		<offset>10,6,10,6</offset>
+		<offset>7,6,7,6</offset>
 	</framedef>
 	<framedef name="cc_chip_gold">
 		<bitmap file="graphics/frames/cc_chip_gold.png" />
-		<offset>10,6,10,6</offset>
+		<offset>7,6,7,6</offset>
 	</framedef>
 	<framedef name="cc_banner">
 		<bitmap file="graphics/frames/cc_banner.png" />
@@ -45,6 +45,14 @@
 	<!-- ===== ICONS ===== -->
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
 	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
+
+	<!-- Die result glyphs (native-chat-style black silhouettes) -->
+	<icon name="cc_die_d4" file="graphics/icons/cc_die_d4.png" />
+	<icon name="cc_die_d6" file="graphics/icons/cc_die_d6.png" />
+	<icon name="cc_die_d8" file="graphics/icons/cc_die_d8.png" />
+	<icon name="cc_die_d10" file="graphics/icons/cc_die_d10.png" />
+	<icon name="cc_die_d12" file="graphics/icons/cc_die_d12.png" />
+	<icon name="cc_die_d20" file="graphics/icons/cc_die_d20.png" />
 
 	<!-- Custom portrait set: the engine composites each PC identity's
 	     portrait with these layers into "portrait_<identity>_ccard" icons.
@@ -79,7 +87,7 @@
 		<color value="#1A1A1A" />
 	</font>
 	<font name="cc_chip">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="10" />
 		<color value="#FFFFFF" />
 	</font>
 	<font name="cc_formula">
@@ -91,12 +99,20 @@
 		<color value="#222222" />
 	</font>
 	<font name="cc_success">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#2E7D32" />
 	</font>
 	<font name="cc_failure">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#B22E2E" />
+	</font>
+	<font name="cc_outcome">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<color value="#8A7340" />
+	</font>
+	<font name="cc_die">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<color value="#FFFFFF" />
 	</font>
 	<font name="cc_bannertext">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />

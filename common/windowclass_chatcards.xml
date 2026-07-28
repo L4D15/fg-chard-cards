@@ -123,57 +123,70 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box, right side, flush with the card border -->
+			<!-- Result box: hangs from the header's bottom edge, sized to
+			     its content from Lua (dice rows + total + optional
+			     outcome). The card grows if the box needs more space. -->
 			<genericcontrol name="resultbox">
-				<anchored width="110" height="72">
-					<top parent="namebar" anchor="bottom" offset="6" />
+				<anchored width="110" height="64">
+					<top parent="namebar" anchor="bottom" offset="0" />
 					<right offset="0" />
 				</anchored>
 				<frame name="cc_resultbox" />
 			</genericcontrol>
-			<stringcontrol name="formula">
-				<anchored to="resultbox" height="20">
-					<top offset="0" />
-					<left offset="0" />
-					<right offset="0" />
+			<!-- Invisible pad that vertically centers the box contents:
+			     its height is set from Lua to half the box's free space -->
+			<genericcontrol name="boxpad">
+				<anchored width="1" height="4">
+					<top parent="resultbox" anchor="top" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
 				</anchored>
-				<font>cc_formula</font>
-				<frame name="cc_resultheader" offset="6,3,6,3" />
-				<center />
-				<readonly />
-			</stringcontrol>
+				<invisible />
+			</genericcontrol>
+			<!-- Individual die results + trailing modifier, as Lua widgets -->
+			<genericcontrol name="diceresults">
+				<anchored height="0">
+					<top parent="boxpad" anchor="bottom" offset="0" />
+					<left parent="resultbox" anchor="left" offset="4" />
+					<right parent="resultbox" anchor="right" offset="-4" />
+				</anchored>
+			</genericcontrol>
 			<stringcontrol name="total">
-				<anchored to="resultbox" position="insidetop" offset="0,24" />
+				<anchored height="30">
+					<top parent="diceresults" anchor="bottom" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
+					<right parent="resultbox" anchor="right" offset="0" />
+				</anchored>
 				<font>cc_total</font>
 				<center />
 				<readonly />
 			</stringcontrol>
 			<stringcontrol name="outcome">
-				<anchored to="resultbox" position="insidebottom" offset="0,4" />
+				<anchored height="16">
+					<top parent="total" anchor="bottom" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
+					<right parent="resultbox" anchor="right" offset="0" />
+				</anchored>
 				<font>cc_success</font>
 				<center />
 				<readonly />
 			</stringcontrol>
 
-			<!-- Body lines, left of the result box -->
-			<stringcontrol name="line1">
+			<!-- Body lines, left of the result box; filled from Lua with a
+			     bold "Label:" widget and a regular value widget -->
+			<genericcontrol name="line1">
 				<anchored height="19">
 					<top parent="subtitle" anchor="bottom" offset="4" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
-				<font>cc_body</font>
-				<readonly />
-			</stringcontrol>
-			<stringcontrol name="line2">
+			</genericcontrol>
+			<genericcontrol name="line2">
 				<anchored height="19">
 					<top parent="line1" anchor="bottom" offset="2" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
-				<font>cc_body</font>
-				<readonly />
-			</stringcontrol>
+			</genericcontrol>
 
 			<!-- Keyword chips -->
 			<cc_chip name="chip1">
