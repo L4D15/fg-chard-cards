@@ -123,33 +123,22 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box, right side under the header; its Lua-computed
-			     height makes its bottom edge reach the card's bottom
-			     border (the card grows when the box is the tall column,
-			     which it is at minimum height). Bottom anchors collapse
-			     in list windows, so everything stays top-anchored. -->
+			<!-- Result box: spans from the header's bottom edge to the
+			     card's bottom border. Bottom anchors collapse in list
+			     windows, so the stretch is computed in Lua: the height is
+			     set so the box always reaches the card bottom, and the
+			     card grows when the dice rows need more space. -->
 			<genericcontrol name="resultbox">
-				<anchored width="110" height="96">
-					<top parent="namebar" anchor="bottom" offset="6" />
+				<anchored width="110" height="102">
+					<top parent="namebar" anchor="bottom" offset="0" />
 					<right offset="0" />
 				</anchored>
 				<frame name="cc_resultbox" />
 			</genericcontrol>
-			<stringcontrol name="formula">
-				<anchored to="resultbox" height="20">
-					<top offset="0" />
-					<left offset="0" />
-					<right offset="0" />
-				</anchored>
-				<font>cc_formula</font>
-				<frame name="cc_resultheader" offset="6,3,6,3" />
-				<center />
-				<readonly />
-			</stringcontrol>
-			<!-- Individual die results, rendered as widgets from Lua -->
+			<!-- Individual die results + trailing modifier, as Lua widgets -->
 			<genericcontrol name="diceresults">
 				<anchored height="0">
-					<top parent="formula" anchor="bottom" offset="2" />
+					<top parent="resultbox" anchor="top" offset="8" />
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>

@@ -136,6 +136,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sTitle = sTitle,
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sDice = encodeDiceResults(rRoll.aDice),
+		sMod = formatMod(rRoll.nMod),
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "",
 		sIconAsset = tPortrait.sIconAsset,
@@ -240,6 +241,14 @@ function cleanRollText(s)
 	end
 	s = s:gsub("%s*%[[^%]]*%]", "");
 	return s;
+end
+
+-- "+4" / "-2" for the trailing modifier slot; empty when zero
+function formatMod(nMod)
+	if (nMod or 0) == 0 then
+		return "";
+	end
+	return string.format("%+d", nMod);
 end
 
 -- Serialize per-die results for OOB transport: "d20:15;gd20:15;d6:3:x"
