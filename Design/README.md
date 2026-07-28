@@ -112,6 +112,12 @@ Dice-tower and GM-hidden rolls would leak information if broadcast.
 **Decision:** `bSecret`/`secret` rolls are skipped entirely on the card layer;
 they still behave normally in the hidden engine log.
 
+### 2026-07-28 — Git flow branching
+We follow git flow: day-to-day work happens on **develop**, each feature gets
+its own **feature branch** off develop (merged back when done), and **master**
+only receives merges as "build points" when releasing a new version (tag the
+merge with the version number). Never commit directly to master.
+
 ## Open questions (to resolve during in-app testing)
 
 - Do list windows auto-size to their bottom-most anchored control (`sizer`),
