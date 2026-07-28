@@ -60,8 +60,22 @@ save(rounded((36, 20), 9, GOLD), "cc_chip_gold")
 # 8px transparent gutter below (framedef offset 12,10,12,18)
 save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 
-# Portrait frame: gold square
-save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
+# Portrait frame: drawn ON TOP of the avatar layers, so it doubles as a
+# visual mask — opaque square outside, transparent rounded window inside.
+# The corner caps cover token/picture art poking past the rounded corners
+# (token controls cannot be masked directly).
+def portrait_frame():
+    s = 4
+    img = Image.new("RGBA", (48 * s, 48 * s), GOLD_DARK)
+    d = ImageDraw.Draw(img)
+    # ImageDraw writes raw pixel values (no blending): this punches a
+    # transparent rounded window through the opaque square.
+    d.rounded_rectangle([3 * s, 3 * s, 45 * s - 1, 45 * s - 1],
+                        radius=6 * s, fill=(0, 0, 0, 0))
+    return img.resize((48, 48), Image.LANCZOS)
+
+
+save(portrait_frame(), "cc_portraitframe")
 
 
 # ===== Portrait icons (fill the whole 44px portrait box; the border-only
