@@ -38,9 +38,8 @@ def save(img, name):
     print(name)
 
 
-# Card body: parchment with gold border + 8px transparent gutter below
-# (framedef offset 12,12,12,20)
-save(rounded((48, 48), 8, PARCHMENT, GOLD_DARK, 2, bottom_gap=8), "cc_card")
+# cc_card.png: USER-SUPPLIED ART (2026-07-28) — do not regenerate.
+# 48x56 with the 8px transparent bottom gutter (framedef offset 12,12,12,20).
 
 # cc_header.png: USER-SUPPLIED ART (2026-07-28) — do not regenerate.
 
