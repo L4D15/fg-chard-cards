@@ -24,6 +24,7 @@ function setData(t)
 
 	local sOutcome = t.sOutcome or "";
 	outcome.setValue(sOutcome);
+	outcome.setAnchoredHeight((sOutcome ~= "") and 16 or 0);
 	if sOutcome == "Success" or sOutcome == "Critical!" then
 		outcome.setFont("cc_success");
 	elseif sOutcome == "Failure" or sOutcome == "Fumble" then
