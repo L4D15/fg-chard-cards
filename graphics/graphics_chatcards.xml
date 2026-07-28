@@ -27,11 +27,11 @@
 	</framedef>
 	<framedef name="cc_chip_red">
 		<bitmap file="graphics/frames/cc_chip_red.png" />
-		<offset>10,6,10,6</offset>
+		<offset>7,6,7,6</offset>
 	</framedef>
 	<framedef name="cc_chip_gold">
 		<bitmap file="graphics/frames/cc_chip_gold.png" />
-		<offset>10,6,10,6</offset>
+		<offset>7,6,7,6</offset>
 	</framedef>
 	<framedef name="cc_banner">
 		<bitmap file="graphics/frames/cc_banner.png" />
@@ -87,7 +87,7 @@
 		<color value="#1A1A1A" />
 	</font>
 	<font name="cc_chip">
-		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="10" />
 		<color value="#FFFFFF" />
 	</font>
 	<font name="cc_formula">

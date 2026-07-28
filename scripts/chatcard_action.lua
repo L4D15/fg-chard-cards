@@ -58,7 +58,7 @@ function setData(t)
 	local nLine2 = ((t.sLine2 or "") ~= "") and 19 or 0;
 	local bChips = (sType == "attack") or (sType == "damage")
 		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
-	local nLeftExtent = 46 + 4 + nLine1 + 2 + nLine2 + 6 + (bChips and 20 or 0) + 12;
+	local nLeftExtent = 46 + 4 + nLine1 + 2 + nLine2 + 6 + (bChips and 14 or 0) + 12;
 
 	-- The box bottom always meets the card bottom: stretch to the left
 	-- column when that is taller, otherwise the box's content (plus 4px

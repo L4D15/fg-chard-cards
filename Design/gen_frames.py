@@ -52,9 +52,8 @@ save(rounded((48, 48), 5, WHITE, GOLD_DARK, 2), "cc_resultbox")
 # Result box header strip (gold)
 save(rounded((48, 20), 4, GOLD), "cc_resultheader")
 
-# Chips
-save(rounded((36, 20), 9, RED), "cc_chip_red")
-save(rounded((36, 20), 9, GOLD), "cc_chip_gold")
+# cc_chip_red.png / cc_chip_gold.png: USER-SUPPLIED ART (2026-07-29) —
+# do not regenerate. 36x14 pills (framedef offset 7,6,7,6).
 
 # Banner: full-width gold rounded bar (turn / damage-applied messages),
 # 8px transparent gutter below (framedef offset 12,10,12,18)

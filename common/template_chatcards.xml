@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <root>
-	<!-- Small pill-shaped keyword chip; set text from Lua -->
+	<!-- Small pill-shaped keyword chip (14px tall); set text from Lua.
+	     The label is a measured text widget so the pill width fits the
+	     content with a fixed 6px margin on each side. -->
 	<template name="cc_chip">
-		<stringcontrol>
-			<anchored height="20" />
-			<font>cc_chip</font>
-			<center />
-			<readonly />
+		<genericcontrol>
+			<anchored height="14" />
 			<script>
+				local _wLabel = nil;
 				function setText(sText, bRed)
 					if (sText or "") == "" then
 						setVisible(false);
@@ -16,15 +16,19 @@
 						setAnchoredWidth(0);
 						return;
 					end
-					setFrame(bRed and "cc_chip_red" or "cc_chip_gold", 8, 3, 8, 3);
-					setValue(sText);
-					-- Rough width fit for placeholder art; refine once in-app
-					setAnchoredWidth(18 + (#sText * 7));
-					setAnchoredHeight(20);
+					setFrame(bRed and "cc_chip_red" or "cc_chip_gold");
+					if not _wLabel then
+						_wLabel = addTextWidget({ font = "cc_chip", text = sText, position = "center" });
+					else
+						_wLabel.setText(sText);
+					end
+					local nTextWidth = _wLabel.getSize();
+					setAnchoredWidth((nTextWidth or 24) + 12);
+					setAnchoredHeight(14);
 					setVisible(true);
 				end
 			</script>
-		</stringcontrol>
+		</genericcontrol>
 	</template>
 
 	<!-- Portrait box shown at the top-left of cards, as three stacked
