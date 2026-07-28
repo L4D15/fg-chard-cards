@@ -123,13 +123,11 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box: spans from the header's bottom edge to the
-			     card's bottom border. Bottom anchors collapse in list
-			     windows, so the stretch is computed in Lua: the height is
-			     set so the box always reaches the card bottom, and the
-			     card grows when the dice rows need more space. -->
+			<!-- Result box: hangs from the header's bottom edge, sized to
+			     its content from Lua (dice rows + total + optional
+			     outcome). The card grows if the box needs more space. -->
 			<genericcontrol name="resultbox">
-				<anchored width="110" height="102">
+				<anchored width="110" height="64">
 					<top parent="namebar" anchor="bottom" offset="0" />
 					<right offset="0" />
 				</anchored>
@@ -138,7 +136,7 @@
 			<!-- Individual die results + trailing modifier, as Lua widgets -->
 			<genericcontrol name="diceresults">
 				<anchored height="0">
-					<top parent="resultbox" anchor="top" offset="8" />
+					<top parent="resultbox" anchor="top" offset="4" />
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>

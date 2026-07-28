@@ -41,11 +41,13 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "", t.sMod or "");
 
-	-- Contents: 8 pad + dice rows + 30 total + 16 outcome + 6 pad. The box
-	-- top touches the header bottom (y=26) and the left column extent is
-	-- 128, so a minimum height of 102 puts the box's bottom edge exactly
-	-- on the card's bottom border; taller content grows the card instead.
-	local nBoxHeight = math.max(60 + nDiceHeight, 102);
+	-- Shrink the box to its content: 4 pad + dice rows + 30 total +
+	-- outcome line only when there is one + 4 pad. The card grows if the
+	-- box needs more space than the left column.
+	local nBoxHeight = 38 + nDiceHeight;
+	if sOutcome ~= "" then
+		nBoxHeight = nBoxHeight + 16;
+	end
 	resultbox.setAnchoredHeight(nBoxHeight);
 end
 
