@@ -27,20 +27,20 @@
 	     layers (declare in this order so the border draws on top):
 	     cc_portrait_token (NPC token/picture art), cc_portrait_icon
 	     (PC portrait / GM badge / "?" icons), cc_portrait_frame
-	     (border-only graphic). The avatar layers are 38x38, matching the
-	     44x44 frame's inner area (3px border) — anchor them at +3,+3
-	     relative to the frame position.
+	     (border-only graphic). The avatar layers are 40x40, matching the
+	     44x44 frame's square inner area (2px border) — anchor them at
+	     +2,+2 relative to the frame position.
 	     Set via ChatCardsManager.setCardPortrait(porticon, tokenview, t). -->
 	<template name="cc_portrait_token">
 		<tokencontrol>
-			<anchored width="38" height="38" />
+			<anchored width="40" height="40" />
 			<invisible />
 		</tokencontrol>
 	</template>
 
 	<template name="cc_portrait_icon">
 		<genericcontrol>
-			<anchored width="38" height="38" />
+			<anchored width="40" height="40" />
 		</genericcontrol>
 	</template>
 

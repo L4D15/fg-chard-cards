@@ -42,8 +42,7 @@ def save(img, name):
 # (framedef offset 12,12,12,20)
 save(rounded((48, 48), 8, PARCHMENT, GOLD_DARK, 2, bottom_gap=8), "cc_card")
 
-# Header bar: solid gold, slightly rounded top corners handled by card behind it
-save(rounded((48, 24), 5, GOLD), "cc_header")
+# cc_header.png: USER-SUPPLIED ART (2026-07-28) — do not regenerate.
 
 # Inner cream text panel
 save(rounded((48, 48), 5, CREAM, (222, 210, 178, 255), 1), "cc_panel")
@@ -62,20 +61,18 @@ save(rounded((36, 20), 9, GOLD), "cc_chip_gold")
 # 8px transparent gutter below (framedef offset 12,10,12,18)
 save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 
-# Portrait frame: border-only, drawn on top of the avatar layers. The
-# avatar layers are sized to the border's inner area (38x38 inside the
-# 44x44 frame) so they don't poke past it.
-save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
+# cc_portraitframe.png: USER-SUPPLIED ART (2026-07-28) — do not regenerate.
+# 2px border, square interior; avatar layers are 40x40 at +2,+2 inside the
+# 44x44 frame control.
 
 
-# ===== Portrait icons (sized to the border's 38px inner area) =====
+# ===== Portrait icons (sized to the border's 40px inner area) =====
 
-def text_icon(name, text, bg, fg, size=38, textsize=18):
+def text_icon(name, text, bg, fg, size=40, textsize=18):
+    # Square badge filling the frame's square interior
     s = 4
-    img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
+    img = Image.new("RGBA", (size * s, size * s), bg)
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([0, 0, size * s - 1, size * s - 1],
-                        radius=5 * s, fill=bg)
     font = ImageFont.truetype(FONT, textsize * s)
     d.text((size * s / 2, size * s / 2 - 1 * s), text,
            font=font, fill=fg, anchor="mm")
@@ -92,12 +89,12 @@ text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=24)
 
 # Portrait-set layers for engine-generated PC portrait icons
 # (portrait_<identity>_ccard): fully transparent base (no ring/decoration)
-# and an opaque rounded mask, both at the 38px inner-area size so the
-# portrait fills it exactly and is clipped to soft corners.
-base = Image.new("RGBA", (38, 38), (0, 0, 0, 0))
+# and a plain opaque square mask, both at the 40px inner-area size so the
+# portrait fills the frame's square interior exactly.
+base = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
 base.save(f"{ICONS}/cc_portrait_base.png")
 print("cc_portrait_base")
 
-mask = rounded((38, 38), 4, (255, 255, 255, 255))
+mask = Image.new("RGBA", (40, 40), (255, 255, 255, 255))
 mask.save(f"{ICONS}/cc_portrait_mask.png")
 print("cc_portrait_mask")
