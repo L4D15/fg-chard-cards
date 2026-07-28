@@ -35,10 +35,13 @@
 				name.setValue(t.sName or "");
 				subtitle.setValue(t.sSub or "");
 				text.setValue(t.sText or "");
-				portrait.setIdentity(t.sIdentity, t.sIsGM == "1");
+				ChatCardsManager.setCardPortrait(portrait, tokenview, t);
 			end
 		</script>
 		<sheetdata>
+			<cc_portrait_token name="tokenview">
+				<anchored position="insidetopleft" offset="12,12" />
+			</cc_portrait_token>
 			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="8,8" />
 			</cc_portrait>
@@ -84,6 +87,9 @@
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
+			<cc_portrait_token name="tokenview">
+				<anchored position="insidetopleft" offset="12,12" />
+			</cc_portrait_token>
 			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="8,8" />
 			</cc_portrait>

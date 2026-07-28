@@ -51,6 +51,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	end
 
 	local sRange, sLabel = parseDesc(rRoll.sDesc, "ATTACK");
+	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
 	local tCard = {
 		sCardType = "attack",
 		sName = ActorManager.getDisplayName(rSource) or rMessage.sender or "",
@@ -59,7 +60,8 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sTotal = tostring(rRoll.nTotal or 0),
 		sOutcome = outcomeText(rRoll.sResult),
-		sIdentity = ChatCardsManager.getIdentityFromActor(rSource),
+		sIconAsset = tPortrait.sIconAsset,
+		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 		sLine2 = string.format("Modifier: %+d", rRoll.nMod or 0),
 	};
@@ -84,6 +86,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	end
 
 	local _, sLabel = parseDesc(rRoll.sDesc, "DAMAGE");
+	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
 	local tCard = {
 		sCardType = "damage",
 		sName = ActorManager.getDisplayName(rSource) or "",
@@ -92,7 +95,8 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "Damage",
-		sIdentity = ChatCardsManager.getIdentityFromActor(rSource),
+		sIconAsset = tPortrait.sIconAsset,
+		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 	};
 	if rTarget then

@@ -7,7 +7,7 @@ function setData(t)
 	name.setValue(t.sName or "");
 	subtitle.setValue(t.sSub or "");
 	title.setValue(t.sTitle or "");
-	portrait.setIdentity(t.sIdentity, t.sIsGM == "1");
+	ChatCardsManager.setCardPortrait(portrait, tokenview, t);
 
 	line1.setValue(t.sLine1 or "");
 	line2.setValue(t.sLine2 or "");
