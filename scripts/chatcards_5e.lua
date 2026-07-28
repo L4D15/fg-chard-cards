@@ -65,7 +65,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
-		sLine2 = "Modifiers: " .. buildAttackModBreakdown(rSource, rTarget, rRoll),
+		sLine2 = buildAttackModBreakdown(rSource, rTarget, rRoll, sLabel),
 	};
 	if rTarget then
 		local sAC = rRoll.nDefenseVal and (" (AC " .. rRoll.nDefenseVal .. ")") or "";
@@ -113,15 +113,22 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	ChatCardsManager.sendCardOOB(tCard);
 end
 
--- Itemized attack modifier line: "Base +3, Bless +1d4, Other effects +1".
--- Re-runs the same per-effect query the ruleset used when building the
--- roll; rRoll.nEffectMod (tracked by ActionCore.applyModRollEffect)
--- separates the base bonus from effect contributions, and anything not
--- attributable to a named ATK/@ATK effect is lumped as "Other effects".
-function buildAttackModBreakdown(rSource, rTarget, rRoll)
+-- Itemized attack modifier line: "Crossbow, Light +3 · Bless +1d4".
+-- The first entry is the roll source's own listed bonus (ability +
+-- proficiency + item bonuses as printed on the sheet), named after the
+-- weapon/spell. Effects are re-queried the same way the ruleset queried
+-- them when building the roll; rRoll.nEffectMod (tracked by
+-- ActionCore.applyModRollEffect) separates the sheet bonus from effect
+-- contributions, and flat mods not attributable to a named ATK/@ATK
+-- effect are lumped as "Other effects". Middot-separated because
+-- weapon names can contain commas.
+function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
 	local nMod = rRoll.nMod or 0;
 	local nEffectMod = tonumber(rRoll.nEffectMod or 0) or 0;
-	local tParts = { string.format("Base %+d", nMod - nEffectMod) };
+	if (sSourceLabel or "") == "" then
+		sSourceLabel = "Base";
+	end
+	local tParts = { string.format("%s %+d", sSourceLabel, nMod - nEffectMod) };
 
 	local tFilter = ActionCore.buildEffectFilter(rRoll);
 	local nListed = 0;
@@ -132,7 +139,7 @@ function buildAttackModBreakdown(rSource, rTarget, rRoll)
 	if nOther ~= 0 then
 		table.insert(tParts, string.format("Other effects %+d", nOther));
 	end
-	return table.concat(tParts, ", ");
+	return table.concat(tParts, " \194\183 ");
 end
 
 -- Append "Name +bonus" entries for each active effect with matching

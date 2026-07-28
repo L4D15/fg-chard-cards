@@ -77,20 +77,23 @@ function setBodyLine(cLine, sText)
 	end
 	cLine.setAnchoredHeight(19);
 
+	-- Lines without a "Label:" prefix render entirely in the body font
 	local sLabel, sValue = sText:match("^([^:]+:)%s*(.*)$");
 	if not sLabel then
-		sLabel = sText;
-		sValue = "";
+		sLabel = "";
+		sValue = sText;
 	end
 
-	local wLabel = cLine.addTextWidget({
-		font = "cc_bodybold", text = sLabel,
-		position = "topleft", y = 9,
-	});
 	local nLabelWidth = 0;
-	if wLabel then
-		nLabelWidth = wLabel.getSize() or 0;
-		wLabel.setPosition("topleft", math.floor(nLabelWidth / 2), 9);
+	if sLabel ~= "" then
+		local wLabel = cLine.addTextWidget({
+			font = "cc_bodybold", text = sLabel,
+			position = "topleft", y = 9,
+		});
+		if wLabel then
+			nLabelWidth = (wLabel.getSize() or 0) + 4;
+			wLabel.setPosition("topleft", math.floor((nLabelWidth - 4) / 2), 9);
+		end
 	end
 
 	if sValue ~= "" then
@@ -100,7 +103,7 @@ function setBodyLine(cLine, sText)
 		});
 		if wValue then
 			local nValueWidth = wValue.getSize() or 0;
-			wValue.setPosition("topleft", nLabelWidth + 4 + math.floor(nValueWidth / 2), 9);
+			wValue.setPosition("topleft", nLabelWidth + math.floor(nValueWidth / 2), 9);
 		end
 	end
 end
