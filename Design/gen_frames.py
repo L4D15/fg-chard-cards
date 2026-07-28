@@ -6,8 +6,10 @@ OUT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/frames"
 ICONS = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/icons"
 FONT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/fonts/NotoSans-Bold.ttf"
 
-GOLD = (185, 156, 91, 255)        # header bars / borders
-GOLD_DARK = (150, 122, 60, 255)   # border lines
+# Unified gold #B49D5D (from the reference mockup): header bars, card
+# borders, and the avatar border all share this color.
+GOLD = (180, 157, 93, 255)
+GOLD_DARK = (180, 157, 93, 255)
 PARCHMENT = (250, 244, 226, 255)  # card body
 CREAM = (255, 252, 242, 255)      # inner text panels
 RED = (178, 46, 46, 255)          # attack chip
