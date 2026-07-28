@@ -56,7 +56,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sCardType = "attack",
 		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
 		sSub = rRoll.sUser or "Gamemaster",
-		sTitle = rangeWord(sRange) .. "Attack: " .. sLabel,
+		sTitle = rangeWord(sRange) .. "Attack",
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sDice = ChatCardsManager.encodeDiceResults(rRoll.aDice),
 		sMod = ChatCardsManager.formatMod(rRoll.nMod),
