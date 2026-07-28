@@ -51,20 +51,20 @@ function setData(t)
 	end
 
 	-- Left column extent, mirroring the windowclass anchors: namebar 26 +
-	-- 2 + subtitle 18, + 4 + line1, + 2 + line2, + 6 + chip row, + sizer 12.
+	-- 2 + subtitle 18, + 2 + line1, + 2 + line2, + 2 + chip row, + 2 pad.
 	local nLine1 = ((t.sLine1 or "") ~= "") and 19 or 0;
 	local nLine2 = ((t.sLine2 or "") ~= "") and 19 or 0;
 	local bChips = (sType == "attack") or (sType == "damage")
 		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
-	local nLeftExtent = 46 + 4 + nLine1 + 2 + nLine2 + 6 + (bChips and 14 or 0) + 12;
+	local nLeftExtent = 46 + 2 + nLine1 + 2 + nLine2 + 2 + (bChips and 14 or 0) + 2;
 
 	-- The box bottom always meets the card bottom: stretch to the left
-	-- column when that is taller, otherwise the box's content (plus 4px
+	-- column when that is taller, otherwise the box's content (plus 2px
 	-- padding each side) drives the card height (box top sits at 26, the
-	-- namebar's bottom). Contents are vertically centered via boxpad.
-	local nBoxHeight = math.max(nBoxContent + 8, nLeftExtent - 26);
+	-- namebar's bottom). Contents keep a fixed 2px top gap.
+	local nBoxHeight = math.max(nBoxContent + 4, nLeftExtent - 26);
 	resultbox.setAnchoredHeight(nBoxHeight);
-	boxpad.setAnchoredHeight(math.floor((nBoxHeight - nBoxContent) / 2));
+	boxpad.setAnchoredHeight(2);
 end
 
 -- Fill a body line ("Target: Elara (AC 13)") with two widgets: the

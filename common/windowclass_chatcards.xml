@@ -175,7 +175,7 @@
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
 				<anchored height="19">
-					<top parent="subtitle" anchor="bottom" offset="4" />
+					<top parent="subtitle" anchor="bottom" offset="2" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
@@ -191,25 +191,25 @@
 			<!-- Keyword chips -->
 			<cc_chip name="chip1">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="6" />
+					<top parent="line2" anchor="bottom" offset="2" />
 					<left offset="12" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip2">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="6" />
+					<top parent="line2" anchor="bottom" offset="2" />
 					<left parent="chip1" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip3">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="6" />
+					<top parent="line2" anchor="bottom" offset="2" />
 					<left parent="chip2" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 
 			<genericcontrol name="sizer">
-				<anchored to="chip1" position="belowleft" height="12" width="1" />
+				<anchored to="chip1" position="belowleft" height="2" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
