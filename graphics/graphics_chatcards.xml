@@ -98,6 +98,10 @@
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="11" />
 		<color value="#B22E2E" />
 	</font>
+	<font name="cc_die">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
+		<color value="#FFFFFF" />
+	</font>
 	<font name="cc_bannertext">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
 		<color value="#3B2A12" />

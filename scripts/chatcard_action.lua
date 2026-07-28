@@ -3,6 +3,10 @@
 -- All values arrive as strings (OOB payloads are stringified in transit).
 --
 
+local GLYPH = 22;    -- die glyph size
+local GAP = 2;       -- spacing between glyphs
+local PER_ROW = 4;   -- glyphs per row inside the 110px result box
+
 function setData(t)
 	name.setValue(t.sName or "");
 	subtitle.setValue(t.sSub or "");
@@ -35,4 +39,70 @@ function setData(t)
 	end
 	chip2.setText(t.sChip2 or "", false);
 	chip3.setText(t.sChip3 or "", false);
+
+	local nDiceHeight = setDiceResults(t.sDice or "");
+
+	-- 20 formula strip + 2 gap + dice rows + 30 total + 16 outcome + 4 pad
+	local nBoxHeight = 72 + nDiceHeight;
+	resultbox.setAnchoredHeight(nBoxHeight);
+	-- Mirror the box height into the top-anchored flow so the card is
+	-- always tall enough for the bottom-anchored box.
+	resultspacer.setAnchoredHeight(nBoxHeight);
+end
+
+-- Render individual die results ("d20:15;gd20:15;d6:3:x", ':x' = dropped)
+-- as rows of engine dice icons with the rolled number on top. Dropped
+-- dice are dimmed the same way native chat dims them. Returns the height
+-- used, with glyphs wrapping into as many rows as needed.
+function setDiceResults(sDice)
+	local tDice = {};
+	for sEntry in string.gmatch(sDice, "[^;]+") do
+		local sType, sResult, sDropped = sEntry:match("^([^:]+):(%-?%d+):?(x?)$");
+		if sType then
+			table.insert(tDice, {
+				sType = sType,
+				sResult = sResult,
+				bDropped = (sDropped == "x"),
+			});
+		end
+	end
+
+	local nCount = #tDice;
+	if nCount == 0 then
+		diceresults.setAnchoredHeight(0);
+		return 0;
+	end
+
+	local nRows = math.ceil(nCount / PER_ROW);
+	local nHeight = nRows * (GLYPH + GAP);
+	diceresults.setAnchoredHeight(nHeight);
+
+	local nAreaWidth = 110 - 8;
+	for i, tDie in ipairs(tDice) do
+		local nRow = math.floor((i - 1) / PER_ROW);
+		local nCol = (i - 1) % PER_ROW;
+		local nInRow = math.min(nCount - (nRow * PER_ROW), PER_ROW);
+		local nRowWidth = (nInRow * GLYPH) + ((nInRow - 1) * GAP);
+		local x = math.floor((nAreaWidth - nRowWidth) / 2) + (nCol * (GLYPH + GAP)) + (GLYPH / 2);
+		local y = (nRow * (GLYPH + GAP)) + (GLYPH / 2);
+
+		local wBitmap = diceresults.addBitmapWidget({
+			icon = "diceselect_desktop_" .. tDie.sType,
+			position = "topleft", x = x, y = y,
+			w = GLYPH, h = GLYPH,
+		});
+		local wText = diceresults.addTextWidget({
+			font = "cc_die", text = tDie.sResult,
+			position = "topleft", x = x, y = y,
+		});
+		if tDie.bDropped then
+			if wBitmap then
+				wBitmap.setColor("80FFFFFF");
+			end
+			if wText then
+				wText.setColor("80FFFFFF");
+			end
+		end
+	end
+	return nHeight;
 end

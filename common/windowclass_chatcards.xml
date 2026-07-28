@@ -123,10 +123,22 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box, right side, flush with the card border -->
+			<!-- Invisible spacer mirroring the result box height in the
+			     top-anchored layout flow, so the card grows to fit it
+			     (bottom-anchored controls don't contribute to window
+			     height). Height is set from Lua alongside the box. -->
+			<genericcontrol name="resultspacer">
+				<anchored width="1" height="78">
+					<top parent="namebar" anchor="bottom" offset="6" />
+					<right offset="0" />
+				</anchored>
+				<invisible />
+			</genericcontrol>
+
+			<!-- Result box, attached to the card's lower-right corner -->
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="72">
-					<top parent="namebar" anchor="bottom" offset="6" />
+					<bottom offset="0" />
 					<right offset="0" />
 				</anchored>
 				<frame name="cc_resultbox" />
@@ -142,14 +154,30 @@
 				<center />
 				<readonly />
 			</stringcontrol>
+			<!-- Individual die results, rendered as widgets from Lua -->
+			<genericcontrol name="diceresults">
+				<anchored height="0">
+					<top parent="formula" anchor="bottom" offset="2" />
+					<left parent="resultbox" anchor="left" offset="4" />
+					<right parent="resultbox" anchor="right" offset="-4" />
+				</anchored>
+			</genericcontrol>
 			<stringcontrol name="total">
-				<anchored to="resultbox" position="insidetop" offset="0,24" />
+				<anchored height="30">
+					<top parent="diceresults" anchor="bottom" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
+					<right parent="resultbox" anchor="right" offset="0" />
+				</anchored>
 				<font>cc_total</font>
 				<center />
 				<readonly />
 			</stringcontrol>
 			<stringcontrol name="outcome">
-				<anchored to="resultbox" position="insidebottom" offset="0,4" />
+				<anchored height="16">
+					<top parent="total" anchor="bottom" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
+					<right parent="resultbox" anchor="right" offset="0" />
+				</anchored>
 				<font>cc_success</font>
 				<center />
 				<readonly />

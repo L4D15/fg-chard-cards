@@ -135,6 +135,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sSub = rRoll.sUser or (Session.IsHost and "Gamemaster" or User.getUsername()),
 		sTitle = sTitle,
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
+		sDice = encodeDiceResults(rRoll.aDice),
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "",
 		sIconAsset = tPortrait.sIconAsset,
@@ -239,6 +240,19 @@ function cleanRollText(s)
 	end
 	s = s:gsub("%s*%[[^%]]*%]", "");
 	return s;
+end
+
+-- Serialize per-die results for OOB transport: "d20:15;gd20:15;d6:3:x"
+-- (":x" marks a die dropped by advantage/disadvantage).
+function encodeDiceResults(aDice)
+	local t = {};
+	for _, d in ipairs(aDice or {}) do
+		if type(d) == "table" then
+			table.insert(t, string.format("%s:%d%s",
+				d.type or "d6", d.result or 0, d.dropped and ":x" or ""));
+		end
+	end
+	return table.concat(t, ";");
 end
 
 function buildDiceFormula(aDice, nMod)
