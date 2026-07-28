@@ -51,6 +51,7 @@
 
 			<!-- Card display -->
 			<windowlist name="cards">
+				<class>chatcard_banner</class>
 				<anchored to="contentanchor">
 					<left offset="8" />
 					<right offset="-24" />
