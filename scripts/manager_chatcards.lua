@@ -68,10 +68,58 @@ function handleCardOOB(msgOOB)
 	addCard("chatcard_action", msgOOB);
 end
 
+-- ===== Generic roll cards =====
+
+-- Every roll type resolves through ActionsManager.resolveAction; the ruleset
+-- hook script wraps it and calls this for types without a dedicated card.
+function sendGenericRollCard(rSource, rRoll)
+	local rActor = rSource;
+	if not rActor and not Session.IsHost then
+		rActor = ActorManager.getActiveActor();
+	end
+
+	local sName;
+	if rActor then
+		sName = ActorManager.getDisplayName(rActor);
+	elseif Session.IsHost then
+		sName = ChatIdentityManager.getGMIdentity();
+	else
+		sName = User.getUsername();
+	end
+
+	local sTitle = cleanRollText(rRoll.sDesc or "");
+	if sTitle == "" then
+		sTitle = "Dice Roll";
+	end
+
+	sendCardOOB({
+		sCardType = "roll",
+		sName = sName or "",
+		sSub = rRoll.sUser or (Session.IsHost and "Gamemaster" or User.getUsername()),
+		sTitle = sTitle,
+		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
+		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
+		sOutcome = "",
+		sIdentity = getIdentityFromActor(rActor),
+	});
+end
+
 -- ===== Generic messages =====
 
 -- Speech-like modes get a speech card; everything else without dice gets a banner.
 local _tSpeechModes = { chat = true, emote = true, ooc = true, whisper = true, story = true };
+
+-- Uppercase tags that identify roll messages (built by encodeActionText from
+-- the action strings, e.g. "[ATTACK (M)] Mace"). All rolls become structured
+-- cards via the resolveAction hook, so their text messages are skipped.
+-- NOTE: dice data is NOT available on received messages (msg.dice arrives
+-- empty), so classification is text-based.
+local _tRollTags = {
+	ATTACK = true, DAMAGE = true, SAVE = true, CHECK = true, SKILL = true,
+	INIT = true, DEATH = true, CAST = true, CONCENTRATION = true,
+	TABLE = true, HEAL = true, RECHARGE = true, RECOVERY = true,
+	POWERSAVE = true,
+};
 
 function onReceiveMessage(msg)
 	if not msg then
@@ -83,20 +131,21 @@ function onReceiveMessage(msg)
 
 	local sText = msg.text or "";
 
+	-- Defensive: if dice ever do arrive, the roll is already carded via OOB.
 	if msg.dice and #msg.dice > 0 then
-		-- Attack/damage rolls arrive twice: as flattened text here, and as a
-		-- structured OOB card from the 5E hooks. Skip the text version.
-		if sText:match("^%[ATTACK") or sText:match("^%[DAMAGE") then
-			return;
-		end
-		addCard("chatcard_action", buildGenericRollData(msg));
+		return;
+	end
+
+	local sTag = sText:match("^%[(%u+)");
+	if sTag and _tRollTags[sTag] then
 		return;
 	end
 
 	-- Apply-result messages from ActionCore.applyMessage use mixed case
-	-- ("[Attack (M)] Rapier [22] -> [Ireena] [HIT]"), unlike the uppercase
-	-- roll tags. The attack card already shows the outcome, so drop those;
-	-- damage applications become a "takes N damage" banner.
+	-- ("[Attack (M)] Rapier [22] -> [Ireena] [HIT]"). The attack card already
+	-- shows the outcome, so drop those; damage applications become a
+	-- "takes N damage" banner. Other applies (Save, Heal, ...) stay as
+	-- banners with their original text.
 	if sText:match("^%[Attack[%s#%(%]]") then
 		return;
 	end
@@ -135,25 +184,6 @@ function addDamageApplyBanner(sText)
 	else
 		addBanner(string.format("%s takes damage", sTarget));
 	end
-end
-
-function buildGenericRollData(msg)
-	local nTotal = msg.diemodifier or 0;
-	for _, d in ipairs(msg.dice) do
-		if type(d) == "table" then
-			nTotal = nTotal + (d.result or 0);
-		end
-	end
-	return {
-		sCardType = "roll",
-		sName = msg.sender or "",
-		sSub = "",
-		sTitle = cleanRollText(msg.text or ""),
-		sFormula = buildDiceFormula(msg.dice, msg.diemodifier or 0),
-		sTotal = tostring(nTotal),
-		sOutcome = "",
-		sIdentity = getIdentityFromMessage(msg),
-	};
 end
 
 -- "[SAVE] Dexterity save [EFFECTS +1]" -> "Save: Dexterity save"

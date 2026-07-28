@@ -112,6 +112,26 @@ Dice-tower and GM-hidden rolls would leak information if broadcast.
 **Decision:** `bSecret`/`secret` rolls are skipped entirely on the card layer;
 they still behave normally in the hidden engine log.
 
+### 2026-07-28 — Generic roll cards hook resolveAction; receive is text-only
+In-app testing showed that `onReceiveMessage` delivers roll messages with
+`msg.dice` empty — dice data is not usable on the receive side, so cards for
+rolls can't be built there. All roll types (including basic desktop dice —
+`"dice"` is a registered action in `GameSystem.actions`) resolve through
+`ActionsManager.resolveAction` on the rolling client, so ChatCards wraps it
+once and broadcasts a generic roll card OOB for every type without a
+dedicated hook. The receive callback is left with text-only classification:
+a skip-list of uppercase roll tags (`[ATTACK`, `[SAVE`, ...) suppresses the
+flattened roll texts, mixed-case apply texts (`[Attack ...]`) are dropped or
+converted to banners, and everything else becomes speech/banner cards.
+
+### 2026-07-28 — Card backgrounds are windowclass frames
+Full-window `bg` generic controls anchored to all four edges collapse to zero
+height inside list windows (the window's height derives from its content, so
+the bottom anchor resolves before the height exists). List-entry windowclasses
+support a top-level `<frame>` instead — same pattern CoreRPG's combat tracker
+entries use (`<frame>ctentrybox</frame>`) — so each card class declares its
+background frame there.
+
 ### 2026-07-28 — Git flow branching
 We follow git flow: day-to-day work happens on **develop**, each feature gets
 its own **feature branch** off develop (merged back when done), and **master**

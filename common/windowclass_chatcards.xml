@@ -3,21 +3,13 @@
 	<!-- One-line gold banner: "Turn: X", "Y takes 7 damage", system messages -->
 	<windowclass name="chatcard_banner">
 		<margins control="0,2,0,2" />
+		<frame>cc_banner</frame>
 		<script>
 			function setData(t)
 				text.setValue(t.sText or "");
 			end
 		</script>
 		<sheetdata>
-			<genericcontrol name="bg">
-				<anchored>
-					<top offset="0" />
-					<left offset="0" />
-					<right offset="0" />
-					<bottom offset="0" />
-				</anchored>
-				<frame name="cc_banner" />
-			</genericcontrol>
 			<stringcontrol name="text">
 				<anchored>
 					<top offset="8" />
@@ -36,6 +28,7 @@
 	<!-- Speech / emote / OOC: portrait, name, subtitle, framed text body -->
 	<windowclass name="chatcard_speech">
 		<margins control="0,2,0,2" />
+		<frame>cc_card</frame>
 		<script>
 			function setData(t)
 				name.setValue(t.sName or "");
@@ -45,15 +38,6 @@
 			end
 		</script>
 		<sheetdata>
-			<genericcontrol name="bg">
-				<anchored>
-					<top offset="0" />
-					<left offset="0" />
-					<right offset="0" />
-					<bottom offset="0" />
-				</anchored>
-				<frame name="cc_card" />
-			</genericcontrol>
 			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="8,8" />
 			</cc_portrait>
@@ -93,17 +77,9 @@
 	     keyword chips, and a result box (formula, big total, outcome). -->
 	<windowclass name="chatcard_action">
 		<margins control="0,2,0,2" />
+		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
-			<genericcontrol name="bg">
-				<anchored>
-					<top offset="0" />
-					<left offset="0" />
-					<right offset="0" />
-					<bottom offset="0" />
-				</anchored>
-				<frame name="cc_card" />
-			</genericcontrol>
 			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="8,8" />
 			</cc_portrait>

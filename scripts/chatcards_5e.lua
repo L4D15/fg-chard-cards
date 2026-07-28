@@ -5,6 +5,12 @@
 --
 
 local _fAttackResolve = nil;
+local _fResolveAction = nil;
+
+-- Roll types with a dedicated card hook; everything else gets a generic
+-- roll card from the resolveAction wrap. Types that roll no dice produce
+-- no card either way.
+local _tDedicatedTypes = { attack = true, damage = true };
 
 function onInit()
 	if ActionAttack and ActionAttack.onAttackResolve then
@@ -16,6 +22,25 @@ function onInit()
 		-- re-registering replaces it with our wrapper.
 		ActionsManager.registerResultHandler("damage", onDamageRoll);
 	end
+	-- Single hook point for every other roll type (basic dice, saves,
+	-- checks, skills, init, ...): runs on the rolling client only.
+	_fResolveAction = ActionsManager.resolveAction;
+	ActionsManager.resolveAction = onResolveAction;
+end
+
+function onResolveAction(rSource, rTarget, rRoll)
+	_fResolveAction(rSource, rTarget, rRoll);
+
+	if _tDedicatedTypes[rRoll.sType or ""] then
+		return;
+	end
+	if rRoll.bSecret then
+		return;
+	end
+	if #(rRoll.aDice or {}) == 0 then
+		return;
+	end
+	ChatCardsManager.sendGenericRollCard(rSource, rRoll);
 end
 
 function onAttackResolve(rSource, rTarget, rRoll, rMessage)
