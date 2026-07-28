@@ -101,6 +101,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "",
 		sIdentity = getIdentityFromActor(rActor),
+		sIsGM = (not rActor and Session.IsHost) and "1" or "",
 	});
 end
 
@@ -125,9 +126,10 @@ function onReceiveMessage(msg)
 	if not msg then
 		return;
 	end
-	if msg.secret then
-		return;
-	end
+	-- NOTE: secret messages are NOT skipped here. The engine only delivers
+	-- them to clients allowed to see them (e.g. the GM's apply-result
+	-- messages when NPCs are involved arrive with secret=true). Roll
+	-- secrecy for cards is enforced at the OOB source via rRoll.bSecret.
 
 	local sText = msg.text or "";
 
@@ -155,11 +157,14 @@ function onReceiveMessage(msg)
 	end
 
 	if _tSpeechModes[msg.mode or ""] and (msg.sender or "") ~= "" then
+		local sIdentity = getIdentityFromMessage(msg);
+		local bGM = (sIdentity == "") and (msg.sender == ChatIdentityManager.getGMIdentity());
 		addCard("chatcard_speech", {
 			sName = msg.sender,
 			sSub = "",
 			sText = sText,
-			sIdentity = getIdentityFromMessage(msg),
+			sIdentity = sIdentity,
+			sIsGM = bGM and "1" or "",
 		});
 		return;
 	end

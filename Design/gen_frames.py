@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Generate placeholder 9-slice frame PNGs for the ChatCards extension."""
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 OUT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/frames"
+ICONS = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/icons"
+FONT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/fonts/NotoSans-Bold.ttf"
 
 GOLD = (185, 156, 91, 255)        # header bars / borders
 GOLD_DARK = (150, 122, 60, 255)   # border lines
@@ -54,3 +56,26 @@ save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1), "cc_banner")
 
 # Portrait frame: gold square
 save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
+
+
+# ===== Portrait icons (fixed-size, drawn inside the 44px portrait box) =====
+
+def text_icon(name, text, bg, fg, size=36, textsize=18):
+    s = 4
+    img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, size * s - 1, size * s - 1],
+                        radius=5 * s, fill=bg)
+    font = ImageFont.truetype(FONT, textsize * s)
+    d.text((size * s / 2, size * s / 2 - 1 * s), text,
+           font=font, fill=fg, anchor="mm")
+    img = img.resize((size, size), Image.LANCZOS)
+    img.save(f"{ICONS}/{name}.png")
+    print(name)
+
+
+# GM speaker icon: gold badge with dark "GM"
+text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=15)
+
+# Unknown speaker fallback: parchment badge with a gold "?"
+text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=22)

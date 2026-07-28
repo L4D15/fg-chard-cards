@@ -2,7 +2,7 @@
 <root>
 	<!-- One-line gold banner: "Turn: X", "Y takes 7 damage", system messages -->
 	<windowclass name="chatcard_banner">
-		<margins control="0,2,0,2" />
+		<margins control="0,0,0,8" />
 		<frame>cc_banner</frame>
 		<script>
 			function setData(t)
@@ -18,6 +18,7 @@
 				</anchored>
 				<font>cc_bannertext</font>
 				<multilinespacing>18</multilinespacing>
+				<readonly />
 			</stringcontrol>
 			<genericcontrol name="sizer">
 				<anchored to="text" position="belowleft" height="8" width="1" />
@@ -27,14 +28,14 @@
 
 	<!-- Speech / emote / OOC: portrait, name, subtitle, framed text body -->
 	<windowclass name="chatcard_speech">
-		<margins control="0,2,0,2" />
+		<margins control="0,0,0,8" />
 		<frame>cc_card</frame>
 		<script>
 			function setData(t)
 				name.setValue(t.sName or "");
 				subtitle.setValue(t.sSub or "");
 				text.setValue(t.sText or "");
-				portrait.setIdentity(t.sIdentity);
+				portrait.setIdentity(t.sIdentity, t.sIsGM == "1");
 			end
 		</script>
 		<sheetdata>
@@ -52,10 +53,12 @@
 			<stringcontrol name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,3" />
 				<font>cc_name</font>
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="subtitle">
 				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
 				<font>cc_subtitle</font>
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="text">
 				<anchored>
@@ -66,6 +69,7 @@
 				<font>cc_body</font>
 				<frame name="cc_panel" offset="8,6,8,6" />
 				<multilinespacing>19</multilinespacing>
+				<readonly />
 			</stringcontrol>
 			<genericcontrol name="sizer">
 				<anchored to="text" position="belowleft" height="12" width="1" />
@@ -76,7 +80,7 @@
 	<!-- Action card: attack / damage / generic roll. Header title, body lines,
 	     keyword chips, and a result box (formula, big total, outcome). -->
 	<windowclass name="chatcard_action">
-		<margins control="0,2,0,2" />
+		<margins control="0,0,0,8" />
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
@@ -94,14 +98,17 @@
 			<stringcontrol name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,3" />
 				<font>cc_name</font>
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="title">
 				<anchored to="namebar" position="insidetopright" offset="10,4" />
 				<font>cc_headertitle</font>
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="subtitle">
 				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
 				<font>cc_subtitle</font>
+				<readonly />
 			</stringcontrol>
 
 			<!-- Result box, right side -->
@@ -121,16 +128,19 @@
 				<font>cc_formula</font>
 				<frame name="cc_resultheader" offset="6,3,6,3" />
 				<center />
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="total">
 				<anchored to="resultbox" position="insidetop" offset="0,24" />
 				<font>cc_total</font>
 				<center />
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="outcome">
 				<anchored to="resultbox" position="insidebottom" offset="0,4" />
 				<font>cc_success</font>
 				<center />
+				<readonly />
 			</stringcontrol>
 
 			<!-- Body lines, left of the result box -->
@@ -141,6 +151,7 @@
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
 				<font>cc_body</font>
+				<readonly />
 			</stringcontrol>
 			<stringcontrol name="line2">
 				<anchored height="19">
@@ -149,6 +160,7 @@
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
 				<font>cc_body</font>
+				<readonly />
 			</stringcontrol>
 
 			<!-- Keyword chips -->

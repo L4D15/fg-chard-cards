@@ -38,6 +38,10 @@
 		<offset>6,6,6,6</offset>
 	</framedef>
 
+	<!-- ===== ICONS ===== -->
+	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
+	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
+
 	<!-- ===== FONTS ===== -->
 	<font name="cc_name">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="17" />

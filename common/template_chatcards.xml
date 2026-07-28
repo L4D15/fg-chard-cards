@@ -6,6 +6,7 @@
 			<anchored height="20" />
 			<font>cc_chip</font>
 			<center />
+			<readonly />
 			<script>
 				function setText(sText, bRed)
 					if (sText or "") == "" then
@@ -28,9 +29,13 @@
 			<anchored width="44" height="44" />
 			<frame name="cc_portraitframe" />
 			<script>
-				function setIdentity(sIdentity)
+				function setIdentity(sIdentity, bGM)
 					if (sIdentity or "") ~= "" then
 						setIcon("portrait_" .. sIdentity .. "_chat");
+					elseif bGM then
+						setIcon("cc_portrait_gm");
+					else
+						setIcon("cc_portrait_unknown");
 					end
 				end
 			</script>

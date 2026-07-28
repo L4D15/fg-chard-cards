@@ -60,6 +60,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sTotal = tostring(rRoll.nTotal or 0),
 		sOutcome = outcomeText(rRoll.sResult),
 		sIdentity = ChatCardsManager.getIdentityFromActor(rSource),
+		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 		sLine2 = string.format("Modifier: %+d", rRoll.nMod or 0),
 	};
 	if rTarget then
@@ -92,6 +93,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "Damage",
 		sIdentity = ChatCardsManager.getIdentityFromActor(rSource),
+		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 	};
 	if rTarget then
 		tCard.sLine1 = "Target: " .. (ActorManager.getDisplayName(rTarget) or "");
