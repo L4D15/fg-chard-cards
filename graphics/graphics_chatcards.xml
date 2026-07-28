@@ -46,6 +46,17 @@
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
 	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
 
+	<!-- Custom portrait set: the engine composites each PC identity's
+	     portrait with these layers into "portrait_<identity>_ccard" icons.
+	     Transparent base (no ring), full-size rounded mask -> full-bleed
+	     portraits clipped to the card frame's corner radius. -->
+	<icon name="cc_portrait_base" file="graphics/icons/cc_portrait_base.png" />
+	<icon name="cc_portrait_mask" file="graphics/icons/cc_portrait_mask.png" />
+	<portraitset name="ccard">
+		<base>cc_portrait_base</base>
+		<mask>cc_portrait_mask</mask>
+	</portraitset>
+
 	<!-- ===== FONTS ===== -->
 	<font name="cc_name">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="17" />

@@ -86,3 +86,15 @@ text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=19)
 
 # Unknown speaker fallback: parchment badge with a gold "?"
 text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=27)
+
+# Portrait-set layers for engine-generated PC portrait icons
+# (portrait_<identity>_ccard): fully transparent base (no ring/decoration)
+# and a full-size opaque rounded mask so the portrait fills the box and is
+# clipped to match the border frame's corners.
+base = Image.new("RGBA", (44, 44), (0, 0, 0, 0))
+base.save(f"{ICONS}/cc_portrait_base.png")
+print("cc_portrait_base")
+
+mask = rounded((44, 44), 6, (255, 255, 255, 255))
+mask.save(f"{ICONS}/cc_portrait_mask.png")
+print("cc_portrait_mask")

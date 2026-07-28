@@ -249,8 +249,9 @@ function getActorPortrait(rActor)
 		return t;
 	end
 	if ActorManager.isPC(rActor) then
-		-- PC portraits are auto-registered icons per identity
-		t.sIconAsset = "portrait_" .. DB.getName(nodeActor) .. "_chat";
+		-- Engine-generated per-identity portrait icons from our own
+		-- portrait set (transparent base, full-size mask)
+		t.sIconAsset = "portrait_" .. DB.getName(nodeActor) .. "_ccard";
 	else
 		local sToken = DB.getValue(nodeActor, "picture", "");
 		if (sToken or "") == "" then
@@ -279,7 +280,14 @@ function getMessagePortrait(msg)
 			if tAsset.name == "portrait_gm_token" then
 				t.bGM = true;
 			else
-				t.sIconAsset = tAsset.name;
+				-- Identity portrait icons from other sets carry their own
+				-- baked-in ring/mask; reroute them to our clean set.
+				local sIdentity = tAsset.name:match("^portrait_(.+)_%w+$");
+				if sIdentity then
+					t.sIconAsset = "portrait_" .. sIdentity .. "_ccard";
+				else
+					t.sIconAsset = tAsset.name;
+				end
 			end
 		else
 			t.sTokenAsset = tAsset.name;
