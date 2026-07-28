@@ -35,16 +35,19 @@
 				name.setValue(t.sName or "");
 				subtitle.setValue(t.sSub or "");
 				text.setValue(t.sText or "");
-				ChatCardsManager.setCardPortrait(portrait, tokenview, t);
+				ChatCardsManager.setCardPortrait(porticon, tokenview, t);
 			end
 		</script>
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="4,4" />
-			</cc_portrait_token>
-			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="0,0" />
-			</cc_portrait>
+			</cc_portrait_token>
+			<cc_portrait_icon name="porticon">
+				<anchored position="insidetopleft" offset="0,0" />
+			</cc_portrait_icon>
+			<cc_portrait_frame name="portraitframe">
+				<anchored position="insidetopleft" offset="0,0" />
+			</cc_portrait_frame>
 			<genericcontrol name="namebar">
 				<anchored height="26">
 					<top offset="0" />
@@ -88,11 +91,14 @@
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="4,4" />
-			</cc_portrait_token>
-			<cc_portrait name="portrait">
 				<anchored position="insidetopleft" offset="0,0" />
-			</cc_portrait>
+			</cc_portrait_token>
+			<cc_portrait_icon name="porticon">
+				<anchored position="insidetopleft" offset="0,0" />
+			</cc_portrait_icon>
+			<cc_portrait_frame name="portraitframe">
+				<anchored position="insidetopleft" offset="0,0" />
+			</cc_portrait_frame>
 			<genericcontrol name="namebar">
 				<anchored height="26">
 					<top offset="0" />

@@ -23,21 +23,29 @@
 		</stringcontrol>
 	</template>
 
-	<!-- Portrait box shown at the top-left of cards: gold frame + icon layer.
-	     Set via ChatCardsManager.setCardPortrait, together with the token
-	     layer below (cc_portrait_token must be declared before it). -->
-	<template name="cc_portrait">
+	<!-- Portrait box shown at the top-left of cards, as three stacked
+	     full-size layers (declare in this order so the border draws on top):
+	     cc_portrait_token (NPC token/picture art), cc_portrait_icon
+	     (PC portrait / GM badge / "?" icons), cc_portrait_frame
+	     (border-only graphic with transparent center).
+	     Set via ChatCardsManager.setCardPortrait(porticon, tokenview, t). -->
+	<template name="cc_portrait_token">
+		<tokencontrol>
+			<anchored width="44" height="44" />
+			<invisible />
+		</tokencontrol>
+	</template>
+
+	<template name="cc_portrait_icon">
+		<genericcontrol>
+			<anchored width="44" height="44" />
+		</genericcontrol>
+	</template>
+
+	<template name="cc_portrait_frame">
 		<genericcontrol>
 			<anchored width="44" height="44" />
 			<frame name="cc_portraitframe" />
 		</genericcontrol>
-	</template>
-
-	<!-- Token layer: renders NPC token/picture assets under the frame -->
-	<template name="cc_portrait_token">
-		<tokencontrol>
-			<anchored width="36" height="36" />
-			<invisible />
-		</tokencontrol>
 	</template>
 </root>

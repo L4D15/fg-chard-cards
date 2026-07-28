@@ -64,9 +64,10 @@ save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
 
 
-# ===== Portrait icons (fixed-size, drawn inside the 44px portrait box) =====
+# ===== Portrait icons (fill the whole 44px portrait box; the border-only
+# cc_portraitframe graphic is layered on top of them) =====
 
-def text_icon(name, text, bg, fg, size=36, textsize=18):
+def text_icon(name, text, bg, fg, size=44, textsize=18):
     s = 4
     img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -81,7 +82,7 @@ def text_icon(name, text, bg, fg, size=36, textsize=18):
 
 
 # GM speaker icon: gold badge with dark "GM"
-text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=15)
+text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=19)
 
 # Unknown speaker fallback: parchment badge with a gold "?"
-text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=22)
+text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=27)
