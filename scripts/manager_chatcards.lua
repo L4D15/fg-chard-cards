@@ -83,6 +83,22 @@ function getActorName(rActor, sUser)
 		if (s or "") ~= "" then
 			return s;
 		end
+		-- Non-CT NPC records can resolve as "unidentified" (FG's record
+		-- ID system returns their empty nonid_name); read the record's
+		-- real name directly. NOTE: this reveals true names of
+		-- unidentified NPCs on cards — swap the order of these two reads
+		-- if a campaign relies on the identification mechanic.
+		local nodeActor = ActorManager.getCreatureNode(rActor);
+		if nodeActor then
+			s = DB.getValue(nodeActor, "name", "");
+			if s ~= "" then
+				return s;
+			end
+			s = DB.getValue(nodeActor, "nonid_name", "");
+			if s ~= "" then
+				return s;
+			end
+		end
 	end
 	if (sUser or "") ~= "" then
 		return sUser;
