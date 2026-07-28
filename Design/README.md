@@ -138,15 +138,23 @@ its own **feature branch** off develop (merged back when done), and **master**
 only receives merges as "build points" when releasing a new version (tag the
 merge with the version number). Never commit directly to master.
 
-## Open questions (to resolve during in-app testing)
+### 2026-07-28 — Card portraits: portrait -> token/picture -> GM badge -> "?"
+(feature/card-portraits, merged after in-app confirmation.) PCs use their
+auto-registered identity portrait icons; NPCs render token art (`picture` ->
+`token` -> `token3Dflat`, resolved via `UtilityManager.resolveDisplayToken`)
+in a `tokencontrol` layered under the gold portrait frame; the GM gets a
+dedicated badge; anything else falls back to a "?" icon. Speech cards read
+the message's own chat asset and fall back to a name lookup with
+`ChatIdentityManager.getAssetByName`.
 
-- Do list windows auto-size to their bottom-most anchored control (`sizer`),
-  or do card classes need explicit heights?
-- Does `onReceiveMessage` fire for locally-sent messages (local echo), or do
-  we need a deliver-side callback with dedup?
-- NPC portraits: `portrait_<identity>_chat` icons only exist for PCs — use a
-  `tokencontrol` with the CT token for NPCs?
+## Open questions
+
 - Where to capture the itemized modifier breakdown ("Base +14, Bless +1") —
   likely `ActionAttack.applyEffectsToRollMod`.
 - Weapon property chips (Agile/Finesse) need a lookup on the source actor's
   weapon/power node; not present in `rRoll`.
+
+Resolved by playtesting (2026-07-28): list windows do auto-size to the
+`sizer` control; `onReceiveMessage` fires for locally-sent messages, but
+delivers roll messages without dice data (see decision above); NPC portraits
+solved by the card-portraits feature.

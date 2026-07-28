@@ -35,27 +35,25 @@ decision log — lives in [`Design/`](Design/README.md).
   fonts. Swap the PNGs in `graphics/frames/` and the colors in
   `graphics_chatcards.xml` to restyle everything without touching code.
 
-## Known gaps / to verify in-app (v0.1)
+## Known gaps (confirmed in-app through v0.1 playtesting)
 
-1. **Card window heights** — assumes list windows size to their bottom-most
-   anchored control (`sizer`). If cards render collapsed or overlapping,
-   heights need to be set explicitly per class.
-2. **Local echo** — cards are created from the `onReceiveMessage` engine event.
-   If locally-sent speech doesn't produce a card, additionally hook
-   `ChatManager.registerDeliverMessageCallback` with a dedup fingerprint.
-3. **Portraits** — uses the auto-registered `portrait_<identity>_chat` icon
-   names (PCs only). NPC cards currently show an empty portrait frame; NPC
-   token art needs a `tokencontrol` or asset-based approach.
-4. **Modifier breakdown** — the mockup's "Base +14, Bless +1" detail isn't
+1. **Modifier breakdown** — the mockup's "Base +14, Bless +1" detail isn't
    available at the hook point; the card shows the net modifier. Getting the
    breakdown means capturing it in `ActionAttack.applyEffectsToRollMod`.
-5. **Weapon property chips** (Agile/Finesse) aren't in `rRoll`; they'd have to
+2. **Weapon property chips** (Agile/Finesse) aren't in `rRoll`; they'd have to
    be looked up from the source actor's weapon/power node.
-6. **Saves, checks, skills, heals** render as generic roll cards (no vs-DC
+3. **Saves, checks, skills, heals** render as generic roll cards (no vs-DC
    box). Wire `ActionSave`/`ActionCheck` hooks the same way as attacks to
    upgrade them.
-7. **Chat entry sliders** (speaker/language) and dice tower / secret rolls are
-   untouched; secret rolls intentionally produce no card.
+4. **Chat entry sliders** (speaker/language) and dice tower / secret rolls are
+   untouched; secret rolls intentionally produce no card (though apply-result
+   banners, e.g. "takes N damage", do show to whoever FG delivers them to).
+
+Resolved during playtesting: card heights (windows size to their `sizer`
+control), local echo (receive fires for own messages), duplicate attack
+text (mixed-case apply messages), basic dice throws (resolveAction hook),
+card background frames (windowclass-level `<frame>`), portraits
+(portrait -> token/picture -> GM badge -> "?").
 
 ## Restyling
 
