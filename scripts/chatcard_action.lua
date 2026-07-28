@@ -46,14 +46,25 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "", t.sMod or "");
 
-	-- Shrink the box to its content: 4 pad + dice rows + 30 total +
-	-- outcome line only when there is one + 4 pad. The card grows if the
-	-- box needs more space than the left column.
-	local nBoxHeight = 38 + nDiceHeight;
+	-- Box content: 4 pad + dice rows + 30 total + outcome line only when
+	-- there is one + 4 pad.
+	local nBoxContent = 38 + nDiceHeight;
 	if sOutcome ~= "" then
-		nBoxHeight = nBoxHeight + 16;
+		nBoxContent = nBoxContent + 16;
 	end
-	resultbox.setAnchoredHeight(nBoxHeight);
+
+	-- Left column extent, mirroring the windowclass anchors: namebar 26 +
+	-- 2 + subtitle 18, + 4 + line1, + 2 + line2, + 6 + chip row, + sizer 12.
+	local nLine1 = ((t.sLine1 or "") ~= "") and 19 or 0;
+	local nLine2 = ((t.sLine2 or "") ~= "") and 19 or 0;
+	local bChips = (sType == "attack") or (sType == "damage")
+		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
+	local nLeftExtent = 46 + 4 + nLine1 + 2 + nLine2 + 6 + (bChips and 20 or 0) + 12;
+
+	-- The box bottom always meets the card bottom: stretch to the left
+	-- column when that is taller, otherwise the box's content drives the
+	-- card height (box top sits at 26, the namebar's bottom).
+	resultbox.setAnchoredHeight(math.max(nBoxContent, nLeftExtent - 26));
 end
 
 -- Known die shapes; anything else (custom dice) falls back to the square
