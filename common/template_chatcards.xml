@@ -24,21 +24,23 @@
 	</template>
 
 	<!-- Portrait box shown at the top-left of cards, as three stacked
-	     full-size layers (declare in this order so the border draws on top):
+	     layers (declare in this order so the border draws on top):
 	     cc_portrait_token (NPC token/picture art), cc_portrait_icon
 	     (PC portrait / GM badge / "?" icons), cc_portrait_frame
-	     (border-only graphic with transparent center).
+	     (border-only graphic). The avatar layers are 38x38, matching the
+	     44x44 frame's inner area (3px border) — anchor them at +3,+3
+	     relative to the frame position.
 	     Set via ChatCardsManager.setCardPortrait(porticon, tokenview, t). -->
 	<template name="cc_portrait_token">
 		<tokencontrol>
-			<anchored width="44" height="44" />
+			<anchored width="38" height="38" />
 			<invisible />
 		</tokencontrol>
 	</template>
 
 	<template name="cc_portrait_icon">
 		<genericcontrol>
-			<anchored width="44" height="44" />
+			<anchored width="38" height="38" />
 		</genericcontrol>
 	</template>
 

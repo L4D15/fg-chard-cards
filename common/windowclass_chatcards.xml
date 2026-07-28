@@ -40,10 +40,10 @@
 		</script>
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="3,3" />
 			</cc_portrait_token>
 			<cc_portrait_icon name="porticon">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="3,3" />
 			</cc_portrait_icon>
 			<cc_portrait_frame name="portraitframe">
 				<anchored position="insidetopleft" offset="0,0" />
@@ -91,10 +91,10 @@
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="3,3" />
 			</cc_portrait_token>
 			<cc_portrait_icon name="porticon">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="3,3" />
 			</cc_portrait_icon>
 			<cc_portrait_frame name="portraitframe">
 				<anchored position="insidetopleft" offset="0,0" />

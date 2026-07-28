@@ -60,28 +60,15 @@ save(rounded((36, 20), 9, GOLD), "cc_chip_gold")
 # 8px transparent gutter below (framedef offset 12,10,12,18)
 save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 
-# Portrait frame: drawn ON TOP of the avatar layers, so it doubles as a
-# visual mask — opaque square outside, transparent rounded window inside.
-# The corner caps cover token/picture art poking past the rounded corners
-# (token controls cannot be masked directly).
-def portrait_frame():
-    s = 4
-    img = Image.new("RGBA", (48 * s, 48 * s), GOLD_DARK)
-    d = ImageDraw.Draw(img)
-    # ImageDraw writes raw pixel values (no blending): this punches a
-    # transparent rounded window through the opaque square.
-    d.rounded_rectangle([3 * s, 3 * s, 45 * s - 1, 45 * s - 1],
-                        radius=6 * s, fill=(0, 0, 0, 0))
-    return img.resize((48, 48), Image.LANCZOS)
+# Portrait frame: border-only, drawn on top of the avatar layers. The
+# avatar layers are sized to the border's inner area (38x38 inside the
+# 44x44 frame) so they don't poke past it.
+save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
 
 
-save(portrait_frame(), "cc_portraitframe")
+# ===== Portrait icons (sized to the border's 38px inner area) =====
 
-
-# ===== Portrait icons (fill the whole 44px portrait box; the border-only
-# cc_portraitframe graphic is layered on top of them) =====
-
-def text_icon(name, text, bg, fg, size=44, textsize=18):
+def text_icon(name, text, bg, fg, size=38, textsize=18):
     s = 4
     img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -96,19 +83,19 @@ def text_icon(name, text, bg, fg, size=44, textsize=18):
 
 
 # GM speaker icon: gold badge with dark "GM"
-text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=19)
+text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=17)
 
 # Unknown speaker fallback: parchment badge with a gold "?"
-text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=27)
+text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=24)
 
 # Portrait-set layers for engine-generated PC portrait icons
 # (portrait_<identity>_ccard): fully transparent base (no ring/decoration)
-# and a full-size opaque rounded mask so the portrait fills the box and is
-# clipped to match the border frame's corners.
-base = Image.new("RGBA", (44, 44), (0, 0, 0, 0))
+# and an opaque rounded mask, both at the 38px inner-area size so the
+# portrait fills it exactly and is clipped to soft corners.
+base = Image.new("RGBA", (38, 38), (0, 0, 0, 0))
 base.save(f"{ICONS}/cc_portrait_base.png")
 print("cc_portrait_base")
 
-mask = rounded((44, 44), 6, (255, 255, 255, 255))
+mask = rounded((38, 38), 4, (255, 255, 255, 255))
 mask.save(f"{ICONS}/cc_portrait_mask.png")
 print("cc_portrait_mask")
