@@ -54,7 +54,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
 	local tCard = {
 		sCardType = "attack",
-		sName = ActorManager.getDisplayName(rSource) or rMessage.sender or "",
+		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
 		sSub = rRoll.sUser or "Gamemaster",
 		sTitle = rangeWord(sRange) .. "Attack: " .. sLabel,
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
@@ -67,7 +67,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	};
 	if rTarget then
 		local sAC = rRoll.nDefenseVal and (" (AC " .. rRoll.nDefenseVal .. ")") or "";
-		tCard.sLine1 = "Target: " .. (ActorManager.getDisplayName(rTarget) or "") .. sAC;
+		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget) .. sAC;
 	end
 	if rRoll.nDefenseVal then
 		tCard.sFormula = tCard.sFormula .. " vs " .. rRoll.nDefenseVal;
@@ -89,7 +89,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
 	local tCard = {
 		sCardType = "damage",
-		sName = ActorManager.getDisplayName(rSource) or "",
+		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
 		sSub = rRoll.sUser or "Gamemaster",
 		sTitle = "Damage Roll: " .. sLabel,
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
@@ -100,7 +100,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 	};
 	if rTarget then
-		tCard.sLine1 = "Target: " .. (ActorManager.getDisplayName(rTarget) or "");
+		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
 	end
 	local sDmgType = (rRoll.sDesc or ""):match("%[TYPE: (%a+)");
 	if sDmgType then

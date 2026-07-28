@@ -70,6 +70,33 @@ end
 
 -- ===== Generic roll cards =====
 
+-- Card display name with fallbacks: actor display name, then the
+-- sourcelinked record name (CT entries can carry an empty name field),
+-- then the rolling user, then the local identity/GM label.
+function getActorName(rActor, sUser)
+	if rActor then
+		local s = ActorManager.getDisplayName(rActor);
+		if (s or "") ~= "" then
+			return s;
+		end
+		s = ActorManager.getBaseName(rActor);
+		if (s or "") ~= "" then
+			return s;
+		end
+	end
+	if (sUser or "") ~= "" then
+		return sUser;
+	end
+	if Session.IsHost then
+		return ChatIdentityManager.getGMIdentity();
+	end
+	local s = User.getIdentityLabel();
+	if (s or "") ~= "" then
+		return s;
+	end
+	return User.getUsername();
+end
+
 -- Every roll type resolves through ActionsManager.resolveAction; the ruleset
 -- hook script wraps it and calls this for types without a dedicated card.
 function sendGenericRollCard(rSource, rRoll)
@@ -78,14 +105,7 @@ function sendGenericRollCard(rSource, rRoll)
 		rActor = ActorManager.getActiveActor();
 	end
 
-	local sName;
-	if rActor then
-		sName = ActorManager.getDisplayName(rActor);
-	elseif Session.IsHost then
-		sName = ChatIdentityManager.getGMIdentity();
-	else
-		sName = User.getUsername();
-	end
+	local sName = getActorName(rActor, rRoll.sUser);
 
 	local sTitle = cleanRollText(rRoll.sDesc or "");
 	if sTitle == "" then
