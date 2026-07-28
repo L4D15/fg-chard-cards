@@ -123,23 +123,14 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Bottom-anchoring collapses in list windows (window height
-			     resolves after control anchors), so the lower-right
-			     placement is computed top-down: this invisible pusher's
-			     height is set from Lua so the result box below it ends
-			     exactly at the card's bottom edge. -->
-			<genericcontrol name="boxpusher">
-				<anchored width="1" height="34">
-					<top offset="0" />
-					<right offset="0" />
-				</anchored>
-				<invisible />
-			</genericcontrol>
-
-			<!-- Result box, attached to the card's lower-right corner -->
+			<!-- Result box, right side under the header; its Lua-computed
+			     height makes its bottom edge reach the card's bottom
+			     border (the card grows when the box is the tall column,
+			     which it is at minimum height). Bottom anchors collapse
+			     in list windows, so everything stays top-anchored. -->
 			<genericcontrol name="resultbox">
-				<anchored width="110" height="72">
-					<top parent="boxpusher" anchor="bottom" offset="0" />
+				<anchored width="110" height="96">
+					<top parent="namebar" anchor="bottom" offset="6" />
 					<right offset="0" />
 				</anchored>
 				<frame name="cc_resultbox" />

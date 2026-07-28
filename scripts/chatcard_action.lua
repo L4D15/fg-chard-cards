@@ -42,23 +42,31 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "");
 
-	-- 20 formula strip + 2 gap + dice rows + 30 total + 16 outcome + 4 pad
-	local nBoxHeight = 72 + nDiceHeight;
+	-- 20 formula strip + 2 gap + dice rows + 30 total + 16 outcome + 4 pad.
+	-- The box top sits at 32 (namebar 26 + 6) and the left column extent
+	-- is 128, so a minimum height of 96 puts the box's bottom edge exactly
+	-- on the card's bottom border; taller boxes grow the card instead.
+	local nBoxHeight = math.max(72 + nDiceHeight, 96);
 	resultbox.setAnchoredHeight(nBoxHeight);
+end
 
-	-- Fixed extent of the left column (namebar 26 + 2 + subtitle 18 + 4 +
-	-- line1 19 + 2 + line2 19 + 6 + chips 20 + sizer 12) — keep in sync
-	-- with the windowclass anchors.
-	local LEFT_COLUMN_HEIGHT = 128;
-	-- The box needs at least the header above it (namebar 26 + 6 gap).
-	local nCardHeight = math.max(LEFT_COLUMN_HEIGHT, 32 + nBoxHeight);
-	boxpusher.setAnchoredHeight(nCardHeight - nBoxHeight);
+-- Known die shapes; anything else (custom dice) falls back to the square
+local _tDieIcons = {
+	d4 = "cc_die_d4", d6 = "cc_die_d6", d8 = "cc_die_d8",
+	d10 = "cc_die_d10", d12 = "cc_die_d12", d20 = "cc_die_d20",
+	d100 = "cc_die_d10",
+};
+
+function getDieIcon(sType)
+	-- strip advantage/disadvantage color prefixes (gd20 / rd20)
+	local sBase = sType:match("d%d+") or sType;
+	return _tDieIcons[sBase] or "cc_die_d6";
 end
 
 -- Render individual die results ("d20:15;gd20:15;d6:3:x", ':x' = dropped)
--- as rows of engine dice icons with the rolled number on top. Dropped
--- dice are dimmed the same way native chat dims them. Returns the height
--- used, with glyphs wrapping into as many rows as needed.
+-- as rows of black die silhouettes (native chat style) with the rolled
+-- number on top. Dropped dice are dimmed the same way native chat dims
+-- them. Returns the height used, wrapping into as many rows as needed.
 function setDiceResults(sDice)
 	local tDice = {};
 	for sEntry in string.gmatch(sDice, "[^;]+") do
@@ -92,7 +100,7 @@ function setDiceResults(sDice)
 		local y = (nRow * (GLYPH + GAP)) + (GLYPH / 2);
 
 		local wBitmap = diceresults.addBitmapWidget({
-			icon = "diceselect_desktop_" .. tDie.sType,
+			icon = getDieIcon(tDie.sType),
 			position = "topleft", x = x, y = y,
 			w = GLYPH, h = GLYPH,
 		});

@@ -46,6 +46,14 @@
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
 	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
 
+	<!-- Die result glyphs (native-chat-style black silhouettes) -->
+	<icon name="cc_die_d4" file="graphics/icons/cc_die_d4.png" />
+	<icon name="cc_die_d6" file="graphics/icons/cc_die_d6.png" />
+	<icon name="cc_die_d8" file="graphics/icons/cc_die_d8.png" />
+	<icon name="cc_die_d10" file="graphics/icons/cc_die_d10.png" />
+	<icon name="cc_die_d12" file="graphics/icons/cc_die_d12.png" />
+	<icon name="cc_die_d20" file="graphics/icons/cc_die_d20.png" />
+
 	<!-- Custom portrait set: the engine composites each PC identity's
 	     portrait with these layers into "portrait_<identity>_ccard" icons.
 	     Transparent base (no ring), full-size rounded mask -> full-bleed
