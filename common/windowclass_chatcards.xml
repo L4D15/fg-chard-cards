@@ -40,16 +40,16 @@
 		</script>
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="12,12" />
+				<anchored position="insidetopleft" offset="4,4" />
 			</cc_portrait_token>
 			<cc_portrait name="portrait">
-				<anchored position="insidetopleft" offset="8,8" />
+				<anchored position="insidetopleft" offset="0,0" />
 			</cc_portrait>
 			<genericcontrol name="namebar">
 				<anchored height="26">
-					<top offset="8" />
-					<left offset="56" />
-					<right offset="-8" />
+					<top offset="0" />
+					<left offset="44" />
+					<right offset="0" />
 				</anchored>
 				<frame name="cc_header" />
 			</genericcontrol>
@@ -88,16 +88,16 @@
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="12,12" />
+				<anchored position="insidetopleft" offset="4,4" />
 			</cc_portrait_token>
 			<cc_portrait name="portrait">
-				<anchored position="insidetopleft" offset="8,8" />
+				<anchored position="insidetopleft" offset="0,0" />
 			</cc_portrait>
 			<genericcontrol name="namebar">
 				<anchored height="26">
-					<top offset="8" />
-					<left offset="56" />
-					<right offset="-8" />
+					<top offset="0" />
+					<left offset="44" />
+					<right offset="0" />
 				</anchored>
 				<frame name="cc_header" />
 			</genericcontrol>
@@ -117,11 +117,11 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box, right side -->
+			<!-- Result box, right side, flush with the card border -->
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="72">
 					<top parent="namebar" anchor="bottom" offset="6" />
-					<right offset="-10" />
+					<right offset="0" />
 				</anchored>
 				<frame name="cc_resultbox" />
 			</genericcontrol>

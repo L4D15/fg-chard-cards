@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <root>
 	<!-- ===== FRAMES (placeholder 9-slice art; swap the PNGs to restyle) ===== -->
+	<!-- cc_card / cc_banner include an 8px transparent gutter at the bottom
+	     of the bitmap (inside the bottom 9-slice band): windowclass frames
+	     stretch over the window margins, so inter-card spacing lives in
+	     the art. Keep the gutter when replacing these graphics. -->
 	<framedef name="cc_card">
 		<bitmap file="graphics/frames/cc_card.png" />
-		<offset>12,12,12,12</offset>
+		<offset>12,12,12,20</offset>
 	</framedef>
 	<framedef name="cc_header">
 		<bitmap file="graphics/frames/cc_header.png" />
@@ -31,7 +35,7 @@
 	</framedef>
 	<framedef name="cc_banner">
 		<bitmap file="graphics/frames/cc_banner.png" />
-		<offset>12,10,12,10</offset>
+		<offset>12,10,12,18</offset>
 	</framedef>
 	<framedef name="cc_portraitframe">
 		<bitmap file="graphics/frames/cc_portraitframe.png" />

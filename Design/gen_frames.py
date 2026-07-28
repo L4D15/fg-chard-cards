@@ -14,17 +14,21 @@ RED = (178, 46, 46, 255)          # attack chip
 WHITE = (255, 255, 255, 255)
 
 
-def rounded(size, radius, fill, outline=None, width=1):
-    # Draw at 4x and downscale for smooth corners
+def rounded(size, radius, fill, outline=None, width=1, bottom_gap=0):
+    # Draw at 4x and downscale for smooth corners. bottom_gap adds fully
+    # transparent rows below the shape: FG windowclass frames stretch over
+    # the whole list-window rect INCLUDING the bottom margin, so inter-card
+    # spacing must be baked into the frame art (keep the gap inside the
+    # bottom 9-slice band via the framedef offset).
     s = 4
-    img = Image.new("RGBA", (size[0] * s, size[1] * s), (0, 0, 0, 0))
+    img = Image.new("RGBA", (size[0] * s, (size[1] + bottom_gap) * s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     d.rounded_rectangle(
         [0, 0, size[0] * s - 1, size[1] * s - 1],
         radius=radius * s, fill=fill,
         outline=outline, width=width * s,
     )
-    return img.resize(size, Image.LANCZOS)
+    return img.resize((size[0], size[1] + bottom_gap), Image.LANCZOS)
 
 
 def save(img, name):
@@ -32,8 +36,9 @@ def save(img, name):
     print(name)
 
 
-# Card body: parchment with gold border, 48x48, corner 10 -> 9-slice offset 12
-save(rounded((48, 48), 8, PARCHMENT, GOLD_DARK, 2), "cc_card")
+# Card body: parchment with gold border + 8px transparent gutter below
+# (framedef offset 12,12,12,20)
+save(rounded((48, 48), 8, PARCHMENT, GOLD_DARK, 2, bottom_gap=8), "cc_card")
 
 # Header bar: solid gold, slightly rounded top corners handled by card behind it
 save(rounded((48, 24), 5, GOLD), "cc_header")
@@ -51,8 +56,9 @@ save(rounded((48, 20), 4, GOLD), "cc_resultheader")
 save(rounded((36, 20), 9, RED), "cc_chip_red")
 save(rounded((36, 20), 9, GOLD), "cc_chip_gold")
 
-# Banner: full-width gold rounded bar (turn / damage-applied messages)
-save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1), "cc_banner")
+# Banner: full-width gold rounded bar (turn / damage-applied messages),
+# 8px transparent gutter below (framedef offset 12,10,12,18)
+save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 
 # Portrait frame: gold square
 save(rounded((48, 48), 6, (0, 0, 0, 0), GOLD_DARK, 3), "cc_portraitframe")
