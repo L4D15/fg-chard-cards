@@ -174,14 +174,14 @@
 			<!-- Body lines, left of the result box; filled from Lua with a
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
-				<anchored height="19">
+				<anchored height="16">
 					<top parent="subtitle" anchor="bottom" offset="2" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
 			</genericcontrol>
 			<genericcontrol name="line2">
-				<anchored height="19">
+				<anchored height="16">
 					<top parent="line1" anchor="bottom" offset="2" />
 					<left offset="12" />
 					<right parent="resultbox" anchor="left" offset="-8" />
@@ -209,7 +209,7 @@
 			</cc_chip>
 
 			<genericcontrol name="sizer">
-				<anchored to="chip1" position="belowleft" height="2" width="1" />
+				<anchored to="chip1" position="belowleft" height="4" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
