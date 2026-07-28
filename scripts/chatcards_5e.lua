@@ -65,7 +65,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
-		sLine2 = string.format("Modifier: %+d", rRoll.nMod or 0),
+		sLine2 = "Modifiers: " .. buildAttackModBreakdown(rSource, rTarget, rRoll),
 	};
 	if rTarget then
 		local sAC = rRoll.nDefenseVal and (" (AC " .. rRoll.nDefenseVal .. ")") or "";
@@ -111,6 +111,67 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		tCard.sChip2 = StringManager.capitalize(sDmgType);
 	end
 	ChatCardsManager.sendCardOOB(tCard);
+end
+
+-- Itemized attack modifier line: "Base +3, Bless +1d4, Other effects +1".
+-- Re-runs the same per-effect query the ruleset used when building the
+-- roll; rRoll.nEffectMod (tracked by ActionCore.applyModRollEffect)
+-- separates the base bonus from effect contributions, and anything not
+-- attributable to a named ATK/@ATK effect is lumped as "Other effects".
+function buildAttackModBreakdown(rSource, rTarget, rRoll)
+	local nMod = rRoll.nMod or 0;
+	local nEffectMod = tonumber(rRoll.nEffectMod or 0) or 0;
+	local tParts = { string.format("Base %+d", nMod - nEffectMod) };
+
+	local tFilter = ActionCore.buildEffectFilter(rRoll);
+	local nListed = 0;
+	nListed = nListed + addEffectBreakdownItems(tParts, rSource, "ATK", { rTarget = rTarget, tFilter = tFilter });
+	nListed = nListed + addEffectBreakdownItems(tParts, rTarget, "@ATK", { rTarget = rSource, tFilter = tFilter });
+
+	local nOther = nEffectMod - nListed;
+	if nOther ~= 0 then
+		table.insert(tParts, string.format("Other effects %+d", nOther));
+	end
+	return table.concat(tParts, ", ");
+end
+
+-- Append "Name +bonus" entries for each active effect with matching
+-- components; returns the flat-modifier total that was itemized.
+function addEffectBreakdownItems(tParts, rActor, sTag, tData)
+	if not rActor then
+		return 0;
+	end
+	local nListedMod = 0;
+	for _, tEffectData in ipairs(EffectQueryManager.getEffectsDataByTag(rActor, sTag, tData)) do
+		if (tEffectData.nActive or 0) == 1 then
+			local sName = StringManager.trim((tEffectData.sLabel or ""):match("^([^;]+)") or "") or "";
+			if sName == "" or sName:match(":") then
+				-- unnamed effect (label starts with a typed component)
+				sName = "Effect";
+			end
+
+			local tDice = {};
+			local nCompMod = 0;
+			for _, tComp in ipairs(EffectManager.parseEffectComps(tEffectData)) do
+				if tComp.type == sTag then
+					for _, vDie in ipairs(tComp.dice or {}) do
+						table.insert(tDice, vDie);
+					end
+					nCompMod = nCompMod + (tComp.mod or 0);
+				end
+			end
+
+			if (#tDice > 0) or (nCompMod ~= 0) then
+				local sBonus = ChatCardsManager.buildDiceFormula(tDice, nCompMod);
+				if not sBonus:match("^[%+%-]") then
+					sBonus = "+" .. sBonus;
+				end
+				table.insert(tParts, sName .. " " .. sBonus);
+				nListedMod = nListedMod + nCompMod;
+			end
+		end
+	end
+	return nListedMod;
 end
 
 -- "[ATTACK (M)] Shortsword [EXTRA TAG]" -> "M", "Shortsword"
