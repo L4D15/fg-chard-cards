@@ -133,10 +133,19 @@
 				</anchored>
 				<frame name="cc_resultbox" />
 			</genericcontrol>
+			<!-- Invisible pad that vertically centers the box contents:
+			     its height is set from Lua to half the box's free space -->
+			<genericcontrol name="boxpad">
+				<anchored width="1" height="4">
+					<top parent="resultbox" anchor="top" offset="0" />
+					<left parent="resultbox" anchor="left" offset="0" />
+				</anchored>
+				<invisible />
+			</genericcontrol>
 			<!-- Individual die results + trailing modifier, as Lua widgets -->
 			<genericcontrol name="diceresults">
 				<anchored height="0">
-					<top parent="resultbox" anchor="top" offset="4" />
+					<top parent="boxpad" anchor="bottom" offset="0" />
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>

@@ -46,9 +46,8 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "", t.sMod or "");
 
-	-- Box content: 4 pad + dice rows + 30 total + outcome line only when
-	-- there is one + 4 pad.
-	local nBoxContent = 38 + nDiceHeight;
+	-- Box content: dice rows + 30 total + outcome line when there is one.
+	local nBoxContent = 30 + nDiceHeight;
 	if sOutcome ~= "" then
 		nBoxContent = nBoxContent + 16;
 	end
@@ -62,9 +61,12 @@ function setData(t)
 	local nLeftExtent = 46 + 4 + nLine1 + 2 + nLine2 + 6 + (bChips and 20 or 0) + 12;
 
 	-- The box bottom always meets the card bottom: stretch to the left
-	-- column when that is taller, otherwise the box's content drives the
-	-- card height (box top sits at 26, the namebar's bottom).
-	resultbox.setAnchoredHeight(math.max(nBoxContent, nLeftExtent - 26));
+	-- column when that is taller, otherwise the box's content (plus 4px
+	-- padding each side) drives the card height (box top sits at 26, the
+	-- namebar's bottom). Contents are vertically centered via boxpad.
+	local nBoxHeight = math.max(nBoxContent + 8, nLeftExtent - 26);
+	resultbox.setAnchoredHeight(nBoxHeight);
+	boxpad.setAnchoredHeight(math.floor((nBoxHeight - nBoxContent) / 2));
 end
 
 -- Known die shapes; anything else (custom dice) falls back to the square
