@@ -194,6 +194,15 @@ trade-off of subtraction is that an effect which cannot be attributed to a
 named `ATK`/`@ATK` effect — exhaustion, ability-score effects — is absorbed
 into the base rather than listed separately.
 
+### 2026-07-29 — Clearing the chat
+`/clear` is an engine built-in, not a CoreRPG slash handler (nothing registers
+it, and the `chatclear` radial icon belongs to the compiled chat control), so it
+clears the hidden chat window it owns and knows nothing about the card list. Two
+routes cover it: a `/clear` slash handler of our own that empties the card list
+(and the pending queue), and a "Clear Chat Window" entry on the card list's
+radial menu, in case the engine consumes the command before registered handlers
+see it. Clearing is `closeAll()` on the windowlist.
+
 ### 2026-07-29 — Healing cards
 `heal` shares the ruleset's damage handler, so heal rolls were already producing
 a card — but a *generic* one, with no target line and no styling of their own.

@@ -67,6 +67,16 @@
 					<type>string</type>
 				</droptypes>
 				<script>
+					-- Radial menu entry, so clearing works even if the engine
+					-- consumes /clear before our slash handler sees it.
+					function onInit()
+						registerMenuItem("Clear Chat Window", "chatclear", 6);
+					end
+					function onMenuSelection(nSelection)
+						if nSelection == 6 then
+							ChatCardsManager.clearCards();
+						end
+					end
 					function onDragStart(_, _, _, draginfo)
 						return ActionsManager.onChatDragStart(draginfo);
 					end
