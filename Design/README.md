@@ -84,12 +84,12 @@ spacing is a transparent gutter baked into the bottom of its bitmap.
 | card | height / frame canvas |
 |---|---|
 | banner (Turn / takes N damage) | 34px content, 42px canvas |
-| plain roll / save / check | 100px |
-| damage (target, chips, outcome) | 116px |
-| attack (target + modifiers, chips, outcome) | 116px |
+| plain roll / save / check | 90px |
+| damage (target, chips, outcome) | 106px |
+| attack (target + modifiers, chips, outcome) | 112px |
 | speech, one line of text (+19px per extra line) | 105px |
-| damage 4d6 → 2 dice rows | 140px |
-| fireball 8d6 → 3 dice rows | 164px |
+| damage 4d6 → 2 dice rows | 130px |
+| fireball 8d6 → 3 dice rows | 154px |
 
 Each extra dice row adds 24px (22px glyph + 2px gap, 4 per row). All card
 content is inset 5px from the window edge, matching the art's shadow border —
