@@ -42,7 +42,7 @@ function setData(t)
 	chip2.setText(t.sChip2 or "", false);
 	chip3.setText(t.sChip3 or "", false);
 
-	local nDiceHeight = setDiceResults(t.sDice or "", t.sMod or "");
+	local nDiceHeight = setDiceResults(t.sDice or "");
 
 	-- Result-area content: 2 pad + roll-type label 18 + 2 + dice rows +
 	-- 30 total + outcome line when there is one.
@@ -126,10 +126,11 @@ end
 
 -- Render individual die results ("d20:15;gd20:15;d6:3:x", ':x' = dropped)
 -- as rows of black die silhouettes (native chat style) with the rolled
--- number on top, followed by the roll modifier ("+1") as a final slot.
--- Dropped dice are dimmed the same way native chat dims them. Returns
--- the height used, wrapping into as many rows as needed.
-function setDiceResults(sDice, sMod)
+-- number on top. The roll modifier is not shown here — the card's
+-- modifier list itemizes it in more detail. Dropped dice are dimmed the
+-- same way native chat dims them. Returns the height used, wrapping into
+-- as many rows as needed.
+function setDiceResults(sDice)
 	local tItems = {};
 	for sEntry in string.gmatch(sDice, "[^;]+") do
 		local sType, sResult, sDropped = sEntry:match("^([^:]+):(%-?%d+):?(x?)$");
@@ -140,9 +141,6 @@ function setDiceResults(sDice, sMod)
 				bDropped = (sDropped == "x"),
 			});
 		end
-	end
-	if sMod ~= "" then
-		table.insert(tItems, { sMod = sMod });
 	end
 
 	local nCount = #tItems;
@@ -164,28 +162,21 @@ function setDiceResults(sDice, sMod)
 		local x = math.floor((nAreaWidth - nRowWidth) / 2) + (nCol * (GLYPH + GAP)) + (GLYPH / 2);
 		local y = (nRow * (GLYPH + GAP)) + (GLYPH / 2);
 
-		if tItem.sMod then
-			diceresults.addTextWidget({
-				font = "cc_bodybold", text = tItem.sMod,
-				position = "topleft", x = x, y = y,
-			});
-		else
-			local wBitmap = diceresults.addBitmapWidget({
-				icon = getDieIcon(tItem.sType),
-				position = "topleft", x = x, y = y,
-				w = GLYPH, h = GLYPH,
-			});
-			local wText = diceresults.addTextWidget({
-				font = "cc_die", text = tItem.sResult,
-				position = "topleft", x = x, y = y,
-			});
-			if tItem.bDropped then
-				if wBitmap then
-					wBitmap.setColor("80FFFFFF");
-				end
-				if wText then
-					wText.setColor("80FFFFFF");
-				end
+		local wBitmap = diceresults.addBitmapWidget({
+			icon = getDieIcon(tItem.sType),
+			position = "topleft", x = x, y = y,
+			w = GLYPH, h = GLYPH,
+		});
+		local wText = diceresults.addTextWidget({
+			font = "cc_die", text = tItem.sResult,
+			position = "topleft", x = x, y = y,
+		});
+		if tItem.bDropped then
+			if wBitmap then
+				wBitmap.setColor("80FFFFFF");
+			end
+			if wText then
+				wText.setColor("80FFFFFF");
 			end
 		end
 	end

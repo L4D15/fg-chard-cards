@@ -128,6 +128,15 @@ function sendGenericRollCard(rSource, rRoll)
 		sTitle = "Dice Roll";
 	end
 
+	-- Modifier line, named after the roll source ("Dexterity +3"): generic
+	-- rolls have no itemized effect breakdown, and the dice row no longer
+	-- carries the bonus.
+	local sLine1 = "";
+	local sMod = formatMod(rRoll.nMod);
+	if sMod ~= "" then
+		sLine1 = (sTitle:match(":%s*(.+)$") or "Modifier") .. " " .. sMod;
+	end
+
 	local tPortrait = getActorPortrait(rActor);
 	sendCardOOB({
 		sCardType = "roll",
@@ -136,7 +145,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sTitle = sTitle,
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sDice = encodeDiceResults(rRoll.aDice),
-		sMod = formatMod(rRoll.nMod),
+		sLine1 = sLine1,
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
 		sOutcome = "",
 		sIconAsset = tPortrait.sIconAsset,
