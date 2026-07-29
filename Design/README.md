@@ -100,7 +100,7 @@ content is inset 5px from the window edge, matching the art's shadow border —
 so the usable interior is `height − 10` tall and `width − 10` wide.
 
 **Fixed-size pieces** (design these 1:1, no stretching):
-portrait frame 44x44 (avatar layers 40x40 at +2,+2) · header bar 26px tall,
+portrait frame 44x44 (avatar layers 40x40 at +2,+2, corners rounded 4px) · header bar 26px tall,
 `card width − 44` wide · tag pills 14px tall, `label + 12px` wide ·
 result area 110px wide, spanning the card's full inner height (dice, total and
 outcome top-aligned inside it; the roll-type label lives in the left column
@@ -213,6 +213,19 @@ and inset into their generated icons, so those are rerouted to `ccard`.
 Header bars, banners, card borders, avatar border, result box, and gold
 chips all use #B49D5D (from the mockup), defined once as `GOLD` in
 `Design/gen_frames.py`.
+
+### 2026-07-29 — Avatar corner rounding (4px) needs three mechanisms
+FG offers no single way to round the avatar, because each layer renders
+differently: PC portraits are engine-composited, so the `ccard` portraitset
+mask carries the 4px radius; the GM/"?" badges are our own art, so they are
+generated rounded; and NPC token art goes through a `tokencontrol`, which
+cannot be masked at all. For that last case a `cc_portrait_cover` icon —
+opaque in the frame colour outside a 4px-radius window — is drawn on top of
+the avatar (as a widget on the frame control, which is declared after both
+avatar layers) so the square corners are covered. It is drawn for every
+portrait type so all three look identical. Consequence: the covered corners
+take the *frame* colour, so `cc_portraitframe.png` wants a matching 4px
+radius on its outer edge for the whole portrait to read as rounded.
 
 ### 2026-07-29 — Asset resolution: what sharpening is possible where
 FG has no @2x/DPI mechanism (no scale attribute exists on `framedef` or

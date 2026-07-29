@@ -11,7 +11,7 @@ function setData(t)
 	name.setValue(t.sName or "");
 	subtitle.setValue(t.sSub or "");
 	title.setValue(t.sTitle or "");
-	ChatCardsManager.setCardPortrait(porticon, tokenview, t);
+	ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
 
 	-- Empty body lines collapse so they don't inflate the card height;
 	-- the card then hugs whichever column is actually taller.

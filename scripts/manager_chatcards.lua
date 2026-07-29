@@ -372,9 +372,22 @@ end
 -- stretching a 40px one — sharper under UI scaling / high-DPI displays.
 local PORTRAIT_SIZE = 40;
 
-function setCardPortrait(cIcon, cToken, t)
+function setCardPortrait(cIcon, cToken, cFrame, t)
 	local sIcon = t.sIconAsset or "";
 	local sToken = t.sTokenAsset or "";
+
+	-- Corner cover, drawn on the frame control so it sits above both avatar
+	-- layers: rounds the avatar's corners for every portrait type (token
+	-- controls cannot be masked). The frame is 4px larger than the avatar,
+	-- hence the centred placement.
+	if cFrame then
+		cFrame.addBitmapWidget({
+			icon = "cc_portrait_cover",
+			position = "topleft",
+			x = (PORTRAIT_SIZE + 4) / 2, y = (PORTRAIT_SIZE + 4) / 2,
+			w = PORTRAIT_SIZE, h = PORTRAIT_SIZE,
+		});
+	end
 
 	-- Token art is rendered by the engine's token control, which already
 	-- scales its (high-resolution) source into the control.

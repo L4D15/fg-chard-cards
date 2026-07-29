@@ -34,7 +34,7 @@
 				name.setValue(t.sName or "");
 				subtitle.setValue(t.sSub or "");
 				text.setValue(t.sText or "");
-				ChatCardsManager.setCardPortrait(porticon, tokenview, t);
+				ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
 			end
 		</script>
 		<sheetdata>

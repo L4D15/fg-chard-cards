@@ -68,6 +68,9 @@
 	     portraits clipped to the card frame's corner radius. -->
 	<icon name="cc_portrait_base" file="graphics/icons/cc_portrait_base.png" />
 	<icon name="cc_portrait_mask" file="graphics/icons/cc_portrait_mask.png" />
+	<!-- Drawn over the avatar to round its corners (token controls cannot
+	     be masked); opaque in the frame colour outside a 4px-radius window -->
+	<icon name="cc_portrait_cover" file="graphics/icons/cc_portrait_cover.png" />
 	<portraitset name="ccard">
 		<base>cc_portrait_base</base>
 		<mask>cc_portrait_mask</mask>

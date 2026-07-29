@@ -72,13 +72,19 @@ save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 PORTRAIT_DISPLAY = 40
 PORTRAIT_SUPERSAMPLE = 3
 PORTRAIT_SRC = PORTRAIT_DISPLAY * PORTRAIT_SUPERSAMPLE
+# Corner rounding of the avatar, in display pixels
+PORTRAIT_RADIUS = 4
+PORTRAIT_RADIUS_SRC = PORTRAIT_RADIUS * PORTRAIT_SUPERSAMPLE
 
 
 def text_icon(name, text, bg, fg, size=PORTRAIT_SRC, textsize=18):
-    # Square badge filling the frame's square interior
+    # Badge filling the frame's interior, corners rounded to match the mask
     s = 4
-    img = Image.new("RGBA", (size * s, size * s), bg)
+    img = Image.new("RGBA", (size * s, size * s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, size * s - 1, size * s - 1],
+                        radius=PORTRAIT_RADIUS_SRC * s * (size / PORTRAIT_SRC),
+                        fill=bg)
     font = ImageFont.truetype(FONT, textsize * s)
     d.text((size * s / 2, size * s / 2 - 1 * s), text,
            font=font, fill=fg, anchor="mm")
@@ -162,6 +168,19 @@ base = Image.new("RGBA", (PORTRAIT_SRC, PORTRAIT_SRC), (0, 0, 0, 0))
 base.save(f"{ICONS}/cc_portrait_base.png")
 print("cc_portrait_base")
 
-mask = Image.new("RGBA", (PORTRAIT_SRC, PORTRAIT_SRC), (255, 255, 255, 255))
+mask = rounded((PORTRAIT_SRC, PORTRAIT_SRC), PORTRAIT_RADIUS_SRC,
+               (255, 255, 255, 255))
 mask.save(f"{ICONS}/cc_portrait_mask.png")
 print("cc_portrait_mask")
+
+# Corner cover drawn on TOP of the avatar layers: FG cannot mask a token
+# control, so the rounding for NPC token art comes from covering the square
+# corners with the frame colour. Opaque outside a rounded window; matches
+# the portrait frame's border so the two read as one rounded frame.
+cover = Image.new("RGBA", (PORTRAIT_SRC * 4, PORTRAIT_SRC * 4), GOLD)
+ImageDraw.Draw(cover).rounded_rectangle(
+    [0, 0, PORTRAIT_SRC * 4 - 1, PORTRAIT_SRC * 4 - 1],
+    radius=PORTRAIT_RADIUS_SRC * 4, fill=(0, 0, 0, 0))
+cover.resize((PORTRAIT_SRC, PORTRAIT_SRC), Image.LANCZOS).save(
+    f"{ICONS}/cc_portrait_cover.png")
+print("cc_portrait_cover")
