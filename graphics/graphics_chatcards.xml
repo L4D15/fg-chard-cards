@@ -127,8 +127,10 @@
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#FFFFFF" />
 	</font>
+	<!-- System messages: same colour as the card body text (#1A1A1A), kept as
+	     its own font so they can be restyled independently. -->
 	<font name="cc_bannertext">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
-		<color value="#3B2A12" />
+		<color value="#1A1A1A" />
 	</font>
 </root>
