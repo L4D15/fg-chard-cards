@@ -29,9 +29,11 @@ in the spirit of D&D Beyond's roll cards. Target ruleset: **5E**.
   Kolyana`, `Ireena Kolyana takes 7 damage` (with the number bolded).
 - **Palette**: parchment card bodies on the chat frame, gold (#B99C5B-ish)
   bars and banners, cream text panels, red accent chips, white result boxes.
-- **Die glyphs**: #C0C0C0 shapes with a white numeral — understated, so the
-  total reads as the result. The art is full white and tinted at runtime
-  (`DIE_COLOR` in `chatcard_action.lua`), so recolouring needs no re-export.
+- **Die glyphs**: understated shapes with a white numeral, so the total reads as
+  the result — the mockup used #C0C0C0, and they now take the neutral tag
+  pill's #D8D2BD so pills and dice read as one family. The art is full white
+  and tinted at runtime (`DIE_COLOR` in `chatcard_action.lua`), so recolouring
+  needs no re-export.
   On an advantage or disadvantage roll the *kept* die is tinted with the
   positive / negative accent instead, matching its tag pill. Note the die type
   convention: it is a leading letter plus the side count, and

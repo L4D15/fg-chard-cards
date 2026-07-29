@@ -8,11 +8,11 @@ local GAP = 2;       -- spacing between glyphs
 local PER_ROW = 4;   -- glyphs per row inside the 110px result box
 
 -- The die art is white so it can be tinted here; without a tint it would be
--- invisible on the card. #C0C0C0 with a white numeral is what the reference
--- mockup uses — deliberately understated, so the total reads as the result.
-local DIE_COLOR = "FFC0C0C0";
+-- invisible on the card. Normal dice take the neutral tag pill's colour, so the
+-- two read as one family; the mockup's understated grey was #C0C0C0.
+local DIE_COLOR = "FFD8D2BD";
 -- Dropped by advantage/disadvantage: dimmed the way native chat dims it.
-local DIE_COLOR_DROPPED = "80C0C0C0";
+local DIE_COLOR_DROPPED = "80D8D2BD";
 local DIE_LABEL_DROPPED = "80FFFFFF";
 
 function setData(t)
