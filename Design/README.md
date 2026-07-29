@@ -183,6 +183,17 @@ bonus rather than a modifier on top of it, so its value stays plain. The value
 pattern requires a digit or `d` after the sign, so a hyphenated name with no
 bonus ("Two-Handed") is left alone instead of splitting.
 
+The base bonus in that row is derived **by subtraction**: whatever remains of
+`rRoll.nMod` once the itemized effect modifiers are taken out, so the segments
+always add up to the total the dice were rolled with. `rRoll.nEffectMod` looks
+like the obvious source for the effect share, but it does not hold the effect
+total by the time a roll resolves — trusting it made the base too low and left
+the difference showing as a phantom "Other effects" entry (an `ATK: -1` effect
+on a +4 weapon read "+3 · Weak -1 · Other effects +1", both wrong). The
+trade-off of subtraction is that an effect which cannot be attributed to a
+named `ATK`/`@ATK` effect — exhaustion, ability-score effects — is absorbed
+into the base rather than listed separately.
+
 `ChatCards5E` registers providers for `attack`, `damage` and `roll`: the
 action-type tag (red), `Advantage` (green) / `Disadvantage` (red) — detected
 from the roll flags, falling back to the `g`/`r` die-type prefix
