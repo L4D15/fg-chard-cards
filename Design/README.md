@@ -87,7 +87,7 @@ as its background.
 | plain roll / save / check (modifier line) | 84px |
 | damage (target + weapon line, chips, outcome) | 114px |
 | attack (target + modifiers, chips, outcome) | 114px |
-| speech, one line of text (+19px per extra line) | 101px |
+| speech, one line of text (+19px per extra line) | ~97px |
 | damage 4d6 → 2 dice rows | 114px |
 | fireball 8d6 → 3 dice rows | 138px |
 
@@ -118,6 +118,17 @@ kept generated with the card's geometry (5px inset, 4px radius) in case a
 distinct banner style is wanted again. An earlier mismatch there (banner
 radius 10 vs card radius 4) showed up as a stepped silhouette wherever a
 banner met a card.
+
+### 2026-07-29 — Speech bubble art (cc_speak_area)
+Spoken text uses `cc_speak_area.png`: a white bubble whose tail occupies the
+top 6 rows at x=6..14. Two consequences for the 9-slice — the **left** slice
+must be at least 15 so the tail sits wholly inside it (otherwise the stretched
+centre smears it), and the **top** slice must cover the tail plus the body's
+corner; hence `16,10,8,8`. The control's frame offset (`8,12,8,6`) extends the
+bubble 12px above the text, 6 of which are the tail, so the text keeps its
+padding below it. The control anchors to the avatar's bottom rather than the
+name block, so the tail always lands just under the avatar it points at.
+Replacements need the tail in the same place, or those offsets change.
 
 ## Decision log
 

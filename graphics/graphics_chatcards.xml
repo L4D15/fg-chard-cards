@@ -20,6 +20,15 @@
 		<bitmap file="graphics/frames/cc_header.png" />
 		<offset>8,6,8,6</offset>
 	</framedef>
+	<!-- Speech bubble for spoken text. The tail sits in the top 6 rows at
+	     x=6..14, so the LEFT slice (16) must contain it whole or the 9-slice
+	     stretch would smear it, and the TOP slice (10) covers the tail plus
+	     the body's rounded corner. -->
+	<framedef name="cc_speak_area">
+		<bitmap file="graphics/frames/cc_speak_area.png" />
+		<offset>16,10,8,8</offset>
+	</framedef>
+	<!-- Unused: superseded by cc_speak_area. -->
 	<framedef name="cc_panel">
 		<bitmap file="graphics/frames/cc_panel.png" />
 		<offset>8,8,8,8</offset>
