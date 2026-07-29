@@ -83,7 +83,8 @@ as its background.
 
 | card | height / frame canvas |
 |---|---|
-| banner (Turn / takes N damage) | 34px |
+| system message (Turn / takes N damage) | 34px |
+| story / narration, one line | 34px |
 | plain roll / save / check (modifier line) | 84px |
 | damage (target + weapon line, chips, outcome) | 114px |
 | attack (target + modifiers, chips, outcome) | 114px |
@@ -118,6 +119,15 @@ kept generated with the card's geometry (5px inset, 4px radius) in case a
 distinct banner style is wanted again. An earlier mismatch there (banner
 radius 10 vs card radius 4) showed up as a stepped silhouette wherever a
 banner met a card.
+
+### 2026-07-29 — System and story cards are separate classes
+Both are the same full-width text layout, but system messages use
+`cc_system_card` (same geometry as `cc_card` — 5px inset, ~4px radius — with a
+darker fill) and story text keeps `cc_card` with the italic `cc_story` font. A
+windowclass `<frame>` is static XML and windows have no per-instance frame
+setter, so this is two classes (`chatcard_system`, `chatcard_story`) rather
+than one with overrides. The cards windowlist declares `chatcard_system` as
+its default class.
 
 ### 2026-07-29 — Speech bubble art (cc_speak_area)
 Spoken text uses `cc_speak_area.png`: a white bubble whose tail occupies the

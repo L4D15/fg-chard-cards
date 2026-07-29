@@ -50,8 +50,12 @@ function addCard(sClass, tData)
 	return w;
 end
 
-function addBanner(sText, sFont)
-	return addCard("chatcard_banner", { sText = sText, sFont = sFont or "" });
+function addSystemCard(sText)
+	return addCard("chatcard_system", { sText = sText });
+end
+
+function addStoryCard(sText)
+	return addCard("chatcard_story", { sText = sText });
 end
 
 -- ===== Structured cards via OOB =====
@@ -264,7 +268,7 @@ function onReceiveMessage(msg)
 
 	if (msg.mode or "") == "story" then
 		if sText ~= "" then
-			addBanner(sText, "cc_story");
+			addStoryCard(sText);
 		end
 		return;
 	end
@@ -284,7 +288,7 @@ function onReceiveMessage(msg)
 	end
 
 	if sText ~= "" then
-		addBanner(sText);
+		addSystemCard(sText);
 	end
 end
 
@@ -294,14 +298,14 @@ end
 function addDamageApplyBanner(sText)
 	local sTarget = sText:match("%->%s*%[([^%]]+)%]");
 	if not sTarget then
-		addBanner(sText);
+		addSystemCard(sText);
 		return;
 	end
 	local nValue = tonumber(sText:match("%[(%-?%d+)%]"));
 	if nValue then
-		addBanner(string.format("%s takes %d damage", sTarget, nValue));
+		addSystemCard(string.format("%s takes %d damage", sTarget, nValue));
 	else
-		addBanner(string.format("%s takes damage", sTarget));
+		addSystemCard(string.format("%s takes damage", sTarget));
 	end
 end
 

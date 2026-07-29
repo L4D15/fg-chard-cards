@@ -54,7 +54,7 @@
 			     these only need to clear the chat frame and (on the right)
 			     the 20px scrollbar, which anchors to this list's edge. -->
 			<windowlist name="cards">
-				<class>chatcard_banner</class>
+				<class>chatcard_system</class>
 				<anchored to="contentanchor">
 					<left offset="2" />
 					<right offset="-20" />
