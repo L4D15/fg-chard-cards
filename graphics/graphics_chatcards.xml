@@ -47,8 +47,7 @@
 		<bitmap file="graphics/frames/cc_resultheader.png" />
 		<offset>6,5,6,5</offset>
 	</framedef>
-	<!-- Tag pills, all 36x14 with the same geometry. Styles are chosen by
-	     name in the cc_chip template: red, green, neutral. -->
+	<!-- Unused: the pills are now built from the tinted cc_tag_* widgets. -->
 	<framedef name="cc_chip_red">
 		<bitmap file="graphics/frames/cc_chip_red.png" />
 		<offset>7,6,7,6</offset>
@@ -80,6 +79,14 @@
 	<!-- ===== ICONS ===== -->
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
 	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
+
+	<!-- Tag pill pieces: one white shape, tinted per style by the cc_chip
+	     template. Drawn as bitmap widgets at an explicit size, so these can be
+	     authored at 3x for sharpness. The caps must be 1:2 (width:height) to
+	     keep their shape at 7x14; the middle stretches, so its width is free. -->
+	<icon name="cc_tag_left" file="graphics/frames/cc_tag_left.png" />
+	<icon name="cc_tag_middle" file="graphics/frames/cc_tag_middle.png" />
+	<icon name="cc_tag_right" file="graphics/frames/cc_tag_right.png" />
 
 	<!-- Die result glyphs (native-chat-style black silhouettes) -->
 	<icon name="cc_die_d4" file="graphics/icons/cc_die_d4.png" />

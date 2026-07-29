@@ -234,6 +234,26 @@ a skip-list of uppercase roll tags (`[ATTACK`, `[SAVE`, ...) suppresses the
 flattened roll texts, mixed-case apply texts (`[Attack ...]`) are dropped or
 converted to banners, and everything else becomes speech/banner cards.
 
+### 2026-07-29 — Tag pills: tinted widgets, not a 9-slice frame
+A framedef could not give us either of the two things the pills needed. Its
+border bands draw 1:1, so a higher-resolution pill bitmap renders a *bigger*
+pill rather than a sharper one (only stretched regions gain from resolution —
+the same reason the card's border cannot be sharpened), and there is no colour
+attribute on `<framedef>` nor any frame-tinting call in the rulesets.
+
+Bitmap widgets have both: they take an explicit draw size, so art can be
+authored at 3x and downsampled, and they accept `setColor`, which CoreRPG uses
+to tint control icons. The pill is therefore assembled from three tinted
+widgets — `cc_tag_left`, `cc_tag_middle`, `cc_tag_right` — a single white
+shape reused for every style, with only the middle stretching so the caps keep
+their form. Style colours live in the `cc_chip` template (`sPill` tints the
+shape, `sLabel` the text). The caps must be authored 1:2 (width:height) for
+the 7x14 draw size; the middle's source width is free.
+
+Widget API notes, both of which are easy to get wrong:
+`addBitmapWidget` takes a **table** (`{ icon = ..., w = ..., h = ... }`), and
+resizing is **`setSize(w, h)`** — there is no `setBitmapSize`.
+
 ### 2026-07-29 — Transparent pixels must carry colour, not black
 FG filters textures as it draws them, so a soft edge pixel is averaged with
 its transparent neighbours' *colour* as well as their alpha. Image editors
