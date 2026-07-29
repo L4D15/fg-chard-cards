@@ -114,7 +114,7 @@
 			<!-- Name block: actor name, player name tight beneath it, then
 			     the roll type. No background frame — the card art styles it. -->
 			<genericcontrol name="namebar">
-				<anchored height="20">
+				<anchored height="18">
 					<top offset="5" />
 					<left offset="49" />
 					<right parent="resultbox" anchor="left" offset="-4" />
@@ -174,7 +174,7 @@
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
 				<anchored height="16">
-					<top parent="title" anchor="bottom" offset="0" />
+					<top parent="title" anchor="bottom" offset="2" />
 					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
