@@ -28,7 +28,6 @@
 
 	<!-- Speech / emote / OOC: portrait, name, subtitle, framed text body -->
 	<windowclass name="chatcard_speech">
-		<margins control="0,0,0,8" />
 		<frame>cc_card</frame>
 		<script>
 			function setData(t)
@@ -86,7 +85,6 @@
 	<!-- Action card: attack / damage / generic roll. Header title, body lines,
 	     keyword chips, and a result box (formula, big total, outcome). -->
 	<windowclass name="chatcard_action">
-		<margins control="0,0,0,8" />
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>

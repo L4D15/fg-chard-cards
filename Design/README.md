@@ -73,19 +73,21 @@ Three layers:
 is 350, so cards run from roughly 300px up to 700px+ on a wide panel; ~490px
 is typical at the default size. Design the horizontal middle to survive that.
 
-**Heights are deterministic.** The frame is drawn over the whole window rect
-*including* the 8px bottom gutter, so the "with gutter" column is the frame's
-canvas; the bottom 8px of the art is the transparent spacing band.
+**Heights are deterministic.** A windowclass frame is drawn over the whole
+window rect, margins included, so the frame canvas equals the card height
+below. `cc_card` classes carry no bottom margin — their separation comes from
+the art's soft glow inset. The banner still adds an 8px margin because its
+spacing is a transparent gutter baked into the bottom of its bitmap.
 
-| card | content | frame canvas |
-|---|---|---|
-| banner (Turn / takes N damage) | 34px | 42px |
-| plain roll / save / check | 84px | 92px |
-| damage (target, chips, outcome) | 100px | 108px |
-| attack (target + modifiers, chips, outcome) | 102px | 110px |
-| speech, one line of text (+19px per extra line) | 95px | 103px |
-| damage 4d6 → 2 dice rows | 124px | 132px |
-| fireball 8d6 → 3 dice rows | 148px | 156px |
+| card | height / frame canvas |
+|---|---|
+| banner (Turn / takes N damage) | 34px content, 42px canvas |
+| plain roll / save / check | 84px |
+| damage (target, chips, outcome) | 100px |
+| attack (target + modifiers, chips, outcome) | 102px |
+| speech, one line of text (+19px per extra line) | 95px |
+| damage 4d6 → 2 dice rows | 124px |
+| fireball 8d6 → 3 dice rows | 148px |
 
 Each extra dice row adds 24px (22px glyph + 2px gap, 4 per row).
 
@@ -95,12 +97,15 @@ portrait frame 44x44 (avatar layers 40x40 at +2,+2) · header bar 26px tall,
 result area 110px wide, 58–122px tall.
 
 **Authoring rule:** stretching softens, compression stays sharp — so author
-for the *largest* card you expect and let smaller ones compress. For
-`cc_card`, something like 512x176 with the offsets left at `12,12,12,20`
-gives an essentially 1:1 fill at a typical 490px card and only mild
-stretching on a very wide chat panel. `cc_header` is 1:1 at 26px tall (the
-current art is 24px, so it is being stretched slightly). `cc_banner` is 1:1
-at a 42px canvas with offsets `12,10,12,18`.
+for the *largest* card you expect and let smaller ones compress. `cc_card` is
+currently 256x256 with `10,10,10,10` offsets: its 236x236 centre compresses
+vertically at every card size and stretches ~2x horizontally at a typical
+490px card, which is fine. Separation between cards comes from the ~5px soft
+glow inset on all four sides of that art — replacements need an equivalent
+inset (or the classes need a margin plus a transparent gutter again).
+`cc_header` is 1:1 at 26px tall (the current art is 24px, so it stretches
+slightly). `cc_banner` is 1:1 at a 42px canvas with offsets `12,10,12,18`
+including its 8px bottom gutter.
 
 ## Decision log
 
@@ -168,6 +173,13 @@ the bottom anchor resolves before the height exists). List-entry windowclasses
 support a top-level `<frame>` instead — same pattern CoreRPG's combat tracker
 entries use (`<frame>ctentrybox</frame>`) — so each card class declares its
 background frame there.
+
+### 2026-07-29 — cc_card separation moved from gutter to art glow
+The 256x256 card art (10px 9-slice) carries a soft ~5px glow inset on every
+side, which separates neighbouring cards on its own. The action and speech
+classes therefore dropped their `0,0,0,8` bottom margin — with the frame
+stretching over margins, that margin only added internal padding once the
+gutter was gone. The banner still uses the gutter approach.
 
 ### 2026-07-28 — Inter-card spacing lives in the frame art
 FG has no list row-spacing property, and windowclass frames stretch over the
