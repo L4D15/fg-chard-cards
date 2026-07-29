@@ -69,12 +69,15 @@
 			<!-- Speech bubble. Anchored to the avatar's bottom because the tail
 			     points up at it: the frame extends 12px above this control, 6 of
 			     which are the tail, so the bubble's top edge lands just below
-			     the avatar. -->
+			     the avatar. Its other three edges sit exactly on the card
+			     art's body edges (frame reaches 8px sideways and 6px below
+			     this control, the card art is inset 5px), so at the bottom
+			     the bubble's own border is the card's border. -->
 			<stringcontrol name="text">
 				<anchored>
 					<top parent="portraitframe" anchor="bottom" offset="14" />
-					<left offset="15" />
-					<right offset="-15" />
+					<left offset="13" />
+					<right offset="-13" />
 				</anchored>
 				<font>cc_body</font>
 				<frame name="cc_speak_area" offset="8,12,8,6" />
@@ -82,7 +85,7 @@
 				<readonly />
 			</stringcontrol>
 			<genericcontrol name="sizer">
-				<anchored to="text" position="belowleft" height="15" width="1" />
+				<anchored to="text" position="belowleft" height="11" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>

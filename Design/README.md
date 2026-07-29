@@ -87,7 +87,7 @@ as its background.
 | plain roll / save / check (modifier line) | 84px |
 | damage (target + weapon line, chips, outcome) | 114px |
 | attack (target + modifiers, chips, outcome) | 114px |
-| speech, one line of text (+19px per extra line) | ~97px |
+| speech, one line of text (+19px per extra line) | ~93px |
 | damage 4d6 → 2 dice rows | 114px |
 | fireball 8d6 → 3 dice rows | 138px |
 
@@ -129,6 +129,11 @@ bubble 12px above the text, 6 of which are the tail, so the text keeps its
 padding below it. The control anchors to the avatar's bottom rather than the
 name block, so the tail always lands just under the avatar it points at.
 Replacements need the tail in the same place, or those offsets change.
+
+The bubble's left, right and bottom edges sit exactly on the card art's body
+edges — the frame reaches 8px sideways and 6px below its control and the card
+art is inset 5px, so the control spans 13..width-13 with an 11px bottom
+spacer. At those three edges the bubble's own border *is* the card's border.
 
 ## Decision log
 
