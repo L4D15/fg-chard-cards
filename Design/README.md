@@ -65,6 +65,43 @@ Three layers:
    message text is flattened (target AC, hit/miss/crit, net modifier), and
    broadcasts it as an OOB message so all clients render identical cards.
 
+## Card metrics (art reference)
+
+**Width is variable** — the card list is anchored inside the chat window with
+8px on the left and 24px on the right (scrollbar), so
+`card width = chat panel content width − 32`. The chat window's minimum width
+is 350, so cards run from roughly 300px up to 700px+ on a wide panel; ~490px
+is typical at the default size. Design the horizontal middle to survive that.
+
+**Heights are deterministic.** The frame is drawn over the whole window rect
+*including* the 8px bottom gutter, so the "with gutter" column is the frame's
+canvas; the bottom 8px of the art is the transparent spacing band.
+
+| card | content | frame canvas |
+|---|---|---|
+| banner (Turn / takes N damage) | 34px | 42px |
+| plain roll / save / check | 84px | 92px |
+| damage (target, chips, outcome) | 100px | 108px |
+| attack (target + modifiers, chips, outcome) | 102px | 110px |
+| speech, one line of text (+19px per extra line) | 95px | 103px |
+| damage 4d6 → 2 dice rows | 124px | 132px |
+| fireball 8d6 → 3 dice rows | 148px | 156px |
+
+Each extra dice row adds 24px (22px glyph + 2px gap, 4 per row).
+
+**Fixed-size pieces** (design these 1:1, no stretching):
+portrait frame 44x44 (avatar layers 40x40 at +2,+2) · header bar 26px tall,
+`card width − 44` wide · tag pills 14px tall, `label + 12px` wide ·
+result area 110px wide, 58–122px tall.
+
+**Authoring rule:** stretching softens, compression stays sharp — so author
+for the *largest* card you expect and let smaller ones compress. For
+`cc_card`, something like 512x176 with the offsets left at `12,12,12,20`
+gives an essentially 1:1 fill at a typical 490px card and only mild
+stretching on a very wide chat panel. `cc_header` is 1:1 at 26px tall (the
+current art is 24px, so it is being stretched slightly). `cc_banner` is 1:1
+at a 42px canvas with offsets `12,10,12,18`.
+
 ## Decision log
 
 ### 2026-07-28 — Replace the chat display, don't restyle it
