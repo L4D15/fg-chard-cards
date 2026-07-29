@@ -47,10 +47,21 @@
 		<bitmap file="graphics/frames/cc_resultheader.png" />
 		<offset>6,5,6,5</offset>
 	</framedef>
+	<!-- Tag pills, all 36x14 with the same geometry. Styles are chosen by
+	     name in the cc_chip template: red, green, neutral. -->
 	<framedef name="cc_chip_red">
 		<bitmap file="graphics/frames/cc_chip_red.png" />
 		<offset>7,6,7,6</offset>
 	</framedef>
+	<framedef name="cc_chip_green">
+		<bitmap file="graphics/frames/cc_chip_green.png" />
+		<offset>7,6,7,6</offset>
+	</framedef>
+	<framedef name="cc_chip_neutral">
+		<bitmap file="graphics/frames/cc_chip_neutral.png" />
+		<offset>7,6,7,6</offset>
+	</framedef>
+	<!-- Unused: superseded by cc_chip_neutral. -->
 	<framedef name="cc_chip_gold">
 		<bitmap file="graphics/frames/cc_chip_gold.png" />
 		<offset>7,6,7,6</offset>

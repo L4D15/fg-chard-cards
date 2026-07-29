@@ -114,9 +114,9 @@ function setTags(sTags)
 	for i, cChip in ipairs(_tChipControls) do
 		local tTag = tTags[i];
 		if tTag then
-			cChip.setText(tTag.sText, tTag.bAccent);
+			cChip.setText(tTag.sText, tTag.sStyle);
 		else
-			cChip.setText("", false);
+			cChip.setText("", nil);
 		end
 	end
 	return #tTags > 0;

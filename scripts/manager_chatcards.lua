@@ -92,8 +92,9 @@ end
 -- Which tags exist is a ruleset concern: each supported system registers
 -- providers per card type and this manager stays ignorant of their content.
 -- A provider receives the card context and returns a list of
--- { sText = "Finesse", bAccent = false }; bAccent picks the accent pill
--- style, plain is the default.
+-- { sText = "Advantage", sStyle = "green" }; sStyle names a pill style
+-- defined in the cc_chip template (red, green, neutral), and defaults to
+-- neutral when omitted or unknown.
 local _tTagProviders = {};
 
 function registerTagProvider(sCardType, fn)
@@ -118,14 +119,19 @@ function buildTags(sCardType, tContext)
 	return encodeTags(tTags);
 end
 
--- "Attack:a;Finesse;Slashing" — ':a' marks the accent style. ';' and ':'
--- are separators, so they are stripped from labels.
+-- "Attack:red;Advantage:green;Finesse" — the suffix is the style name, and
+-- no suffix means neutral. ';' and ':' are separators, so they are stripped
+-- from labels.
 function encodeTags(tTags)
 	local t = {};
 	for _, tTag in ipairs(tTags or {}) do
 		local sText = tostring(tTag.sText or ""):gsub("[;:]", " ");
 		if sText ~= "" then
-			table.insert(t, sText .. (tTag.bAccent and ":a" or ""));
+			local sStyle = tostring(tTag.sStyle or ""):gsub("[^%a]", "");
+			if sStyle ~= "" then
+				sText = sText .. ":" .. sStyle;
+			end
+			table.insert(t, sText);
 		end
 	end
 	return table.concat(t, ";");
@@ -134,9 +140,9 @@ end
 function decodeTags(sTags)
 	local tTags = {};
 	for sEntry in string.gmatch(sTags or "", "[^;]+") do
-		local sText, sFlag = sEntry:match("^([^:]*):?(a?)$");
+		local sText, sStyle = sEntry:match("^([^:]*):?(%a*)$");
 		if (sText or "") ~= "" then
-			table.insert(tTags, { sText = sText, bAccent = (sFlag == "a") });
+			table.insert(tTags, { sText = sText, sStyle = sStyle });
 		end
 	end
 	return tTags;

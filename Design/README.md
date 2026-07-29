@@ -151,13 +151,20 @@ provides the mechanism: `registerTagProvider(sCardType, fn)` collects
 providers per card type, `buildTags(sCardType, tContext)` runs them in
 registration order at card-build time (on the rolling client, where the roll
 data still exists), and the result travels in the payload as one encoded
-string — `"Attack:a;Finesse;Slashing"`, where `:a` selects the accent pill
-style. Nothing in the manager or the card window knows any tag name; adding a
+string — `"Attack:red;Advantage:green;Finesse"`, where the suffix names a
+pill style and no suffix means neutral. Styles (`red`, `green`, `neutral`)
+are defined once in the `cc_chip` template, which also sets the label colour
+per style, since the neutral art is light while red and green are dark.
+Nothing in the manager or the card window knows any tag name; adding a
 system, or a plugin extension adding tags to an existing one, means
 registering another provider.
 
-`ChatCards5E` registers providers for `attack` and `damage`: the action-type
-tag (accent), `Critical!`, the damage type, and the weapon's properties —
+`ChatCards5E` registers providers for `attack`, `damage` and `roll`: the
+action-type tag (red), `Advantage` (green) / `Disadvantage` (red) — detected
+from the roll flags, falling back to the `g`/`r` die-type prefix
+`ActionD20.decodeAdvantage` leaves on the kept die, with both flags together
+cancelling as in the rules — `Critical!`, the damage type, and the weapon's
+properties —
 those come from the weapon entry on the source's sheet matched by the roll's
 label, since the roll carries no weapon node, with range parentheses
 ("Thrown (20/60)") dropped. Card type `roll` also builds tags, so saves and

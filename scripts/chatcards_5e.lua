@@ -31,6 +31,8 @@ function onInit()
 	-- systems (or plugin extensions) register their own the same way.
 	ChatCardsManager.registerTagProvider("attack", getAttackTags);
 	ChatCardsManager.registerTagProvider("damage", getDamageTags);
+	-- Saves, checks and skills roll with advantage too
+	ChatCardsManager.registerTagProvider("roll", getAdvantageTags);
 end
 
 --
@@ -39,9 +41,14 @@ end
 
 -- tContext: { rSource, rTarget, rRoll, sLabel }
 function getAttackTags(t)
-	local tTags = { { sText = "Attack", bAccent = true } };
+	local tTags = { { sText = "Attack", sStyle = "red" } };
 	if t.rRoll and t.rRoll.sResult == "crit" then
 		table.insert(tTags, { sText = "Critical!" });
+	end
+	-- Advantage before the weapon properties: slots fill in order, and a
+	-- weapon with many properties would otherwise push it off the row.
+	for _, tTag in ipairs(getAdvantageTags(t)) do
+		table.insert(tTags, tTag);
 	end
 	for _, sProp in ipairs(getWeaponProperties(t.rSource, t.sLabel)) do
 		table.insert(tTags, { sText = sProp });
@@ -50,7 +57,7 @@ function getAttackTags(t)
 end
 
 function getDamageTags(t)
-	local tTags = { { sText = "Damage", bAccent = true } };
+	local tTags = { { sText = "Damage", sStyle = "red" } };
 	local sDmgType = ((t.rRoll or {}).sDesc or ""):match("%[TYPE: (%a+)");
 	if sDmgType then
 		table.insert(tTags, { sText = StringManager.capitalize(sDmgType) });
@@ -59,6 +66,31 @@ function getDamageTags(t)
 		table.insert(tTags, { sText = sProp });
 	end
 	return tTags;
+end
+
+-- Advantage / disadvantage. The roll flags survive to resolve time, and the
+-- kept die also carries the 'g'/'r' prefix ActionD20.decodeAdvantage puts on
+-- it, which covers roll types that do not set the flags. Both together
+-- cancel out, as in the rules, and produce no tag.
+function getAdvantageTags(t)
+	local rRoll = t.rRoll or {};
+	local bADV, bDIS = rRoll.bADV, rRoll.bDIS;
+	if not bADV and not bDIS then
+		for _, vDie in ipairs(rRoll.aDice or {}) do
+			local sType = (type(vDie) == "table") and (vDie.type or "") or "";
+			if sType:match("^gd%d") then
+				bADV = true;
+			elseif sType:match("^rd%d") then
+				bDIS = true;
+			end
+		end
+	end
+	if bADV and not bDIS then
+		return { { sText = "Advantage", sStyle = "green" } };
+	elseif bDIS and not bADV then
+		return { { sText = "Disadvantage", sStyle = "red" } };
+	end
+	return {};
 end
 
 -- Weapon properties ("Finesse, Light") live on the weapon entry of the

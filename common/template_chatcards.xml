@@ -7,8 +7,16 @@
 		<genericcontrol>
 			<anchored height="14" />
 			<script>
+				-- Pill styles by name. The label uses one font throughout and
+				-- takes its colour from the style, since the neutral art is
+				-- light while red and green are dark.
+				local _tStyles = {
+					red = { sFrame = "cc_chip_red", sColor = "FFFFFFFF" },
+					green = { sFrame = "cc_chip_green", sColor = "FFFFFFFF" },
+					neutral = { sFrame = "cc_chip_neutral", sColor = "FF1A1A1A" },
+				};
 				local _wLabel = nil;
-				function setText(sText, bAccent)
+				function setText(sText, sStyle)
 					if (sText or "") == "" then
 						setVisible(false);
 						-- collapse so empty chip rows don't inflate the card
@@ -16,12 +24,14 @@
 						setAnchoredWidth(0);
 						return;
 					end
-					setFrame(bAccent and "cc_chip_red" or "cc_chip_gold");
+					local tStyle = _tStyles[sStyle or ""] or _tStyles["neutral"];
+					setFrame(tStyle.sFrame);
 					if not _wLabel then
 						_wLabel = addTextWidget({ font = "cc_chip", text = sText, position = "center" });
 					else
 						_wLabel.setText(sText);
 					end
+					_wLabel.setColor(tStyle.sColor);
 					local nTextWidth = _wLabel.getSize();
 					setAnchoredWidth((nTextWidth or 24) + 12);
 					setAnchoredHeight(14);
