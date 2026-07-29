@@ -240,8 +240,11 @@ function onCheckRoll(rSource, rTarget, rRoll)
 	local sTitle, sLabel;
 	if rRoll.sType == "skill" then
 		sTitle = "Skill Check";
-		sLabel = rRoll.sSkill or "";
-		table.insert(tQueries, { sTag = "SKILL", tFilter = { sAbility, sLabel } });
+		local sSkill = rRoll.sSkill or "";
+		-- Display the ruleset's own spelling ("Sleight of Hand"), but query
+		-- effects with the roll's value, which is what the filter matched on.
+		sLabel = getCanonicalSkillName(sSkill);
+		table.insert(tQueries, { sTag = "SKILL", tFilter = { sAbility, sSkill } });
 	else
 		sTitle = "Ability Check";
 		sLabel = StringManager.capitalize(sAbility);
@@ -253,6 +256,24 @@ function onCheckRoll(rSource, rTarget, rRoll)
 		sMods = buildRollModBreakdown(rSource, rRoll, sLabel, tQueries),
 		sOutcome = outcomeVsDC(rRoll),
 	});
+end
+
+-- Skill names reach the card in whatever case the roll carried, often all
+-- lowercase. DataCommon.skilldata is keyed by the ruleset's own localised
+-- spelling ("Animal Handling", "Sleight of Hand"), so match that
+-- case-insensitively rather than capitalising words ourselves, which would give
+-- "Sleight Of Hand". Falls back to per-word capitalisation for anything custom.
+function getCanonicalSkillName(sSkill)
+	if (sSkill or "") == "" then
+		return "";
+	end
+	local sLower = sSkill:lower();
+	for sName, _ in pairs(DataCommon.skilldata or {}) do
+		if sName:lower() == sLower then
+			return sName;
+		end
+	end
+	return StringManager.capitalizeAll(sSkill);
 end
 
 -- "DC: 15", rendered with the same bold label as an attack's "Target:" line.
