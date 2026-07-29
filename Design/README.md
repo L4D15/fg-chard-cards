@@ -260,6 +260,16 @@ pixels tint to black, so `solidify_alpha.py` must be run on white shape art
 too — its transparent pixels need to be white, so filtered edges blend toward
 the tint rather than toward black.
 
+Building it needs care with widget lifecycle: widgets draw in **creation
+order** and cannot be reordered (`bringToFront` is a window API, not a widget
+one), so the three pill pieces must exist before the label — yet their width
+depends on the label's measured width. And a bitmap widget's draw size only
+takes effect at creation; `setSize` afterwards left every piece stuck at the
+cap width. So the template measures with a throwaway named text widget,
+deletes it (`deleteWidget`), creates the pieces at their final sizes, and adds
+the label last. Every widget is named so a re-fill deletes the previous set
+instead of stacking.
+
 Widget API notes, all easy to get wrong:
 `addBitmapWidget` takes a **table** (`{ icon = ..., w = ..., h = ... }`), and
 resizing is **`setSize(w, h)`** — there is no `setBitmapSize`. Also, an inline

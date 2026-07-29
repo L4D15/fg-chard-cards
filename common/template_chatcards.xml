@@ -50,10 +50,16 @@
 					neutral = { sPill = "FFD8D2BD", sLabel = "FF1A1A1A" },
 				};
 
-				-- Created in draw order: shape first, label last (on top).
-				local _wLeft, _wMiddle, _wRight, _wLabel = nil, nil, nil, nil;
-
 				function setText(sText, sStyle)
+					-- Widgets draw in creation order and cannot be reordered, so
+					-- the pill pieces have to be created before the label. Their
+					-- width depends on the label's measured width, and a bitmap
+					-- widget's draw size only reliably takes effect at creation
+					-- (setSize left them all cap-width) — so measure with a
+					-- throwaway label, drop it, then build everything in order.
+					for _, sWidget in ipairs({ "pill_l", "pill_m", "pill_r", "pill_label" }) do
+						deleteWidget(sWidget);
+					end
 					if (sText or "") == "" then
 						setVisible(false);
 						-- collapse so empty chip rows don't inflate the card
@@ -63,31 +69,34 @@
 					end
 					local tStyle = _tStyles[sStyle or ""] or _tStyles["neutral"];
 
-					local nCap = getCapWidth();
-					if not _wLeft then
-						-- w/h are the draw size, which is what lets the art be
-						-- authored larger and be downsampled here.
-						_wLeft = addBitmapWidget({ icon = "cc_tag_left", w = nCap, h = HEIGHT });
-						_wMiddle = addBitmapWidget({ icon = "cc_tag_middle", w = nCap, h = HEIGHT });
-						_wRight = addBitmapWidget({ icon = "cc_tag_right", w = nCap, h = HEIGHT });
-						_wLabel = addTextWidget({ font = "cc_chip", text = sText, position = "center" });
-					else
-						_wLabel.setText(sText);
-					end
+					local wMeasure = addTextWidget({ name = "pill_measure", font = "cc_chip", text = sText, position = "center" });
+					local nText = (wMeasure and wMeasure.getSize()) or 24;
+					deleteWidget("pill_measure");
 
-					-- Measure the label, then lay the three pieces out around it.
-					_wLabel.setColor(tStyle.sLabel);
-					local nWidth = math.max((_wLabel.getSize() or 24) + (PADDING * 2), (nCap * 2) + 2);
+					local nCap = getCapWidth();
+					local nWidth = math.max(nText + (PADDING * 2), (nCap * 2) + 2);
 					local nMiddle = nWidth - (nCap * 2);
 
-					_wLeft.setSize(nCap, HEIGHT);
-					_wLeft.setPosition("topleft", nCap / 2, HEIGHT / 2);
-					_wMiddle.setSize(nMiddle, HEIGHT);
-					_wMiddle.setPosition("topleft", nCap + (nMiddle / 2), HEIGHT / 2);
-					_wRight.setSize(nCap, HEIGHT);
-					_wRight.setPosition("topleft", nWidth - (nCap / 2), HEIGHT / 2);
-					for _, w in ipairs({ _wLeft, _wMiddle, _wRight }) do
-						w.setColor(tStyle.sPill);
+					-- Positions are the widget's centre within the control.
+					local tPieces = {
+						{ sName = "pill_l", sIcon = "cc_tag_left", nW = nCap, nX = nCap / 2 },
+						{ sName = "pill_m", sIcon = "cc_tag_middle", nW = nMiddle, nX = nCap + (nMiddle / 2) },
+						{ sName = "pill_r", sIcon = "cc_tag_right", nW = nCap, nX = nWidth - (nCap / 2) },
+					};
+					for _, tPiece in ipairs(tPieces) do
+						local wPiece = addBitmapWidget({
+							name = tPiece.sName, icon = tPiece.sIcon,
+							position = "topleft", x = tPiece.nX, y = HEIGHT / 2,
+							w = tPiece.nW, h = HEIGHT,
+						});
+						if wPiece then
+							wPiece.setColor(tStyle.sPill);
+						end
+					end
+
+					local wLabel = addTextWidget({ name = "pill_label", font = "cc_chip", text = sText, position = "center" });
+					if wLabel then
+						wLabel.setColor(tStyle.sLabel);
 					end
 
 					setAnchoredWidth(nWidth);
