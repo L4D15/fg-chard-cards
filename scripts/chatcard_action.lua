@@ -44,11 +44,11 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "");
 
-	-- Result-area content: 2 pad + dice rows + 30 total + outcome line
-	-- when there is one.
-	local nBoxContent = 2 + nDiceHeight + 30;
+	-- Result-area content: 4 pad + dice rows + 30 total + outcome line
+	-- when there is one (its row overlaps the total's by 4px).
+	local nBoxContent = 4 + nDiceHeight + 30;
 	if sOutcome ~= "" then
-		nBoxContent = nBoxContent + 16;
+		nBoxContent = nBoxContent + 12;
 	end
 
 	-- Window height each column needs, mirroring the windowclass anchors.
