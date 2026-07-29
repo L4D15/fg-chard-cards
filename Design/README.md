@@ -247,8 +247,16 @@ to tint control icons. The pill is therefore assembled from three tinted
 widgets — `cc_tag_left`, `cc_tag_middle`, `cc_tag_right` — a single white
 shape reused for every style, with only the middle stretching so the caps keep
 their form. Style colours live in the `cc_chip` template (`sPill` tints the
-shape, `sLabel` the text). The caps must be authored 1:2 (width:height) for
-the 7x14 draw size; the middle's source width is free.
+shape, `sLabel` the text). The caps are authored 33x32 and drawn at 14x14 —
+the same scale horizontally as vertically, or the curve distorts; only the
+leading ~6px of the cap is the curve, the rest is straight fill. The middle's
+source width is free since it stretches. If cap art changes shape, the `CAP`
+calculation in the template needs its aspect updated.
+
+Tinting makes the transparent-pixel colour matter even more: black transparent
+pixels tint to black, so `solidify_alpha.py` must be run on white shape art
+too — its transparent pixels need to be white, so filtered edges blend toward
+the tint rather than toward black.
 
 Widget API notes, both of which are easy to get wrong:
 `addBitmapWidget` takes a **table** (`{ icon = ..., w = ..., h = ... }`), and
