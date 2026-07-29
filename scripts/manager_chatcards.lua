@@ -20,6 +20,22 @@ local _tPending = {};
 function onInit()
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
 	ChatManager.registerReceiveMessageCallback(onReceiveMessage);
+	-- /clear is handled inside the engine, which clears the (hidden) chat
+	-- control it owns and knows nothing about the card list beside it. A
+	-- handler of our own covers the card list; the card list's radial menu
+	-- offers the same thing, in case the engine consumes the command first.
+	Comm.registerSlashHandler("clear", processClear);
+end
+
+function processClear()
+	clearCards();
+end
+
+function clearCards()
+	_tPending = {};
+	if _cList then
+		_cList.closeAll();
+	end
 end
 
 function setCardList(cList)
