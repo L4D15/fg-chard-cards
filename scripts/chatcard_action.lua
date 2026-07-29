@@ -7,6 +7,14 @@ local GLYPH = 22;    -- die glyph size
 local GAP = 2;       -- spacing between glyphs
 local PER_ROW = 4;   -- glyphs per row inside the 110px result box
 
+-- The die art is white so it can be tinted here; without a tint it would be
+-- invisible on the card. #C0C0C0 with a white numeral is what the reference
+-- mockup uses — deliberately understated, so the total reads as the result.
+local DIE_COLOR = "FFC0C0C0";
+-- Dropped by advantage/disadvantage: dimmed the way native chat dims it.
+local DIE_COLOR_DROPPED = "80C0C0C0";
+local DIE_LABEL_DROPPED = "80FFFFFF";
+
 function setData(t)
 	name.setValue(t.sName or "");
 	subtitle.setValue(t.sSub or "");
@@ -183,17 +191,15 @@ function setDiceResults(sDice)
 			position = "topleft", x = x, y = y,
 			w = GLYPH, h = GLYPH,
 		});
+		if wBitmap then
+			wBitmap.setColor(tItem.bDropped and DIE_COLOR_DROPPED or DIE_COLOR);
+		end
 		local wText = diceresults.addTextWidget({
 			font = "cc_die", text = tItem.sResult,
 			position = "topleft", x = x, y = y,
 		});
-		if tItem.bDropped then
-			if wBitmap then
-				wBitmap.setColor("80FFFFFF");
-			end
-			if wText then
-				wText.setColor("80FFFFFF");
-			end
+		if wText and tItem.bDropped then
+			wText.setColor(DIE_LABEL_DROPPED);
 		end
 	end
 	return nHeight;

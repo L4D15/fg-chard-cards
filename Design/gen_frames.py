@@ -108,61 +108,10 @@ text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255),
 text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK,
           textsize=24 * PORTRAIT_SUPERSAMPLE)
 
-# ===== Die result glyphs (mimic native chat's black die silhouettes;
-# the rolled number is overlaid as a white text widget) =====
-#
-# Authored at 3x the 22px display size: the card renders them through
-# addBitmapWidget with an explicit w/h, so FG downsamples a detailed
-# source instead of stretching a 22px one. Keeps the same on-screen size
-# while staying sharp under UI scaling / high-DPI displays. Do NOT bake
-# the downscale in here — a single scale at render time is crisper than
-# downscale-then-upscale.
-DIE_DISPLAY = 22
-DIE_SUPERSAMPLE = 3
-
-
-def die_glyph(name, shape, size=DIE_DISPLAY * DIE_SUPERSAMPLE):
-    import math
-    s = 4
-    W = size * s
-    img = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    dark = MUTED
-
-    def ngon(n, rot_deg, radius=W / 2 - 1, cy=W / 2):
-        pts = []
-        for i in range(n):
-            a = math.radians(rot_deg + i * (360.0 / n))
-            pts.append((W / 2 + radius * math.cos(a), cy + radius * math.sin(a)))
-        return pts
-
-    k = size / DIE_DISPLAY      # keep proportions at any supersample
-    if shape == "square":       # d6
-        inset = k * s
-        d.rounded_rectangle([inset, inset, W - inset - 1, W - inset - 1],
-                            radius=4 * k * s, fill=dark)
-    elif shape == "triangle":   # d4
-        d.polygon([(W / 2, 0), (W - 1, W * 0.9), (0, W * 0.9)], fill=dark)
-    elif shape == "diamond":    # d8
-        d.polygon([(W / 2, 0), (W - 1, W / 2), (W / 2, W - 1), (0, W / 2)], fill=dark)
-    elif shape == "kite":       # d10 / d100
-        d.polygon([(W / 2, 0), (W * 0.96, W * 0.42), (W / 2, W - 1), (W * 0.04, W * 0.42)], fill=dark)
-    elif shape == "pentagon":   # d12
-        d.polygon(ngon(5, -90), fill=dark)
-    elif shape == "hexagon":    # d20
-        d.polygon(ngon(6, -90), fill=dark)
-
-    img = img.resize((size, size), Image.LANCZOS)
-    img.save(f"{ICONS}/{name}.png")
-    print(name)
-
-
-die_glyph("cc_die_d4", "triangle")
-die_glyph("cc_die_d6", "square")
-die_glyph("cc_die_d8", "diamond")
-die_glyph("cc_die_d10", "kite")
-die_glyph("cc_die_d12", "pentagon")
-die_glyph("cc_die_d20", "hexagon")
+# cc_die_*.png: USER-SUPPLIED ART (2026-07-29) — do not regenerate.
+# Full-white 64x64 silhouettes (no numeral — that is a separate text widget),
+# drawn at 22x22 and tinted in chatcard_action.lua, so one shape serves any
+# colour. Run Design/solidify_alpha.py after re-exporting.
 
 
 # Portrait-set layers for engine-generated PC portrait icons
