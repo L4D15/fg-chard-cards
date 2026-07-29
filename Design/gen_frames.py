@@ -18,7 +18,7 @@ WHITE = (255, 255, 255, 255)
 MUTED = (121, 117, 108, 255)      # #79756C: roll-type label + die glyphs
 
 
-def rounded(size, radius, fill, outline=None, width=1, bottom_gap=0):
+def rounded(size, radius, fill, outline=None, width=1, bottom_gap=0, inset=0):
     # Draw at 4x and downscale for smooth corners. bottom_gap adds fully
     # transparent rows below the shape: FG windowclass frames stretch over
     # the whole list-window rect INCLUDING the bottom margin, so inter-card
@@ -28,7 +28,7 @@ def rounded(size, radius, fill, outline=None, width=1, bottom_gap=0):
     img = Image.new("RGBA", (size[0] * s, (size[1] + bottom_gap) * s), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     d.rounded_rectangle(
-        [0, 0, size[0] * s - 1, size[1] * s - 1],
+        [inset * s, inset * s, (size[0] - inset) * s - 1, (size[1] - inset) * s - 1],
         radius=radius * s, fill=fill,
         outline=outline, width=width * s,
     )
@@ -57,9 +57,12 @@ save(rounded((48, 20), 4, GOLD), "cc_resultheader")
 # cc_chip_red.png / cc_chip_gold.png: USER-SUPPLIED ART (2026-07-29) —
 # do not regenerate. 36x14 pills (framedef offset 7,6,7,6).
 
-# Banner: full-width gold rounded bar (turn / damage-applied messages),
-# 8px transparent gutter below (framedef offset 12,10,12,18)
-save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
+# Banner (turn / damage-applied messages): matches the card art's geometry
+# so the two never disagree at their edges — same 5px transparent inset on
+# every side (which also provides the separation between rows, so the class
+# needs no margin) and the same ~4px corner radius, no outline.
+# framedef offset 12,12,12,12 (>= inset 5 + radius 4).
+save(rounded((48, 48), 4, GOLD, inset=5), "cc_banner")
 
 # cc_portraitframe.png: USER-SUPPLIED ART (2026-07-28) — do not regenerate.
 # 2px border, square interior; avatar layers are 40x40 at +2,+2 inside the

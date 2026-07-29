@@ -2,7 +2,6 @@
 <root>
 	<!-- One-line gold banner: "Turn: X", "Y takes 7 damage", system messages -->
 	<windowclass name="chatcard_banner">
-		<margins control="0,0,0,8" />
 		<frame>cc_banner</frame>
 		<script>
 			function setData(t)

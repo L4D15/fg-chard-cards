@@ -77,13 +77,12 @@ size. Design the horizontal middle to survive that range.
 
 **Heights are deterministic.** A windowclass frame is drawn over the whole
 window rect, margins included, so the frame canvas equals the card height
-below. `cc_card` classes carry no bottom margin — their separation comes from
-the art's soft glow inset. The banner still adds an 8px margin because its
-spacing is a transparent gutter baked into the bottom of its bitmap.
+below. No card class carries a margin: separation between rows comes from the
+~5px inset in the art itself, for both `cc_card` and `cc_banner`.
 
 | card | height / frame canvas |
 |---|---|
-| banner (Turn / takes N damage) | 34px content, 42px canvas |
+| banner (Turn / takes N damage) | 34px |
 | plain roll / save / check (modifier line) | 84px |
 | damage (target + weapon line, chips, outcome) | 114px |
 | attack (target + modifiers, chips, outcome) | 114px |
@@ -113,9 +112,10 @@ vertically at every card size and stretches ~2x horizontally at a typical
 490px card, which is fine. Separation between cards comes from the ~5px soft
 glow inset on all four sides of that art — replacements need an equivalent
 inset (or the classes need a margin plus a transparent gutter again).
-`cc_header` is 1:1 at 26px tall (the current art is 24px, so it stretches
-slightly). `cc_banner` is 1:1 at a 42px canvas with offsets `12,10,12,18`
-including its 8px bottom gutter.
+`cc_banner` mirrors the card's geometry (5px inset, 4px radius, offsets
+`12,12,12,12`) so the two never disagree where a banner meets a card — an
+earlier mismatch (banner radius 10 vs card radius 4) showed up as a stepped
+silhouette at their shared edge.
 
 ## Decision log
 

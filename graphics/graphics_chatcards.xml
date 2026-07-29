@@ -3,10 +3,9 @@
 	<!-- ===== FRAMES (placeholder 9-slice art; swap the PNGs to restyle) ===== -->
 	<!-- Windowclass frames stretch over the window's margins too, so
 	     inter-card spacing has to come from the art rather than a margin.
-	     cc_card does it with a soft ~5px glow inset on every side (its
-	     window classes therefore carry no bottom margin); cc_banner still
-	     uses an 8px transparent gutter baked into the bottom 9-slice band,
-	     so keep that gutter if you replace the banner graphic.
+	     Both cc_card and cc_banner do it with a ~5px inset on every side, so
+	     their window classes carry no margins and their edges and corners
+	     agree; keep that inset (and the ~4px corner radius) in replacements.
 
 	     RESOLUTION: offsets are in bitmap pixels and the border bands draw
 	     1:1, so bigger art only sharpens the STRETCHED regions. To gain
@@ -43,7 +42,7 @@
 	</framedef>
 	<framedef name="cc_banner">
 		<bitmap file="graphics/frames/cc_banner.png" />
-		<offset>12,10,12,18</offset>
+		<offset>12,12,12,12</offset>
 	</framedef>
 	<framedef name="cc_portraitframe">
 		<bitmap file="graphics/frames/cc_portraitframe.png" />
