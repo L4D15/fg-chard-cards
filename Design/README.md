@@ -78,7 +78,8 @@ size. Design the horizontal middle to survive that range.
 **Heights are deterministic.** A windowclass frame is drawn over the whole
 window rect, margins included, so the frame canvas equals the card height
 below. No card class carries a margin: separation between rows comes from the
-~5px inset in the art itself, for both `cc_card` and `cc_banner`.
+~5px inset in `cc_card`, which every class (including system messages) uses
+as its background.
 
 | card | height / frame canvas |
 |---|---|
@@ -112,10 +113,11 @@ vertically at every card size and stretches ~2x horizontally at a typical
 490px card, which is fine. Separation between cards comes from the ~5px soft
 glow inset on all four sides of that art — replacements need an equivalent
 inset (or the classes need a margin plus a transparent gutter again).
-`cc_banner` mirrors the card's geometry (5px inset, 4px radius, offsets
-`12,12,12,12`) so the two never disagree where a banner meets a card — an
-earlier mismatch (banner radius 10 vs card radius 4) showed up as a stepped
-silhouette at their shared edge.
+`cc_banner` is no longer used — system messages share `cc_card` — but it is
+kept generated with the card's geometry (5px inset, 4px radius) in case a
+distinct banner style is wanted again. An earlier mismatch there (banner
+radius 10 vs card radius 4) showed up as a stepped silhouette wherever a
+banner met a card.
 
 ## Decision log
 

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <root>
-	<!-- One-line gold banner: "Turn: X", "Y takes 7 damage", system messages -->
+	<!-- One-line system message: "Turn: X", "Y takes 7 damage". Uses the same
+	     card background as the other cards. -->
 	<windowclass name="chatcard_banner">
-		<frame>cc_banner</frame>
+		<frame>cc_card</frame>
 		<script>
 			function setData(t)
 				text.setValue(t.sText or "");
@@ -12,8 +13,8 @@
 			<stringcontrol name="text">
 				<anchored>
 					<top offset="8" />
-					<left offset="14" />
-					<right offset="-14" />
+					<left offset="17" />
+					<right offset="-17" />
 				</anchored>
 				<font>cc_bannertext</font>
 				<multilinespacing>18</multilinespacing>

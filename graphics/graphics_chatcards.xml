@@ -40,6 +40,8 @@
 		<bitmap file="graphics/frames/cc_chip_gold.png" />
 		<offset>7,6,7,6</offset>
 	</framedef>
+	<!-- Unused: system messages now use cc_card like every other card. Kept
+	     in case a distinct banner style is wanted again. -->
 	<framedef name="cc_banner">
 		<bitmap file="graphics/frames/cc_banner.png" />
 		<offset>12,12,12,12</offset>
