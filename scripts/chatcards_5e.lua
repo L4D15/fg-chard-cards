@@ -200,35 +200,33 @@ end
 
 -- Itemized attack modifiers as encoded segments ("Crossbow, Light +3;Bless
 -- +1d4:positive"), which the card joins with a middot and colours per style.
--- The first entry is the roll source's own listed bonus (ability +
--- proficiency + item bonuses as printed on the sheet), named after the
--- weapon/spell. Effects are re-queried the same way the ruleset queried
--- them when building the roll; rRoll.nEffectMod (tracked by
--- ActionCore.applyModRollEffect) separates the sheet bonus from effect
--- contributions, and flat mods not attributable to a named ATK/@ATK
--- effect are lumped as "Other effects". The first segment carries no style:
--- it is the roll's own bonus rather than a modifier on top of it, so the card
--- leaves its value uncoloured.
+--
+-- Effects are re-queried the same way the ruleset queried them when building
+-- the roll. The roll's own bonus is then whatever remains of rRoll.nMod once
+-- those itemized modifiers are taken out, so the segments always add up to the
+-- total the dice were rolled with. (rRoll.nEffectMod looks like the obvious
+-- source for the effect share, but it does not hold the effect total by the
+-- time the roll resolves — trusting it made the base too low and left the
+-- difference showing as a phantom "Other effects" entry.) The trade-off is
+-- that an effect we cannot attribute to a named ATK/@ATK effect — exhaustion,
+-- ability-score effects — is absorbed into the base rather than listed.
+--
+-- The first segment carries no style: it is the roll's own bonus rather than a
+-- modifier on top of it, so the card leaves its value uncoloured.
 function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
-	local nMod = rRoll.nMod or 0;
-	local nEffectMod = tonumber(rRoll.nEffectMod or 0) or 0;
-	if (sSourceLabel or "") == "" then
-		sSourceLabel = "Base";
-	end
-	local tSegments = { { sText = string.format("%s %+d", sSourceLabel, nMod - nEffectMod) } };
-
 	local tFilter = ActionCore.buildEffectFilter(rRoll);
+	local tSegments = {};
 	local nListed = 0;
 	nListed = nListed + addEffectBreakdownItems(tSegments, rSource, "ATK", { rTarget = rTarget, tFilter = tFilter });
 	nListed = nListed + addEffectBreakdownItems(tSegments, rTarget, "@ATK", { rTarget = rSource, tFilter = tFilter });
 
-	local nOther = nEffectMod - nListed;
-	if nOther ~= 0 then
-		table.insert(tSegments, {
-			sText = string.format("Other effects %+d", nOther),
-			sStyle = (nOther > 0) and "positive" or "negative",
-		});
+	if (sSourceLabel or "") == "" then
+		sSourceLabel = "Base";
 	end
+	table.insert(tSegments, 1, {
+		sText = string.format("%s %+d", sSourceLabel, (rRoll.nMod or 0) - nListed),
+	});
+
 	return ChatCardsManager.encodeTags(tSegments);
 end
 
