@@ -135,6 +135,22 @@ function setTags(sTags)
 	return #tTags > 0;
 end
 
+-- Tint for a die: the engine prefixes the kept die's type with 'g' on an
+-- advantage roll and 'r' on disadvantage (ActionD20.decodeAdvantage), and that
+-- prefix survives in the card payload, so the kept die can carry the same
+-- colour as the Advantage / Disadvantage pill. Dropped dice stay dimmed.
+function getDieColor(sType, bDropped)
+	if bDropped then
+		return DIE_COLOR_DROPPED;
+	end
+	if sType:match("^gd%d") then
+		return ChatCardsManager.COLOR_POSITIVE;
+	elseif sType:match("^rd%d") then
+		return ChatCardsManager.COLOR_NEGATIVE;
+	end
+	return DIE_COLOR;
+end
+
 -- Known die shapes; anything else (custom dice) falls back to the square
 local _tDieIcons = {
 	d4 = "cc_die_d4", d6 = "cc_die_d6", d8 = "cc_die_d8",
@@ -192,7 +208,7 @@ function setDiceResults(sDice)
 			w = GLYPH, h = GLYPH,
 		});
 		if wBitmap then
-			wBitmap.setColor(tItem.bDropped and DIE_COLOR_DROPPED or DIE_COLOR);
+			wBitmap.setColor(getDieColor(tItem.sType, tItem.bDropped));
 		end
 		local wText = diceresults.addTextWidget({
 			font = "cc_die", text = tItem.sResult,

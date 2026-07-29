@@ -7,6 +7,12 @@
 
 OOB_MSGTYPE_CHATCARD = "chatcards_card";
 
+-- Card accent palette, in FG's AARRGGBB form. The advantage/disadvantage die
+-- tints use these, and the positive/negative tag pill art is drawn in the same
+-- two colours — keep them in step if either changes.
+COLOR_POSITIVE = "FF55A000";
+COLOR_NEGATIVE = "FFB22E2E";
+
 local MAX_CARDS = 150;
 local _cList = nil;
 local _tPending = {};

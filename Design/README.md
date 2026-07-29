@@ -32,6 +32,12 @@ in the spirit of D&D Beyond's roll cards. Target ruleset: **5E**.
 - **Die glyphs**: #C0C0C0 shapes with a white numeral — understated, so the
   total reads as the result. The art is full white and tinted at runtime
   (`DIE_COLOR` in `chatcard_action.lua`), so recolouring needs no re-export.
+  On an advantage or disadvantage roll the *kept* die is tinted with the
+  positive / negative accent instead, matching its tag pill: the engine
+  prefixes that die's type with `g` or `r` (`ActionD20.decodeAdvantage`) and the
+  prefix survives in the card payload. The accents live in
+  `ChatCardsManager.COLOR_POSITIVE` / `COLOR_NEGATIVE`, which the pill art is
+  drawn to match — keep the two in step.
 
 ## How the extension works
 
