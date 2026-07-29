@@ -136,6 +136,11 @@
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="12" />
 		<color value="#FFFFFF" />
 	</font>
+	<!-- Story / narration text: italic, same colour as the body text. -->
+	<font name="cc_story">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="14" />
+		<color value="#1A1A1A" />
+	</font>
 	<!-- System messages: same colour as the card body text (#1A1A1A), kept as
 	     its own font so they can be restyled independently. -->
 	<font name="cc_bannertext">

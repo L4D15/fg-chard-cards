@@ -50,8 +50,8 @@ function addCard(sClass, tData)
 	return w;
 end
 
-function addBanner(sText)
-	return addCard("chatcard_banner", { sText = sText });
+function addBanner(sText, sFont)
+	return addCard("chatcard_banner", { sText = sText, sFont = sFont or "" });
 end
 
 -- ===== Structured cards via OOB =====
@@ -211,8 +211,10 @@ end
 
 -- ===== Generic messages =====
 
--- Speech-like modes get a speech card; everything else without dice gets a banner.
-local _tSpeechModes = { chat = true, emote = true, ooc = true, whisper = true, story = true };
+-- Speech-like modes get a speech card; everything else without dice gets a
+-- full-width text card. Story is handled separately: it is narration rather
+-- than someone speaking, so it gets no portrait and an italic font.
+local _tSpeechModes = { chat = true, emote = true, ooc = true, whisper = true };
 
 -- Uppercase tags that identify roll messages (built by encodeActionText from
 -- the action strings, e.g. "[ATTACK (M)] Mace"). All rolls become structured
@@ -257,6 +259,13 @@ function onReceiveMessage(msg)
 	end
 	if sText:match("^%[Damage[%s#%(%]]") then
 		addDamageApplyBanner(sText);
+		return;
+	end
+
+	if (msg.mode or "") == "story" then
+		if sText ~= "" then
+			addBanner(sText, "cc_story");
+		end
 		return;
 	end
 

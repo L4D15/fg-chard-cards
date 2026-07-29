@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <root>
-	<!-- One-line system message: "Turn: X", "Y takes 7 damage". Uses the same
-	     card background as the other cards. -->
+	<!-- Full-width text card: system messages ("Turn: X", "Y takes 7 damage")
+	     and story/narration text, which passes an italic font override. Uses
+	     the same card background as the other cards. -->
 	<windowclass name="chatcard_banner">
 		<frame>cc_card</frame>
 		<script>
 			function setData(t)
 				text.setValue(t.sText or "");
+				if (t.sFont or "") ~= "" then
+					text.setFont(t.sFont);
+				end
 			end
 		</script>
 		<sheetdata>
