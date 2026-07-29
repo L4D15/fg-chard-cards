@@ -153,7 +153,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
-		sLine2 = buildAttackModBreakdown(rSource, rTarget, rRoll, sLabel),
+		sMods = buildAttackModBreakdown(rSource, rTarget, rRoll, sLabel),
 	};
 	if rTarget then
 		local sAC = rRoll.nDefenseVal and (" (AC " .. rRoll.nDefenseVal .. ")") or "";
@@ -198,36 +198,41 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 end
 
--- Itemized attack modifier line: "Crossbow, Light +3 · Bless +1d4".
+-- Itemized attack modifiers as encoded segments ("Crossbow, Light +3;Bless
+-- +1d4:positive"), which the card joins with a middot and colours per style.
 -- The first entry is the roll source's own listed bonus (ability +
 -- proficiency + item bonuses as printed on the sheet), named after the
 -- weapon/spell. Effects are re-queried the same way the ruleset queried
 -- them when building the roll; rRoll.nEffectMod (tracked by
 -- ActionCore.applyModRollEffect) separates the sheet bonus from effect
 -- contributions, and flat mods not attributable to a named ATK/@ATK
--- effect are lumped as "Other effects". Middot-separated because
--- weapon names can contain commas.
+-- effect are lumped as "Other effects". The first segment carries no style:
+-- it is the roll's own bonus rather than a modifier on top of it, so the card
+-- leaves its value uncoloured.
 function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
 	local nMod = rRoll.nMod or 0;
 	local nEffectMod = tonumber(rRoll.nEffectMod or 0) or 0;
 	if (sSourceLabel or "") == "" then
 		sSourceLabel = "Base";
 	end
-	local tParts = { string.format("%s %+d", sSourceLabel, nMod - nEffectMod) };
+	local tSegments = { { sText = string.format("%s %+d", sSourceLabel, nMod - nEffectMod) } };
 
 	local tFilter = ActionCore.buildEffectFilter(rRoll);
 	local nListed = 0;
-	nListed = nListed + addEffectBreakdownItems(tParts, rSource, "ATK", { rTarget = rTarget, tFilter = tFilter });
-	nListed = nListed + addEffectBreakdownItems(tParts, rTarget, "@ATK", { rTarget = rSource, tFilter = tFilter });
+	nListed = nListed + addEffectBreakdownItems(tSegments, rSource, "ATK", { rTarget = rTarget, tFilter = tFilter });
+	nListed = nListed + addEffectBreakdownItems(tSegments, rTarget, "@ATK", { rTarget = rSource, tFilter = tFilter });
 
 	local nOther = nEffectMod - nListed;
 	if nOther ~= 0 then
-		table.insert(tParts, string.format("Other effects %+d", nOther));
+		table.insert(tSegments, {
+			sText = string.format("Other effects %+d", nOther),
+			sStyle = (nOther > 0) and "positive" or "negative",
+		});
 	end
-	return table.concat(tParts, " \194\183 ");
+	return ChatCardsManager.encodeTags(tSegments);
 end
 
--- Append "Name +bonus" entries for each active effect with matching
+-- Append "Name +bonus" segments for each active effect with matching
 -- components; returns the flat-modifier total that was itemized.
 function addEffectBreakdownItems(tParts, rActor, sTag, tData)
 	if not rActor then
@@ -258,7 +263,10 @@ function addEffectBreakdownItems(tParts, rActor, sTag, tData)
 				if not sBonus:match("^[%+%-]") then
 					sBonus = "+" .. sBonus;
 				end
-				table.insert(tParts, sName .. " " .. sBonus);
+				table.insert(tParts, {
+					sText = sName .. " " .. sBonus,
+					sStyle = sBonus:match("^%-") and "negative" or "positive",
+				});
 				nListedMod = nListedMod + nCompMod;
 			end
 		end

@@ -24,7 +24,10 @@ function setData(t)
 	-- Empty body lines collapse so they don't inflate the card height;
 	-- the card then hugs whichever column is actually taller.
 	setBodyLine(line1, t.sLine1 or "");
-	setBodyLine(line2, t.sLine2 or "");
+	local bMods = setModifierLine(line2, t.sMods or "");
+	if not bMods then
+		setBodyLine(line2, t.sLine2 or "");
+	end
 
 	total.setValue(t.sTotal or "");
 
@@ -54,7 +57,7 @@ function setData(t)
 	-- INSET is the card art's shadow border, which all content sits inside.
 	local INSET = 5;
 	local nLine1 = ((t.sLine1 or "") ~= "") and 16 or 0;
-	local nLine2 = ((t.sLine2 or "") ~= "") and 16 or 0;
+	local nLine2 = (bMods or ((t.sLine2 or "") ~= "")) and 16 or 0;
 	-- Name block stacked flush (namebar 16 + subtitle 15 + roll-type 15),
 	-- then 4 + line1, + 2 + line2, + 2 + chips, + 4 bottom pad, keeping the
 	-- body rows at y=55. They cannot start above y=49 anyway: they sit
@@ -133,6 +136,62 @@ function setTags(sTags)
 		end
 	end
 	return #tTags > 0;
+end
+
+-- Modifier row: segments encoded by the ruleset ("Crossbow, Light +3;Bless
+-- +1d4:positive"), joined here with a middot. Only each segment's *value* is
+-- coloured — the trailing +/- token — and only when the segment carries a
+-- style, so the roll's own bonus stays plain. Returns whether anything was
+-- rendered.
+local _tSegmentColors = nil;
+
+function setModifierLine(cLine, sMods)
+	local tSegments = ChatCardsManager.decodeTags(sMods);
+	if #tSegments == 0 then
+		cLine.setAnchoredHeight(0);
+		return false;
+	end
+	cLine.setAnchoredHeight(16);
+
+	_tSegmentColors = _tSegmentColors or {
+		positive = ChatCardsManager.COLOR_POSITIVE,
+		negative = ChatCardsManager.COLOR_NEGATIVE,
+	};
+
+	-- Widgets are positioned by their centre, so each piece is measured and
+	-- the pen advances by its width.
+	local nX = 0;
+	local function addPiece(sText, sColor)
+		if (sText or "") == "" then
+			return;
+		end
+		local wPiece = cLine.addTextWidget({ font = "cc_body", text = sText, position = "topleft", y = 8 });
+		if not wPiece then
+			return;
+		end
+		local nPieceWidth = wPiece.getSize() or 0;
+		wPiece.setPosition("topleft", nX + math.floor(nPieceWidth / 2), 8);
+		if sColor then
+			wPiece.setColor(sColor);
+		end
+		nX = nX + nPieceWidth;
+	end
+
+	for i, tSegment in ipairs(tSegments) do
+		if i > 1 then
+			addPiece(" \194\183 ", nil);
+		end
+		-- The value is a signed number or dice expression, so require a digit
+		-- or "d" after the sign: a hyphenated name would otherwise split.
+		local sName, sValue = tSegment.sText:match("^(.-)%s*([%+%-][%dd]%w*)$");
+		if sName then
+			addPiece(sName .. " ", nil);
+			addPiece(sValue, _tSegmentColors[tSegment.sStyle or ""]);
+		else
+			addPiece(tSegment.sText, nil);
+		end
+	end
+	return true;
 end
 
 -- A die type is a leading letter plus its number of sides: "d20" normally,

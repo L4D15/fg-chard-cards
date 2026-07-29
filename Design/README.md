@@ -174,6 +174,15 @@ Nothing in the manager or the card window knows any tag name; adding a
 system, or a plugin extension adding tags to an existing one, means
 registering another provider.
 
+The same encoding carries the **modifier row**: the ruleset sends
+`sMods` as styled segments (`"Crossbow, Light +3;Bless +1d4:positive"`) and the
+card joins them with a middot, colouring only each segment's *value* — the
+trailing signed number or dice expression — with the positive/negative accent.
+The first segment deliberately carries no style, because it is the roll's own
+bonus rather than a modifier on top of it, so its value stays plain. The value
+pattern requires a digit or `d` after the sign, so a hyphenated name with no
+bonus ("Two-Handed") is left alone instead of splitting.
+
 `ChatCards5E` registers providers for `attack`, `damage` and `roll`: the
 action-type tag (red), `Advantage` (green) / `Disadvantage` (red) — detected
 from the roll flags, falling back to the `g`/`r` die-type prefix
