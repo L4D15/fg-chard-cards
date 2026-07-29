@@ -194,6 +194,19 @@ trade-off of subtraction is that an effect which cannot be attributed to a
 named `ATK`/`@ATK` effect — exhaustion, ability-score effects — is absorbed
 into the base rather than listed separately.
 
+### 2026-07-29 — Redundant apply messages are dropped
+`ActionCore.applyMessage` posts a second, mixed-case chat message for each
+resolved roll ("[Save] [16] [vs DC 12] [SUCCESS]"). Now that a card reports the
+same outcome, those repeat it, so the receive path drops the ones whose result a
+card already shows — `Attack`, `Save`, `Concentration`, `System Shock` — keyed by
+the label rather than by pattern-matching each. `Damage` is not dropped but
+converted to a "takes N damage" banner, since no card reports the *applied*
+total, and healing applies are left alone because nothing else reports them.
+
+The label is captured up to the closing bracket rather than the first space, so
+two-word labels ("System Shock") survive; an order suffix ("[Save #2]") and a
+range ("[Attack (M)]") are trimmed off.
+
 ### 2026-07-29 — Saves and checks get the attack card's treatment
 Saves, ability checks and skill checks now have dedicated hooks rather than
 falling through to the generic roll card, so they show the same things an attack
