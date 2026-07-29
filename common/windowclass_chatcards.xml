@@ -39,21 +39,22 @@
 		</script>
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="2,2" />
+				<anchored position="insidetopleft" offset="7,7" />
 			</cc_portrait_token>
 			<cc_portrait_icon name="porticon">
-				<anchored position="insidetopleft" offset="2,2" />
+				<anchored position="insidetopleft" offset="7,7" />
 			</cc_portrait_icon>
 			<cc_portrait_frame name="portraitframe">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="5,5" />
 			</cc_portrait_frame>
+			<!-- Header row: no background frame (the card art carries the
+			     styling); inset by the art's 5px shadow. -->
 			<genericcontrol name="namebar">
 				<anchored height="26">
-					<top offset="0" />
-					<left offset="44" />
-					<right offset="0" />
+					<top offset="5" />
+					<left offset="49" />
+					<right offset="-5" />
 				</anchored>
-				<frame name="cc_header" />
 			</genericcontrol>
 			<stringcontrol name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,3" />
@@ -68,8 +69,8 @@
 			<stringcontrol name="text">
 				<anchored>
 					<top parent="subtitle" anchor="bottom" offset="6" />
-					<left offset="10" />
-					<right offset="-10" />
+					<left offset="15" />
+					<right offset="-15" />
 				</anchored>
 				<font>cc_body</font>
 				<frame name="cc_panel" offset="8,6,8,6" />
@@ -77,7 +78,7 @@
 				<readonly />
 			</stringcontrol>
 			<genericcontrol name="sizer">
-				<anchored to="text" position="belowleft" height="12" width="1" />
+				<anchored to="text" position="belowleft" height="17" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
@@ -89,21 +90,22 @@
 		<script file="scripts/chatcard_action.lua" />
 		<sheetdata>
 			<cc_portrait_token name="tokenview">
-				<anchored position="insidetopleft" offset="2,2" />
+				<anchored position="insidetopleft" offset="7,7" />
 			</cc_portrait_token>
 			<cc_portrait_icon name="porticon">
-				<anchored position="insidetopleft" offset="2,2" />
+				<anchored position="insidetopleft" offset="7,7" />
 			</cc_portrait_icon>
 			<cc_portrait_frame name="portraitframe">
-				<anchored position="insidetopleft" offset="0,0" />
+				<anchored position="insidetopleft" offset="5,5" />
 			</cc_portrait_frame>
+			<!-- Header row: no background frame (the card art carries the
+			     styling); inset by the art's 5px shadow. -->
 			<genericcontrol name="namebar">
 				<anchored height="26">
-					<top offset="0" />
-					<left offset="44" />
-					<right offset="0" />
+					<top offset="5" />
+					<left offset="49" />
+					<right offset="-5" />
 				</anchored>
-				<frame name="cc_header" />
 			</genericcontrol>
 			<stringcontrol name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,3" />
@@ -128,7 +130,7 @@
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="64">
 					<top parent="namebar" anchor="bottom" offset="0" />
-					<right offset="0" />
+					<right offset="-5" />
 				</anchored>
 			</genericcontrol>
 			<!-- Invisible pad that vertically centers the box contents:
@@ -174,14 +176,14 @@
 			<genericcontrol name="line1">
 				<anchored height="16">
 					<top parent="subtitle" anchor="bottom" offset="2" />
-					<left offset="12" />
+					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
 			</genericcontrol>
 			<genericcontrol name="line2">
 				<anchored height="16">
 					<top parent="line1" anchor="bottom" offset="2" />
-					<left offset="12" />
+					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
 			</genericcontrol>
@@ -190,7 +192,7 @@
 			<cc_chip name="chip1">
 				<anchored>
 					<top parent="line2" anchor="bottom" offset="2" />
-					<left offset="12" />
+					<left offset="17" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip2">
@@ -207,7 +209,7 @@
 			</cc_chip>
 
 			<genericcontrol name="sizer">
-				<anchored to="chip1" position="belowleft" height="4" width="1" />
+				<anchored to="chip1" position="belowleft" height="9" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>

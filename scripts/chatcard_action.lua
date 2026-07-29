@@ -50,20 +50,25 @@ function setData(t)
 		nBoxContent = nBoxContent + 16;
 	end
 
-	-- Left column extent, mirroring the windowclass anchors: namebar 26 +
-	-- 2 + subtitle 18, + 2 + line1, + 2 + line2, + 2 + chip row, + 4 pad.
+	-- Window height each column needs, mirroring the windowclass anchors.
+	-- INSET is the card art's shadow border, which all content sits inside.
+	local INSET = 5;
 	local nLine1 = ((t.sLine1 or "") ~= "") and 16 or 0;
 	local nLine2 = ((t.sLine2 or "") ~= "") and 16 or 0;
 	local bChips = (sType == "attack") or (sType == "damage")
 		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
-	local nLeftExtent = 46 + 2 + nLine1 + 2 + nLine2 + 2 + (bChips and 14 or 0) + 4;
+	-- namebar 26 + 2 + subtitle 18, + 2 + line1, + 2 + line2, + 2 + chips,
+	-- + 4 bottom padding, all between the two inset borders.
+	local nLeftNeeds = INSET + 46 + 2 + nLine1 + 2 + nLine2 + 2
+		+ (bChips and 14 or 0) + 4 + INSET;
+	-- The box hangs from the namebar's bottom edge (INSET + 26).
+	local nBoxTop = INSET + 26;
+	local nBoxNeeds = nBoxTop + nBoxContent + 4 + INSET;
 
-	-- The box bottom always meets the card bottom: stretch to the left
-	-- column when that is taller, otherwise the box's content (plus 2px
-	-- padding each side) drives the card height (box top sits at 26, the
-	-- namebar's bottom). Contents keep a fixed 2px top gap.
-	local nBoxHeight = math.max(nBoxContent + 4, nLeftExtent - 26);
-	resultbox.setAnchoredHeight(nBoxHeight);
+	-- The box bottom always meets the card's inner bottom edge: it stretches
+	-- when the left column is taller, and drives the card height otherwise.
+	local nCardHeight = math.max(nLeftNeeds, nBoxNeeds);
+	resultbox.setAnchoredHeight(nCardHeight - nBoxTop - INSET);
 	boxpad.setAnchoredHeight(2);
 end
 
