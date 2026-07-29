@@ -64,9 +64,16 @@ save(rounded((48, 32), 10, GOLD, GOLD_DARK, 1, bottom_gap=8), "cc_banner")
 # 44x44 frame control.
 
 
-# ===== Portrait icons (sized to the border's 40px inner area) =====
+# ===== Portrait icons =====
+# Authored at 3x the 40px avatar area for the same reason as the die
+# glyphs: setCardPortrait draws them via a bitmap widget with an explicit
+# 40px size, so a detailed source is downsampled once at render time.
+PORTRAIT_DISPLAY = 40
+PORTRAIT_SUPERSAMPLE = 3
+PORTRAIT_SRC = PORTRAIT_DISPLAY * PORTRAIT_SUPERSAMPLE
 
-def text_icon(name, text, bg, fg, size=40, textsize=18):
+
+def text_icon(name, text, bg, fg, size=PORTRAIT_SRC, textsize=18):
     # Square badge filling the frame's square interior
     s = 4
     img = Image.new("RGBA", (size * s, size * s), bg)
@@ -80,10 +87,12 @@ def text_icon(name, text, bg, fg, size=40, textsize=18):
 
 
 # GM speaker icon: gold badge with dark "GM"
-text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255), textsize=17)
+text_icon("cc_portrait_gm", "GM", GOLD, (59, 42, 18, 255),
+          textsize=17 * PORTRAIT_SUPERSAMPLE)
 
 # Unknown speaker fallback: parchment badge with a gold "?"
-text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=24)
+text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK,
+          textsize=24 * PORTRAIT_SUPERSAMPLE)
 
 # ===== Die result glyphs (mimic native chat's black die silhouettes;
 # the rolled number is overlaid as a white text widget) =====
@@ -144,12 +153,14 @@ die_glyph("cc_die_d20", "hexagon")
 
 # Portrait-set layers for engine-generated PC portrait icons
 # (portrait_<identity>_ccard): fully transparent base (no ring/decoration)
-# and a plain opaque square mask, both at the 40px inner-area size so the
-# portrait fills the frame's square interior exactly.
-base = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+# and a plain opaque square mask, authored at the supersampled size so the
+# engine composites each identity's portrait at 3x — the card renders it
+# down into the 40px avatar area, preserving detail from the original
+# portrait image instead of baking a 40px thumbnail.
+base = Image.new("RGBA", (PORTRAIT_SRC, PORTRAIT_SRC), (0, 0, 0, 0))
 base.save(f"{ICONS}/cc_portrait_base.png")
 print("cc_portrait_base")
 
-mask = Image.new("RGBA", (40, 40), (255, 255, 255, 255))
+mask = Image.new("RGBA", (PORTRAIT_SRC, PORTRAIT_SRC), (255, 255, 255, 255))
 mask.save(f"{ICONS}/cc_portrait_mask.png")
 print("cc_portrait_mask")

@@ -357,21 +357,32 @@ end
 
 -- Apply portrait data to a card's icon + token controls (card side; the
 -- data table carries stringified OOB fields).
+-- Avatar layer size (the frame's square inner area). Portrait icons and
+-- badges are authored at 3x this and drawn through a bitmap widget with
+-- an explicit size, so FG downsamples a detailed source rather than
+-- stretching a 40px one — sharper under UI scaling / high-DPI displays.
+local PORTRAIT_SIZE = 40;
+
 function setCardPortrait(cIcon, cToken, t)
 	local sIcon = t.sIconAsset or "";
 	local sToken = t.sTokenAsset or "";
-	if sIcon ~= "" then
-		cIcon.setIcon(sIcon);
-		cToken.setVisible(false);
-	elseif sToken ~= "" then
-		cIcon.setIcon("");
+
+	-- Token art is rendered by the engine's token control, which already
+	-- scales its (high-resolution) source into the control.
+	if sIcon == "" and sToken ~= "" then
 		cToken.setPrototype(sToken);
 		cToken.setVisible(true);
-	elseif t.sIsGM == "1" then
-		cIcon.setIcon("cc_portrait_gm");
-		cToken.setVisible(false);
-	else
-		cIcon.setIcon("cc_portrait_unknown");
-		cToken.setVisible(false);
+		return;
 	end
+	cToken.setVisible(false);
+
+	if sIcon == "" then
+		sIcon = (t.sIsGM == "1") and "cc_portrait_gm" or "cc_portrait_unknown";
+	end
+	cIcon.addBitmapWidget({
+		icon = sIcon,
+		position = "topleft",
+		x = PORTRAIT_SIZE / 2, y = PORTRAIT_SIZE / 2,
+		w = PORTRAIT_SIZE, h = PORTRAIT_SIZE,
+	});
 end
