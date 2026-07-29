@@ -234,6 +234,15 @@ a skip-list of uppercase roll tags (`[ATTACK`, `[SAVE`, ...) suppresses the
 flattened roll texts, mixed-case apply texts (`[Attack ...]`) are dropped or
 converted to banners, and everything else becomes speech/banner cards.
 
+### 2026-07-29 — Layout spacers must not be `<invisible />`
+A control marked `<invisible />` stops taking part in the anchor layout, so
+sizing it from Lua moves nothing — which is why two attempts at vertically
+centring the result contents appeared to do nothing at all. Spacers must be
+plain `genericcontrol`s with no frame or icon (they then draw nothing but
+still occupy space), exactly like the `sizer` controls that set each card's
+height. `<invisible />` is only for controls whose visibility is genuinely
+toggled, such as the token avatar layer.
+
 ### 2026-07-28 — Card backgrounds are windowclass frames
 Full-window `bg` generic controls anchored to all four edges collapse to zero
 height inside list windows (the window's height derives from its content, so

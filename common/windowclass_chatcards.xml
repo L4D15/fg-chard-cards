@@ -174,14 +174,15 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Invisible spacer that vertically centres the result contents:
-			     its height is computed in Lua from the box's free space. -->
+			<!-- Spacer that vertically centres the result contents: its height
+			     is computed in Lua from the box's free space. Draws nothing
+			     (no frame or icon) but must NOT be <invisible />, or it stops
+			     taking part in the anchor layout — same as the sizers. -->
 			<genericcontrol name="boxpad">
 				<anchored width="1" height="4">
 					<top parent="resultbox" anchor="top" offset="0" />
 					<left parent="resultbox" anchor="left" offset="0" />
 				</anchored>
-				<invisible />
 			</genericcontrol>
 			<!-- Individual die results, as Lua widgets -->
 			<genericcontrol name="diceresults">
