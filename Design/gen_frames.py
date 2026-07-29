@@ -87,8 +87,18 @@ text_icon("cc_portrait_unknown", "?", PARCHMENT, GOLD_DARK, textsize=24)
 
 # ===== Die result glyphs (mimic native chat's black die silhouettes;
 # the rolled number is overlaid as a white text widget) =====
+#
+# Authored at 3x the 22px display size: the card renders them through
+# addBitmapWidget with an explicit w/h, so FG downsamples a detailed
+# source instead of stretching a 22px one. Keeps the same on-screen size
+# while staying sharp under UI scaling / high-DPI displays. Do NOT bake
+# the downscale in here — a single scale at render time is crisper than
+# downscale-then-upscale.
+DIE_DISPLAY = 22
+DIE_SUPERSAMPLE = 3
 
-def die_glyph(name, shape, size=22):
+
+def die_glyph(name, shape, size=DIE_DISPLAY * DIE_SUPERSAMPLE):
     import math
     s = 4
     W = size * s
@@ -103,8 +113,11 @@ def die_glyph(name, shape, size=22):
             pts.append((W / 2 + radius * math.cos(a), cy + radius * math.sin(a)))
         return pts
 
+    k = size / DIE_DISPLAY      # keep proportions at any supersample
     if shape == "square":       # d6
-        d.rounded_rectangle([s, s, W - s - 1, W - s - 1], radius=4 * s, fill=dark)
+        inset = k * s
+        d.rounded_rectangle([inset, inset, W - inset - 1, W - inset - 1],
+                            radius=4 * k * s, fill=dark)
     elif shape == "triangle":   # d4
         d.polygon([(W / 2, 0), (W - 1, W * 0.9), (0, W * 0.9)], fill=dark)
     elif shape == "diamond":    # d8
