@@ -194,6 +194,29 @@ trade-off of subtraction is that an effect which cannot be attributed to a
 named `ATK`/`@ATK` effect — exhaustion, ability-score effects — is absorbed
 into the base rather than listed separately.
 
+### 2026-07-29 — Saves and checks get the attack card's treatment
+Saves, ability checks and skill checks now have dedicated hooks rather than
+falling through to the generic roll card, so they show the same things an attack
+does: an itemized modifier row, and a `DC: 15` line rendered with the same bold
+label as `Target:` when the roll has a target DC (`rRoll.nTarget`), plus a
+Success / Failure outcome measured against it. The ability or skill names the
+base modifier, the way a weapon does on an attack card, so the title is just
+"Saving Throw" / "Ability Check" / "Skill Check".
+
+Hook points: `ActionSave.onSaveResolve` wraps like the attack's resolve hook,
+while checks and skills share `ActionCheck.onRoll`, so both of its result
+handlers are re-registered (as with damage). Effect queries per type: `SAVE`
+for saves, `CHECK` for ability checks, and `CHECK` + `SKILL` for skills — what
+the ruleset itself queries.
+
+One catch: the ruleset's effect filters (`tSaveFilter`, `tCheckFilter`,
+`tSkillFilter`) are **tables**, and only scalars survive the dice throw's
+encode/decode, so they are nil by resolve time. They are rebuilt from the
+string fields that do survive — `sSave`, `sAbility`, `sSkill` — which matters
+because without a filter a conditional effect (a bonus to *dexterity* saves)
+would be counted on every save. One shared `buildRollModBreakdown` now serves
+attacks, saves and checks; each type only supplies its queries.
+
 `ChatCards5E` registers providers for `attack`, `damage` and `roll`: the
 action-type tag (red), `Advantage` (green) / `Disadvantage` (red) — detected
 from the roll flags, falling back to the `g`/`r` die-type prefix

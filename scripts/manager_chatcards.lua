@@ -199,9 +199,11 @@ function getActorName(rActor, sUser)
 	return User.getUsername();
 end
 
--- Every roll type resolves through ActionsManager.resolveAction; the ruleset
--- hook script wraps it and calls this for types without a dedicated card.
-function sendGenericRollCard(rSource, rRoll)
+-- Build and broadcast a roll card. tExtra lets a ruleset's dedicated hook add
+-- the pieces only it knows about — a target-DC line, an itemized modifier row,
+-- a pass/fail outcome, a title of its own — while the common parts (actor,
+-- portrait, dice, total, tags, secrecy) stay here.
+function sendRollCard(rSource, rRoll, tExtra)
 	local rActor = rSource;
 	if not rActor and not Session.IsHost then
 		rActor = ActorManager.getActiveActor();
@@ -209,18 +211,22 @@ function sendGenericRollCard(rSource, rRoll)
 
 	local sName = getActorName(rActor, rRoll.sUser);
 
-	local sTitle = cleanRollText(rRoll.sDesc or "");
+	tExtra = tExtra or {};
+	local sTitle = tExtra.sTitle or cleanRollText(rRoll.sDesc or "");
 	if sTitle == "" then
 		sTitle = "Dice Roll";
 	end
 
-	-- Modifier line, named after the roll source ("Dexterity +3"): generic
-	-- rolls have no itemized effect breakdown, and the dice row no longer
-	-- carries the bonus.
-	local sLine1 = "";
-	local sMod = formatMod(rRoll.nMod);
-	if sMod ~= "" then
-		sLine1 = (sTitle:match(":%s*(.+)$") or "Modifier") .. " " .. sMod;
+	-- Without an itemized breakdown from the hook, fall back to a single
+	-- modifier line named after the roll source ("Dexterity +3") — the dice
+	-- row no longer carries the bonus.
+	local sLine1 = tExtra.sLine1 or "";
+	local sMods = tExtra.sMods or "";
+	if (sMods == "") and (sLine1 == "") then
+		local sMod = formatMod(rRoll.nMod);
+		if sMod ~= "" then
+			sLine1 = (sTitle:match(":%s*(.+)$") or "Modifier") .. " " .. sMod;
+		end
 	end
 
 	local tPortrait = getActorPortrait(rActor);
@@ -232,13 +238,19 @@ function sendGenericRollCard(rSource, rRoll)
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
 		sDice = encodeDiceResults(rRoll.aDice),
 		sLine1 = sLine1,
+		sMods = sMods,
 		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
-		sOutcome = "",
+		sOutcome = tExtra.sOutcome or "",
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
 		sTags = buildTags("roll", { rSource = rSource, rRoll = rRoll, sTitle = sTitle }),
 	}, isRollSecret(rRoll));
+end
+
+-- Types without a dedicated hook (basic tray dice, initiative, ...).
+function sendGenericRollCard(rSource, rRoll)
+	sendRollCard(rSource, rRoll, nil);
 end
 
 -- Player label for a speech card. Chat messages carry no username, so the
