@@ -5,17 +5,29 @@
 --
 
 local _fAttackResolve = nil;
+local _fSaveResolve = nil;
 local _fResolveAction = nil;
 
 -- Roll types with a dedicated card hook; everything else gets a generic
 -- roll card from the resolveAction wrap. Types that roll no dice produce
 -- no card either way.
-local _tDedicatedTypes = { attack = true, damage = true };
+local _tDedicatedTypes = {
+	attack = true, damage = true, save = true, check = true, skill = true,
+};
 
 function onInit()
 	if ActionAttack and ActionAttack.onAttackResolve then
 		_fAttackResolve = ActionAttack.onAttackResolve;
 		ActionAttack.onAttackResolve = onAttackResolve;
+	end
+	if ActionSave and ActionSave.onSaveResolve then
+		_fSaveResolve = ActionSave.onSaveResolve;
+		ActionSave.onSaveResolve = onSaveResolve;
+	end
+	-- Checks and skills share one result handler, re-registered like damage.
+	if ActionCheck and ActionCheck.onRoll then
+		ActionsManager.registerResultHandler("check", onCheckRoll);
+		ActionsManager.registerResultHandler("skill", onCheckRoll);
 	end
 	if ActionDamageD20 and ActionDamageD20.onRoll then
 		-- The original handler reference was captured at ruleset init;
@@ -198,27 +210,108 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 end
 
--- Itemized attack modifiers as encoded segments ("Crossbow, Light +3;Bless
--- +1d4:positive"), which the card joins with a middot and colours per style.
 --
--- Effects are re-queried the same way the ruleset queried them when building
--- the roll. The roll's own bonus is then whatever remains of rRoll.nMod once
--- those itemized modifiers are taken out, so the segments always add up to the
--- total the dice were rolled with. (rRoll.nEffectMod looks like the obvious
--- source for the effect share, but it does not hold the effect total by the
--- time the roll resolves — trusting it made the base too low and left the
--- difference showing as a phantom "Other effects" entry.) The trade-off is
--- that an effect we cannot attribute to a named ATK/@ATK effect — exhaustion,
--- ability-score effects — is absorbed into the base rather than listed.
+--	SAVES, ABILITY CHECKS AND SKILL CHECKS
 --
--- The first segment carries no style: it is the roll's own bonus rather than a
--- modifier on top of it, so the card leaves its value uncoloured.
-function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
-	local tFilter = ActionCore.buildEffectFilter(rRoll);
+
+-- Saving throw. rRoll.nTarget carries the DC when the save has one; the ability
+-- becomes the base modifier's label, the way a weapon does on an attack card.
+function onSaveResolve(rSource, rRoll, rMessage)
+	_fSaveResolve(rSource, rRoll, rMessage);
+
+	local sAbility = rRoll.sSave or rRoll.sAbility or "";
+	ChatCardsManager.sendRollCard(rSource, rRoll, {
+		sTitle = "Saving Throw",
+		sLine1 = formatTargetDC(rRoll),
+		sMods = buildRollModBreakdown(rSource, rRoll, StringManager.capitalize(sAbility),
+			{ { sTag = "SAVE", tFilter = { sAbility } } }),
+		sOutcome = outcomeVsDC(rRoll),
+	});
+end
+
+-- Ability and skill checks. A skill roll takes both the CHECK effects for its
+-- ability and the SKILL effects for the skill itself, which is what the
+-- ruleset queries when building the roll.
+function onCheckRoll(rSource, rTarget, rRoll)
+	ActionCheck.onRoll(rSource, rTarget, rRoll);
+
+	local sAbility = rRoll.sAbility or "";
+	local tQueries = { { sTag = "CHECK", tFilter = { sAbility } } };
+	local sTitle, sLabel;
+	if rRoll.sType == "skill" then
+		sTitle = "Skill Check";
+		local sSkill = rRoll.sSkill or "";
+		-- Display the ruleset's own spelling ("Sleight of Hand"), but query
+		-- effects with the roll's value, which is what the filter matched on.
+		sLabel = getCanonicalSkillName(sSkill);
+		table.insert(tQueries, { sTag = "SKILL", tFilter = { sAbility, sSkill } });
+	else
+		sTitle = "Ability Check";
+		sLabel = StringManager.capitalize(sAbility);
+	end
+
+	ChatCardsManager.sendRollCard(rSource, rRoll, {
+		sTitle = sTitle,
+		sLine1 = formatTargetDC(rRoll),
+		sMods = buildRollModBreakdown(rSource, rRoll, sLabel, tQueries),
+		sOutcome = outcomeVsDC(rRoll),
+	});
+end
+
+-- Skill names reach the card in whatever case the roll carried, often all
+-- lowercase. DataCommon.skilldata is keyed by the ruleset's own localised
+-- spelling ("Animal Handling", "Sleight of Hand"), so match that
+-- case-insensitively rather than capitalising words ourselves, which would give
+-- "Sleight Of Hand". Falls back to per-word capitalisation for anything custom.
+function getCanonicalSkillName(sSkill)
+	if (sSkill or "") == "" then
+		return "";
+	end
+	local sLower = sSkill:lower();
+	for sName, _ in pairs(DataCommon.skilldata or {}) do
+		if sName:lower() == sLower then
+			return sName;
+		end
+	end
+	return StringManager.capitalizeAll(sSkill);
+end
+
+-- "DC: 15", rendered with the same bold label as an attack's "Target:" line.
+function formatTargetDC(rRoll)
+	local nDC = tonumber(rRoll.nTarget) or 0;
+	if nDC <= 0 then
+		return "";
+	end
+	return "DC: " .. nDC;
+end
+
+function outcomeVsDC(rRoll)
+	local nDC = tonumber(rRoll.nTarget) or 0;
+	if nDC <= 0 then
+		return "";
+	end
+	if (rRoll.sDesc or ""):match("%[AUTOFAIL%]") then
+		return "Failure";
+	end
+	local nTotal = rRoll.nTotal or ActionsManager.total(rRoll);
+	return (nTotal >= nDC) and "Success" or "Failure";
+end
+
+-- Itemized modifiers for a save or check, in the same shape as the attack row:
+-- each effect query contributes its own segments, and the roll's own bonus is
+-- whatever remains of rRoll.nMod afterwards.
+--
+-- The ruleset's effect filters (tSaveFilter, tCheckFilter, tSkillFilter) are
+-- tables, so they do not survive the dice throw and cannot be reused here —
+-- they are rebuilt by the callers from the string fields that do survive
+-- (sSave, sAbility, sSkill).
+function buildRollModBreakdown(rSource, rRoll, sSourceLabel, tQueries)
 	local tSegments = {};
 	local nListed = 0;
-	nListed = nListed + addEffectBreakdownItems(tSegments, rSource, "ATK", { rTarget = rTarget, tFilter = tFilter });
-	nListed = nListed + addEffectBreakdownItems(tSegments, rTarget, "@ATK", { rTarget = rSource, tFilter = tFilter });
+	for _, tQuery in ipairs(tQueries or {}) do
+		nListed = nListed + addEffectBreakdownItems(tSegments, tQuery.rActor or rSource,
+			tQuery.sTag, tQuery.tData or { tFilter = tQuery.tFilter });
+	end
 
 	if (sSourceLabel or "") == "" then
 		sSourceLabel = "Base";
@@ -226,8 +319,18 @@ function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
 	table.insert(tSegments, 1, {
 		sText = string.format("%s %+d", sSourceLabel, (rRoll.nMod or 0) - nListed),
 	});
-
 	return ChatCardsManager.encodeTags(tSegments);
+end
+
+-- Attack modifiers: the attacker's ATK effects plus the defender's @ATK
+-- effects, with the weapon or spell naming the roll's own bonus. See
+-- buildRollModBreakdown for how the base is derived and why.
+function buildAttackModBreakdown(rSource, rTarget, rRoll, sSourceLabel)
+	local tFilter = ActionCore.buildEffectFilter(rRoll);
+	return buildRollModBreakdown(rSource, rRoll, sSourceLabel, {
+		{ sTag = "ATK", tData = { rTarget = rTarget, tFilter = tFilter } },
+		{ sTag = "@ATK", rActor = rTarget, tData = { rTarget = rSource, tFilter = tFilter } },
+	});
 end
 
 -- Append "Name +bonus" segments for each active effect with matching
