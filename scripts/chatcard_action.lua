@@ -31,16 +31,7 @@ function setData(t)
 		outcome.setFont("cc_outcome");
 	end
 
-	local sType = t.sCardType or "roll";
-	if sType == "attack" then
-		chip1.setText("Attack", true);
-	elseif sType == "damage" then
-		chip1.setText("Damage", true);
-	else
-		chip1.setText(t.sChip1 or "", true);
-	end
-	chip2.setText(t.sChip2 or "", false);
-	chip3.setText(t.sChip3 or "", false);
+	local bChips = setTags(t.sTags or "");
 
 	local nDiceHeight = setDiceResults(t.sDice or "");
 
@@ -56,8 +47,6 @@ function setData(t)
 	local INSET = 5;
 	local nLine1 = ((t.sLine1 or "") ~= "") and 16 or 0;
 	local nLine2 = ((t.sLine2 or "") ~= "") and 16 or 0;
-	local bChips = (sType == "attack") or (sType == "damage")
-		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
 	-- Name block stacked flush (namebar 16 + subtitle 15 + roll-type 15),
 	-- then 4 + line1, + 2 + line2, + 2 + chips, + 4 bottom pad, keeping the
 	-- body rows at y=55. They cannot start above y=49 anyway: they sit
@@ -111,6 +100,26 @@ function setBodyLine(cLine, sText)
 			wValue.setPosition("topleft", nLabelWidth + math.floor(nValueWidth / 2), 8);
 		end
 	end
+end
+
+-- Fill the pill controls from the card's encoded tag list. Slots are filled
+-- in order (empty ones collapse, and the row is a single line), so a
+-- provider should return its most important tags first; anything past the
+-- last slot is dropped. Returns whether any tag was shown.
+local _tChipControls = nil;
+
+function setTags(sTags)
+	_tChipControls = _tChipControls or { chip1, chip2, chip3, chip4, chip5, chip6 };
+	local tTags = ChatCardsManager.decodeTags(sTags);
+	for i, cChip in ipairs(_tChipControls) do
+		local tTag = tTags[i];
+		if tTag then
+			cChip.setText(tTag.sText, tTag.bAccent);
+		else
+			cChip.setText("", false);
+		end
+	end
+	return #tTags > 0;
 end
 
 -- Known die shapes; anything else (custom dice) falls back to the square

@@ -88,6 +88,60 @@ function handleCardOOB(msgOOB)
 	addCard("chatcard_action", msgOOB);
 end
 
+-- ===== Tags (the pills on action cards) =====
+-- Which tags exist is a ruleset concern: each supported system registers
+-- providers per card type and this manager stays ignorant of their content.
+-- A provider receives the card context and returns a list of
+-- { sText = "Finesse", bAccent = false }; bAccent picks the accent pill
+-- style, plain is the default.
+local _tTagProviders = {};
+
+function registerTagProvider(sCardType, fn)
+	if (sCardType or "") == "" or type(fn) ~= "function" then
+		return;
+	end
+	_tTagProviders[sCardType] = _tTagProviders[sCardType] or {};
+	table.insert(_tTagProviders[sCardType], fn);
+end
+
+-- Runs every provider registered for the card type, in registration order,
+-- and returns the encoded string for the card payload.
+function buildTags(sCardType, tContext)
+	local tTags = {};
+	for _, fn in ipairs(_tTagProviders[sCardType or ""] or {}) do
+		for _, tTag in ipairs(fn(tContext) or {}) do
+			if (type(tTag) == "table") and ((tTag.sText or "") ~= "") then
+				table.insert(tTags, tTag);
+			end
+		end
+	end
+	return encodeTags(tTags);
+end
+
+-- "Attack:a;Finesse;Slashing" — ':a' marks the accent style. ';' and ':'
+-- are separators, so they are stripped from labels.
+function encodeTags(tTags)
+	local t = {};
+	for _, tTag in ipairs(tTags or {}) do
+		local sText = tostring(tTag.sText or ""):gsub("[;:]", " ");
+		if sText ~= "" then
+			table.insert(t, sText .. (tTag.bAccent and ":a" or ""));
+		end
+	end
+	return table.concat(t, ";");
+end
+
+function decodeTags(sTags)
+	local tTags = {};
+	for sEntry in string.gmatch(sTags or "", "[^;]+") do
+		local sText, sFlag = sEntry:match("^([^:]*):?(a?)$");
+		if (sText or "") ~= "" then
+			table.insert(tTags, { sText = sText, bAccent = (sFlag == "a") });
+		end
+	end
+	return tTags;
+end
+
 -- ===== Generic roll cards =====
 
 -- Card display name with fallbacks: actor display name, then the
@@ -171,6 +225,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
+		sTags = buildTags("roll", { rSource = rSource, rRoll = rRoll, sTitle = sTitle }),
 	}, isRollSecret(rRoll));
 end
 

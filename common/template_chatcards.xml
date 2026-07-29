@@ -8,7 +8,7 @@
 			<anchored height="14" />
 			<script>
 				local _wLabel = nil;
-				function setText(sText, bRed)
+				function setText(sText, bAccent)
 					if (sText or "") == "" then
 						setVisible(false);
 						-- collapse so empty chip rows don't inflate the card
@@ -16,7 +16,7 @@
 						setAnchoredWidth(0);
 						return;
 					end
-					setFrame(bRed and "cc_chip_red" or "cc_chip_gold");
+					setFrame(bAccent and "cc_chip_red" or "cc_chip_gold");
 					if not _wLabel then
 						_wLabel = addTextWidget({ font = "cc_chip", text = sText, position = "center" });
 					else

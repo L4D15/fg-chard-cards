@@ -145,6 +145,29 @@ edges — the frame reaches 8px sideways and 6px below its control and the card
 art is inset 5px, so the control spans 13..width-13 with an 11px bottom
 spacer. At those three edges the bubble's own border *is* the card's border.
 
+### 2026-07-29 — Tags are registered by the ruleset, not the manager
+Which pills a card shows is a per-system concern, so `ChatCardsManager` only
+provides the mechanism: `registerTagProvider(sCardType, fn)` collects
+providers per card type, `buildTags(sCardType, tContext)` runs them in
+registration order at card-build time (on the rolling client, where the roll
+data still exists), and the result travels in the payload as one encoded
+string — `"Attack:a;Finesse;Slashing"`, where `:a` selects the accent pill
+style. Nothing in the manager or the card window knows any tag name; adding a
+system, or a plugin extension adding tags to an existing one, means
+registering another provider.
+
+`ChatCards5E` registers providers for `attack` and `damage`: the action-type
+tag (accent), `Critical!`, the damage type, and the weapon's properties —
+those come from the weapon entry on the source's sheet matched by the roll's
+label, since the roll carries no weapon node, with range parentheses
+("Thrown (20/60)") dropped. Card type `roll` also builds tags, so saves and
+checks can be tagged without touching the card layer.
+
+Cards have six pill slots, filled in order on one row; providers should
+return their most important tags first, since anything past the last slot is
+dropped. Wrapping to a second row would need the pills' widths measured and
+positioned from Lua, as the dice glyphs are.
+
 ## Decision log
 
 ### 2026-07-28 — Replace the chat display, don't restyle it

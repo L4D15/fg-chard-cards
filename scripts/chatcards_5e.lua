@@ -26,6 +26,67 @@ function onInit()
 	-- checks, skills, init, ...): runs on the rolling client only.
 	_fResolveAction = ActionsManager.resolveAction;
 	ActionsManager.resolveAction = onResolveAction;
+
+	-- This ruleset's card tags. The manager knows nothing about them; other
+	-- systems (or plugin extensions) register their own the same way.
+	ChatCardsManager.registerTagProvider("attack", getAttackTags);
+	ChatCardsManager.registerTagProvider("damage", getDamageTags);
+end
+
+--
+--	TAGS
+--
+
+-- tContext: { rSource, rTarget, rRoll, sLabel }
+function getAttackTags(t)
+	local tTags = { { sText = "Attack", bAccent = true } };
+	if t.rRoll and t.rRoll.sResult == "crit" then
+		table.insert(tTags, { sText = "Critical!" });
+	end
+	for _, sProp in ipairs(getWeaponProperties(t.rSource, t.sLabel)) do
+		table.insert(tTags, { sText = sProp });
+	end
+	return tTags;
+end
+
+function getDamageTags(t)
+	local tTags = { { sText = "Damage", bAccent = true } };
+	local sDmgType = ((t.rRoll or {}).sDesc or ""):match("%[TYPE: (%a+)");
+	if sDmgType then
+		table.insert(tTags, { sText = StringManager.capitalize(sDmgType) });
+	end
+	for _, sProp in ipairs(getWeaponProperties(t.rSource, t.sLabel)) do
+		table.insert(tTags, { sText = sProp });
+	end
+	return tTags;
+end
+
+-- Weapon properties ("Finesse, Light") live on the weapon entry of the
+-- source's sheet; the roll carries only the weapon's label, so match on
+-- that. Range parentheses ("Thrown (20/60)") are dropped.
+function getWeaponProperties(rSource, sLabel)
+	local tProps = {};
+	if not rSource or ((sLabel or "") == "") then
+		return tProps;
+	end
+	local nodeActor = ActorManager.getCreatureNode(rSource);
+	if not nodeActor then
+		return tProps;
+	end
+	local sLabelLower = sLabel:lower();
+	for _, nodeWeapon in ipairs(DB.getChildList(nodeActor, "weaponlist")) do
+		if DB.getValue(nodeWeapon, "name", ""):lower() == sLabelLower then
+			local sProps = DB.getValue(nodeWeapon, "properties", "");
+			for _, sProp in ipairs(StringManager.splitByPattern(sProps, ",", true)) do
+				sProp = StringManager.trim(sProp:gsub("%s*%(.*%)", ""));
+				if sProp ~= "" then
+					table.insert(tProps, StringManager.capitalize(sProp));
+				end
+			end
+			break;
+		end
+	end
+	return tProps;
 end
 
 function onResolveAction(rSource, rTarget, rRoll)
@@ -68,9 +129,8 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	if rRoll.nDefenseVal then
 		tCard.sFormula = tCard.sFormula .. " vs " .. rRoll.nDefenseVal;
 	end
-	if rRoll.sResult == "crit" then
-		tCard.sChip2 = "Critical!";
-	end
+	tCard.sTags = ChatCardsManager.buildTags("attack",
+		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, bSecret);
 end
 
@@ -100,10 +160,8 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	if rTarget then
 		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
 	end
-	local sDmgType = (rRoll.sDesc or ""):match("%[TYPE: (%a+)");
-	if sDmgType then
-		tCard.sChip2 = StringManager.capitalize(sDmgType);
-	end
+	tCard.sTags = ChatCardsManager.buildTags("damage",
+		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 end
 

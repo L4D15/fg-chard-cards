@@ -239,6 +239,24 @@
 					<left parent="chip2" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
+			<cc_chip name="chip4">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="2" />
+					<left parent="chip3" anchor="right" offset="6" />
+				</anchored>
+			</cc_chip>
+			<cc_chip name="chip5">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="2" />
+					<left parent="chip4" anchor="right" offset="6" />
+				</anchored>
+			</cc_chip>
+			<cc_chip name="chip6">
+				<anchored>
+					<top parent="line2" anchor="bottom" offset="2" />
+					<left parent="chip5" anchor="right" offset="6" />
+				</anchored>
+			</cc_chip>
 
 			<genericcontrol name="sizer">
 				<anchored to="chip1" position="belowleft" height="9" width="1" />
