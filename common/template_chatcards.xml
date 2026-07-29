@@ -14,11 +14,14 @@
 				-- and widgets can be tinted, so one white shape serves every
 				-- style. The caps keep their aspect and only the middle stretches.
 				local HEIGHT = 14;
-				-- Cap art is 33x32, so it is drawn at the same scale
-				-- horizontally as vertically or its curve would distort. Only
-				-- the leading ~6px of it is the curve; the rest is straight
-				-- fill, which is why a cap this wide still looks like the pill.
-				local CAP = math.floor(((HEIGHT * 33) / 32) + 0.5);
+				-- Cap draw width, = round(HEIGHT * 33/32) for the 33x32 cap art:
+				-- it is drawn at the same scale horizontally as vertically or
+				-- its curve would distort. Only the leading ~6px of it is the
+				-- curve; the rest is straight fill, which is why a cap this
+				-- wide still looks like the pill. Recompute this by hand if the
+				-- cap art's aspect changes: control scripts have no `math` at
+				-- load time, only inside functions.
+				local CAP = 14;
 				local PADDING = 6;     -- each side of the label
 
 				-- sPill tints the shape, sLabel the text on top of it.

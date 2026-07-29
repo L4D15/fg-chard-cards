@@ -258,9 +258,14 @@ pixels tint to black, so `solidify_alpha.py` must be run on white shape art
 too — its transparent pixels need to be white, so filtered edges blend toward
 the tint rather than toward black.
 
-Widget API notes, both of which are easy to get wrong:
+Widget API notes, all easy to get wrong:
 `addBitmapWidget` takes a **table** (`{ icon = ..., w = ..., h = ... }`), and
-resizing is **`setSize(w, h)`** — there is no `setBitmapSize`.
+resizing is **`setSize(w, h)`** — there is no `setBitmapSize`. Also, an inline
+control script has **no standard libraries at chunk-load time** — a
+`math.floor` at file scope fails with "attempt to index global 'math'", and
+because the chunk then never finishes, every function it defines is missing
+too (the visible symptom is a cascade of "attempt to call field 'setText'").
+Use literals at file scope and keep library calls inside functions.
 
 ### 2026-07-29 — Transparent pixels must carry colour, not black
 FG filters textures as it draws them, so a soft edge pixel is averaged with
