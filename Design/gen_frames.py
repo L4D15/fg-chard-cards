@@ -14,6 +14,7 @@ PARCHMENT = (250, 244, 226, 255)  # card body
 CREAM = (255, 252, 242, 255)      # inner text panels
 RED = (178, 46, 46, 255)          # attack chip
 WHITE = (255, 255, 255, 255)
+MUTED = (121, 117, 108, 255)      # #79756C: roll-type label + die glyphs
 
 
 def rounded(size, radius, fill, outline=None, width=1, bottom_gap=0):
@@ -113,7 +114,7 @@ def die_glyph(name, shape, size=DIE_DISPLAY * DIE_SUPERSAMPLE):
     W = size * s
     img = Image.new("RGBA", (W, W), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    dark = (42, 42, 42, 255)
+    dark = MUTED
 
     def ngon(n, rot_deg, radius=W / 2 - 1, cy=W / 2):
         pts = []
