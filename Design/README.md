@@ -216,6 +216,22 @@ Header bars, banners, card borders, avatar border, result box, and gold
 chips all use #B49D5D (from the mockup), defined once as `GOLD` in
 `Design/gen_frames.py`.
 
+### 2026-07-29 — OOB targeting: secret to the GM, everything else broadcast
+`Comm.deliverOOBMessage(msg, "")` targets the host only — `""` is the GM, the
+same convention `Comm.deliverChatMessage` uses. Card payloads were being sent
+that way, so **players saw no roll cards at all** (only speech cards and
+system messages, which come from the chat receive path); on a player's own
+roll, not even they saw it. Cards are now sent with no target, which reaches
+every client including the sender.
+
+Separately, hidden-actor rolls produced no card for anyone: the engine sets
+`rRoll.bSecret` when the host rolls for a CT-hidden actor
+(`ActionsManager.performAction`), and the hooks were skipping those outright.
+They now build the card and route it to the GM only, matching how the engine
+delivers the corresponding chat message. `ChatCardsManager.isRollSecret`
+also covers the GM's "reveal rolls off" option, mirroring
+`ActionsManager.createActionMessage`.
+
 ### 2026-07-29 — Avatar corner rounding (4px) needs three mechanisms
 FG offers no single way to round the avatar, because each layer renders
 differently: PC portraits are engine-composited, so the `ccard` portraitset

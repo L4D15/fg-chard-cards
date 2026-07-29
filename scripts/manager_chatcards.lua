@@ -56,12 +56,28 @@ end
 
 -- ===== Structured cards via OOB =====
 
-function sendCardOOB(tFields)
+-- Rolls hidden from players: flagged secret by the engine (a CT-hidden
+-- actor, or the dice tower) or the GM running with "reveal rolls" off.
+-- Mirrors what ActionsManager.createActionMessage does to rMessage.secret.
+function isRollSecret(rRoll)
+	if rRoll and rRoll.bSecret then
+		return true;
+	end
+	return Session.IsHost and OptionsManager.isOption("REVL", "off");
+end
+
+-- Secret cards go to the GM only (target ""); everything else is broadcast
+-- to every client, the sender included (no target).
+function sendCardOOB(tFields, bSecret)
 	local msgOOB = { type = OOB_MSGTYPE_CHATCARD };
 	for k, v in pairs(tFields) do
 		msgOOB[k] = tostring(v);
 	end
-	Comm.deliverOOBMessage(msgOOB, "");
+	if bSecret then
+		Comm.deliverOOBMessage(msgOOB, "");
+	else
+		Comm.deliverOOBMessage(msgOOB);
+	end
 end
 
 function handleCardOOB(msgOOB)
@@ -151,7 +167,7 @@ function sendGenericRollCard(rSource, rRoll)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
-	});
+	}, isRollSecret(rRoll));
 end
 
 -- ===== Generic messages =====

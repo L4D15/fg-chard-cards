@@ -34,9 +34,6 @@ function onResolveAction(rSource, rTarget, rRoll)
 	if _tDedicatedTypes[rRoll.sType or ""] then
 		return;
 	end
-	if rRoll.bSecret then
-		return;
-	end
 	if #(rRoll.aDice or {}) == 0 then
 		return;
 	end
@@ -46,9 +43,7 @@ end
 function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	_fAttackResolve(rSource, rTarget, rRoll, rMessage);
 
-	if rRoll.bSecret or rMessage.secret then
-		return;
-	end
+	local bSecret = ChatCardsManager.isRollSecret(rRoll) or rMessage.secret;
 
 	local sRange, sLabel = parseDesc(rRoll.sDesc, "ATTACK");
 	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
@@ -76,13 +71,13 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	if rRoll.sResult == "crit" then
 		tCard.sChip2 = "Critical!";
 	end
-	ChatCardsManager.sendCardOOB(tCard);
+	ChatCardsManager.sendCardOOB(tCard, bSecret);
 end
 
 function onDamageRoll(rSource, rTarget, rRoll)
 	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
 
-	if rRoll.sType ~= "damage" or rRoll.bSecret then
+	if rRoll.sType ~= "damage" then
 		return;
 	end
 
@@ -109,7 +104,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	if sDmgType then
 		tCard.sChip2 = StringManager.capitalize(sDmgType);
 	end
-	ChatCardsManager.sendCardOOB(tCard);
+	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 end
 
 -- Itemized attack modifier line: "Crossbow, Light +3 · Bless +1d4".
