@@ -83,8 +83,9 @@
 		</sheetdata>
 	</windowclass>
 
-	<!-- Action card: attack / damage / generic roll. Header title, body lines,
-	     keyword chips, and a result box (formula, big total, outcome). -->
+	<!-- Action card: attack / damage / generic roll. Left column carries the
+	     actor, body lines and chips; the result area owns the whole right
+	     side and holds the roll-type label, dice, total and outcome. -->
 	<windowclass name="chatcard_action">
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
@@ -98,54 +99,32 @@
 			<cc_portrait_frame name="portraitframe">
 				<anchored position="insidetopleft" offset="5,5" />
 			</cc_portrait_frame>
-			<!-- Header row: no background frame (the card art carries the
-			     styling); inset by the art's 5px shadow. -->
-			<genericcontrol name="namebar">
-				<anchored height="26">
-					<top offset="5" />
-					<left offset="49" />
-					<right offset="-5" />
-				</anchored>
-			</genericcontrol>
-			<stringcontrol name="name">
-				<anchored to="namebar" position="insidetopleft" offset="10,3" />
-				<font>cc_name</font>
-				<readonly />
-			</stringcontrol>
-			<stringcontrol name="title">
-				<anchored to="namebar" position="insidetopright" offset="10,4" />
-				<font>cc_headertitle</font>
-				<readonly />
-			</stringcontrol>
-			<stringcontrol name="subtitle">
-				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
-				<font>cc_subtitle</font>
-				<readonly />
-			</stringcontrol>
 
-			<!-- Result area: hangs from the header's bottom edge, sized to
-			     its content from Lua (dice rows + total + optional
-			     outcome). The card grows if it needs more space. No
-			     background frame — it sits directly on the card. -->
+			<!-- Result area: full inner height of the card's right side.
+			     Declared before the controls that anchor to it. Its height
+			     is computed in Lua, since bottom anchors do not resolve
+			     inside list windows. -->
 			<genericcontrol name="resultbox">
-				<anchored width="110" height="64">
-					<top parent="namebar" anchor="bottom" offset="0" />
+				<anchored width="110" height="84">
+					<top offset="5" />
 					<right offset="-5" />
 				</anchored>
 			</genericcontrol>
-			<!-- Invisible pad that vertically centers the box contents:
-			     its height is set from Lua to half the box's free space -->
-			<genericcontrol name="boxpad">
-				<anchored width="1" height="4">
-					<top parent="resultbox" anchor="top" offset="0" />
+			<!-- Roll type ("Melee Attack", "Check: Dexterity"), centered -->
+			<stringcontrol name="title">
+				<anchored height="18">
+					<top parent="resultbox" anchor="top" offset="2" />
 					<left parent="resultbox" anchor="left" offset="0" />
+					<right parent="resultbox" anchor="right" offset="0" />
 				</anchored>
-				<invisible />
-			</genericcontrol>
+				<font>cc_headertitle</font>
+				<center />
+				<readonly />
+			</stringcontrol>
 			<!-- Individual die results + trailing modifier, as Lua widgets -->
 			<genericcontrol name="diceresults">
 				<anchored height="0">
-					<top parent="boxpad" anchor="bottom" offset="0" />
+					<top parent="title" anchor="bottom" offset="2" />
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>
@@ -168,6 +147,27 @@
 				</anchored>
 				<font>cc_success</font>
 				<center />
+				<readonly />
+			</stringcontrol>
+
+			<!-- Header row: no background frame (the card art carries the
+			     styling); inset by the art's 5px shadow and stopping where
+			     the result area begins. -->
+			<genericcontrol name="namebar">
+				<anchored height="26">
+					<top offset="5" />
+					<left offset="49" />
+					<right parent="resultbox" anchor="left" offset="-4" />
+				</anchored>
+			</genericcontrol>
+			<stringcontrol name="name">
+				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<font>cc_name</font>
+				<readonly />
+			</stringcontrol>
+			<stringcontrol name="subtitle">
+				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
+				<font>cc_subtitle</font>
 				<readonly />
 			</stringcontrol>
 

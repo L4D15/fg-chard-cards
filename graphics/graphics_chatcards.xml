@@ -78,11 +78,10 @@
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="17" />
 		<color value="#3B2A12" />
 	</font>
-	<!-- Dark, not white: the header bar has no background frame, so this
-	     sits directly on the card art. -->
+	<!-- Roll-type label inside the result area: muted, sits on the card art -->
 	<font name="cc_headertitle">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
-		<color value="#3B2A12" />
+		<color value="#79756C" />
 	</font>
 	<font name="cc_subtitle">
 		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />

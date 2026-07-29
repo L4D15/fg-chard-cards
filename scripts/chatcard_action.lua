@@ -44,8 +44,9 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "", t.sMod or "");
 
-	-- Box content: dice rows + 30 total + outcome line when there is one.
-	local nBoxContent = 30 + nDiceHeight;
+	-- Result-area content: 2 pad + roll-type label 18 + 2 + dice rows +
+	-- 30 total + outcome line when there is one.
+	local nBoxContent = 2 + 18 + 2 + nDiceHeight + 30;
 	if sOutcome ~= "" then
 		nBoxContent = nBoxContent + 16;
 	end
@@ -61,15 +62,12 @@ function setData(t)
 	-- + 4 bottom padding, all between the two inset borders.
 	local nLeftNeeds = INSET + 46 + 2 + nLine1 + 2 + nLine2 + 2
 		+ (bChips and 14 or 0) + 4 + INSET;
-	-- The box hangs from the namebar's bottom edge (INSET + 26).
-	local nBoxTop = INSET + 26;
-	local nBoxNeeds = nBoxTop + nBoxContent + 4 + INSET;
+	local nBoxNeeds = INSET + nBoxContent + 4 + INSET;
 
-	-- The box bottom always meets the card's inner bottom edge: it stretches
-	-- when the left column is taller, and drives the card height otherwise.
+	-- The result area spans the card's full inner height, so it stretches
+	-- when the left column is taller and drives the card height otherwise.
 	local nCardHeight = math.max(nLeftNeeds, nBoxNeeds);
-	resultbox.setAnchoredHeight(nCardHeight - nBoxTop - INSET);
-	boxpad.setAnchoredHeight(2);
+	resultbox.setAnchoredHeight(nCardHeight - (2 * INSET));
 end
 
 -- Fill a body line ("Target: Elara (AC 13)") with two widgets: the
