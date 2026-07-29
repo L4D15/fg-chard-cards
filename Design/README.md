@@ -68,10 +68,12 @@ Three layers:
 ## Card metrics (art reference)
 
 **Width is variable** — the card list is anchored inside the chat window with
-8px on the left and 24px on the right (scrollbar), so
-`card width = chat panel content width − 32`. The chat window's minimum width
-is 350, so cards run from roughly 300px up to 700px+ on a wide panel; ~490px
-is typical at the default size. Design the horizontal middle to survive that.
+2px on the left and 20px on the right (the scrollbar is 20px wide and anchors
+to the list's right edge, so that side cannot tighten much further), giving
+`card width = chat panel content width − 22`. The card art's own ~5px inset
+sits inside that. The chat window's minimum width is 350, so cards run from
+roughly 310px up to 700px+ on a wide panel; ~500px is typical at the default
+size. Design the horizontal middle to survive that range.
 
 **Heights are deterministic.** A windowclass frame is drawn over the whole
 window rect, margins included, so the frame canvas equals the card height
