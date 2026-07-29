@@ -312,10 +312,21 @@ local _tRollTags = {
 };
 
 -- Apply-result labels whose outcome a card already reports, so their chat
--- message would only repeat it. Damage is handled separately (it becomes a
--- banner), and healing applies are left alone since nothing else reports them.
+-- message would only repeat it.
 local _tRedundantApplies = {
 	Attack = true, Save = true, Concentration = true, ["System Shock"] = true,
+};
+
+-- Applies that report a change to an actor instead: what a card shows is the
+-- roll, while these carry the amount that actually landed after resistances,
+-- caps and the like, so they become a banner in plain words.
+local _tApplyBanners = {
+	Damage = { sVerb = "takes", sUnit = "damage" },
+	Heal = { sVerb = "recovers", sUnit = "hit points" },
+	["Temporary hit points"] = { sVerb = "gains", sUnit = "temporary hit points" },
+	["Fast healing"] = { sVerb = "recovers", sUnit = "hit points" },
+	Regeneration = { sVerb = "recovers", sUnit = "hit points" },
+	Recovery = { sVerb = "recovers", sUnit = "hit points" },
 };
 
 function onReceiveMessage(msg)
@@ -353,8 +364,8 @@ function onReceiveMessage(msg)
 	if sApplyLabel and _tRedundantApplies[sApplyLabel] then
 		return;
 	end
-	if sText:match("^%[Damage[%s#%(%]]") then
-		addDamageApplyBanner(sText);
+	if sApplyLabel and _tApplyBanners[sApplyLabel] then
+		addApplyBanner(sText, _tApplyBanners[sApplyLabel]);
 		return;
 	end
 
@@ -385,9 +396,9 @@ function onReceiveMessage(msg)
 end
 
 -- "[Damage (M)] Rapier [7] -> [Ireena Kolyana] [WOUNDED]" ->
--- "Ireena Kolyana takes 7 damage". GM sees the total; players receive the
--- short form without it, so the amount is optional.
-function addDamageApplyBanner(sText)
+-- "Ireena Kolyana takes 7 damage". The GM's copy carries the amount; the
+-- players' short form does not, so it is optional.
+function addApplyBanner(sText, tPhrase)
 	local sTarget = sText:match("%->%s*%[([^%]]+)%]");
 	if not sTarget then
 		addSystemCard(sText);
@@ -395,9 +406,9 @@ function addDamageApplyBanner(sText)
 	end
 	local nValue = tonumber(sText:match("%[(%-?%d+)%]"));
 	if nValue then
-		addSystemCard(string.format("%s takes %d damage", sTarget, nValue));
+		addSystemCard(string.format("%s %s %d %s", sTarget, tPhrase.sVerb, nValue, tPhrase.sUnit));
 	else
-		addSystemCard(string.format("%s takes damage", sTarget));
+		addSystemCard(string.format("%s %s %s", sTarget, tPhrase.sVerb, tPhrase.sUnit));
 	end
 end
 

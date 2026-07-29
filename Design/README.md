@@ -194,6 +194,23 @@ trade-off of subtraction is that an effect which cannot be attributed to a
 named `ATK`/`@ATK` effect — exhaustion, ability-score effects — is absorbed
 into the base rather than listed separately.
 
+### 2026-07-29 — Healing cards
+`heal` shares the ruleset's damage handler, so heal rolls were already producing
+a card — but a *generic* one, with no target line and no styling of their own.
+They now have a dedicated hook mirroring the damage card: title "Healing" or
+"Temporary HP" (from `rRoll.healtype`), a `Target:` line, the source naming the
+roll the way a weapon does, and a green **positive** pill, since healing is the
+one card type where the accent means something good. Effect tags for the
+itemized route, should it be added later, are `HEAL` and `TEMP` (see
+`ActionCore.setupModRoll`).
+
+Health *apply* messages now become banners in plain words rather than raw
+system cards — "Durin Stonefist recovers 8 hit points", "Elara gains 5
+temporary hit points" — covering Damage, Heal, Temporary hit points, Fast
+healing, Regeneration and Recovery from one table. They are deliberately not
+dropped like attack/save applies: a card shows the *roll*, while these carry
+what actually landed after resistances and caps.
+
 ### 2026-07-29 — Redundant apply messages are dropped
 `ActionCore.applyMessage` posts a second, mixed-case chat message for each
 resolved roll ("[Save] [16] [vs DC 12] [SUCCESS]"). Now that a card reports the

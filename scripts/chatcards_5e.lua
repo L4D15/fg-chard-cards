@@ -12,7 +12,8 @@ local _fResolveAction = nil;
 -- roll card from the resolveAction wrap. Types that roll no dice produce
 -- no card either way.
 local _tDedicatedTypes = {
-	attack = true, damage = true, save = true, check = true, skill = true,
+	attack = true, damage = true, heal = true,
+	save = true, check = true, skill = true,
 };
 
 function onInit()
@@ -33,6 +34,8 @@ function onInit()
 		-- The original handler reference was captured at ruleset init;
 		-- re-registering replaces it with our wrapper.
 		ActionsManager.registerResultHandler("damage", onDamageRoll);
+		-- Healing shares the damage handler in the ruleset.
+		ActionsManager.registerResultHandler("heal", onHealRoll);
 	end
 	-- Single hook point for every other roll type (basic dice, saves,
 	-- checks, skills, init, ...): runs on the rolling client only.
@@ -43,6 +46,7 @@ function onInit()
 	-- systems (or plugin extensions) register their own the same way.
 	ChatCardsManager.registerTagProvider("attack", getAttackTags);
 	ChatCardsManager.registerTagProvider("damage", getDamageTags);
+	ChatCardsManager.registerTagProvider("heal", getHealTags);
 	-- Saves, checks and skills roll with advantage too
 	ChatCardsManager.registerTagProvider("roll", getAdvantageTags);
 end
@@ -78,6 +82,11 @@ function getDamageTags(t)
 		table.insert(tTags, { sText = sProp });
 	end
 	return tTags;
+end
+
+function getHealTags(t)
+	local bTemp = (((t.rRoll or {}).healtype or "") == "temp");
+	return { { sText = bTemp and "Temporary HP" or "Healing", sStyle = "positive" } };
 end
 
 -- Advantage / disadvantage. The roll flags survive to resolve time, and the
@@ -206,6 +215,46 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
 	end
 	tCard.sTags = ChatCardsManager.buildTags("damage",
+		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
+	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
+end
+
+-- Healing and temporary hit points. rRoll.healtype distinguishes the two, and
+-- the source (a spell, a potion) names the roll the way a weapon does on a
+-- damage card.
+function onHealRoll(rSource, rTarget, rRoll)
+	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
+
+	if rRoll.sType ~= "heal" then
+		return;
+	end
+
+	local bTemp = ((rRoll.healtype or "") == "temp");
+	local sLabel = rRoll.sLabel or "";
+	if sLabel == "" then
+		sLabel = ActionHealCore.decodeLabelText(rRoll.sDesc or "") or "";
+	end
+	local sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0);
+
+	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
+	local tCard = {
+		sCardType = "heal",
+		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+		sSub = rRoll.sUser or "Gamemaster",
+		sTitle = bTemp and "Temporary HP" or "Healing",
+		sFormula = sFormula,
+		sDice = ChatCardsManager.encodeDiceResults(rRoll.aDice),
+		sLine2 = StringManager.trim(sLabel .. " " .. sFormula),
+		sTotal = tostring(rRoll.nTotal or ActionsManager.total(rRoll)),
+		sOutcome = bTemp and "Temp HP" or "Healing",
+		sIconAsset = tPortrait.sIconAsset,
+		sTokenAsset = tPortrait.sTokenAsset,
+		sIsGM = (not rSource and Session.IsHost) and "1" or "",
+	};
+	if rTarget then
+		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
+	end
+	tCard.sTags = ChatCardsManager.buildTags("heal",
 		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 end
