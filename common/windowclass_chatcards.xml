@@ -114,26 +114,26 @@
 			<!-- Name block: actor name, player name tight beneath it, then
 			     the roll type. No background frame — the card art styles it. -->
 			<genericcontrol name="namebar">
-				<anchored height="21">
+				<anchored height="20">
 					<top offset="5" />
 					<left offset="49" />
 					<right parent="resultbox" anchor="left" offset="-4" />
 				</anchored>
 			</genericcontrol>
 			<stringcontrol name="name">
-				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<anchored to="namebar" position="insidetopleft" offset="10,2" />
 				<font>cc_name</font>
 				<readonly />
 			</stringcontrol>
 			<stringcontrol name="subtitle">
-				<anchored to="namebar" position="belowleft" offset="10,0" height="16" />
+				<anchored to="namebar" position="belowleft" offset="10,0" height="15" />
 				<font>cc_subtitle</font>
 				<readonly />
 			</stringcontrol>
 			<!-- Roll type ("Melee Attack", "Check: Dexterity") -->
 			<stringcontrol name="title">
-				<anchored height="18">
-					<top parent="subtitle" anchor="bottom" offset="2" />
+				<anchored height="15">
+					<top parent="subtitle" anchor="bottom" offset="0" />
 					<left parent="namebar" anchor="left" offset="10" />
 					<right parent="resultbox" anchor="left" offset="-4" />
 				</anchored>
@@ -174,7 +174,7 @@
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
 				<anchored height="16">
-					<top parent="title" anchor="bottom" offset="2" />
+					<top parent="title" anchor="bottom" offset="4" />
 					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>

@@ -58,9 +58,9 @@ function setData(t)
 	local nLine2 = ((t.sLine2 or "") ~= "") and 16 or 0;
 	local bChips = (sType == "attack") or (sType == "damage")
 		or ((t.sChip1 or "") ~= "") or ((t.sChip2 or "") ~= "") or ((t.sChip3 or "") ~= "");
-	-- namebar 21 + subtitle 16, + 2 + roll-type 18, + 2 + line1,
-	-- + 2 + line2, + 2 + chips, + 4 bottom padding, between the insets.
-	local nLeftNeeds = INSET + 21 + 16 + 2 + 18 + 2 + nLine1 + 2 + nLine2 + 2
+	-- Name block stacked flush: namebar 20 + subtitle 15 + roll-type 15,
+	-- then 4 + line1, + 2 + line2, + 2 + chips, + 4 bottom padding.
+	local nLeftNeeds = INSET + 20 + 15 + 15 + 4 + nLine1 + 2 + nLine2 + 2
 		+ (bChips and 14 or 0) + 4 + INSET;
 	local nBoxNeeds = INSET + nBoxContent + 4 + INSET;
 
