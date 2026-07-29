@@ -123,15 +123,15 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Result box: hangs from the header's bottom edge, sized to
+			<!-- Result area: hangs from the header's bottom edge, sized to
 			     its content from Lua (dice rows + total + optional
-			     outcome). The card grows if the box needs more space. -->
+			     outcome). The card grows if it needs more space. No
+			     background frame — it sits directly on the card. -->
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="64">
 					<top parent="namebar" anchor="bottom" offset="0" />
 					<right offset="0" />
 				</anchored>
-				<frame name="cc_resultbox" />
 			</genericcontrol>
 			<!-- Invisible pad that vertically centers the box contents:
 			     its height is set from Lua to half the box's free space -->
