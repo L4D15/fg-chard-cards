@@ -216,6 +216,20 @@ Header bars, banners, card borders, avatar border, result box, and gold
 chips all use #B49D5D (from the mockup), defined once as `GOLD` in
 `Design/gen_frames.py`.
 
+### 2026-07-29 — Speech cards: speaker from the identity list, portrait from the actor
+Chat messages carry no username, and record ownership alone is not enough (a
+player given control of a combatant is granted it on the CT entry, not the
+creature record, and `ActorManager.getOwner` reads the creature node). The
+player label is therefore resolved from the engine identity list — match
+`msg.sender` against `User.getIdentityLabel`, then `User.getIdentityOwner` —
+the same mapping `ChatManager.searchForIdentity` uses; CT then record
+ownership are fallbacks, and "Gamemaster" is the last resort.
+
+The portrait is likewise resolved from `msg.sActorNode` via
+`getActorPortrait`, so speech cards follow the roll cards' priority
+(picture → token → "?"). The message's own chat asset uses the engine's
+order (token first) and is only a fallback.
+
 ### 2026-07-29 — OOB targeting: secret to the GM, everything else broadcast
 `Comm.deliverOOBMessage(msg, "")` targets the host only — `""` is the GM, the
 same convention `Comm.deliverChatMessage` uses. Card payloads were being sent

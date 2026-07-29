@@ -170,13 +170,37 @@ function sendGenericRollCard(rSource, rRoll)
 	}, isRollSecret(rRoll));
 end
 
--- Player label for a speech card: the username owning the speaking
--- character, or "Gamemaster" for the GM's own voices (NPC identities, the
--- GM identity, and unowned characters). Chat messages carry the speaking
--- actor as msg.sActorNode but no username of their own.
+-- Player label for a speech card. Chat messages carry no username, so the
+-- speaker is resolved from the engine's identity list: the sender label is
+-- an identity label, and identities know their owning user (the same
+-- mapping ChatManager.searchForIdentity uses for whisper autocomplete).
+-- This is what catches a player speaking as an NPC they have been given.
+-- Falls back to record ownership (the CT entry first, since control of a
+-- combatant is granted there rather than on the creature record), then to
+-- "Gamemaster" for the GM's own voices.
 function getSpeakerUser(msg)
+	local sSender = msg.sender or "";
+	if sSender ~= "" then
+		for _, sIdentity in ipairs(User.getAllActiveIdentities() or {}) do
+			if User.getIdentityLabel(sIdentity) == sSender then
+				local sOwner = User.getIdentityOwner(sIdentity);
+				if (sOwner or "") ~= "" then
+					return sOwner;
+				end
+				break;
+			end
+		end
+	end
+
 	local rActor = ActorManager.resolveActor(msg.sActorNode);
 	if rActor then
+		local nodeCT = ActorManager.getCTNode(rActor);
+		if nodeCT then
+			local sOwner = DB.getOwner(nodeCT);
+			if (sOwner or "") ~= "" then
+				return sOwner;
+			end
+		end
 		local sOwner = ActorManager.getOwner(rActor);
 		if (sOwner or "") ~= "" then
 			return sOwner;
@@ -364,10 +388,20 @@ function getActorPortrait(rActor)
 	return t;
 end
 
--- Resolve portrait fields from a received chat message: prefer the message's
--- own asset (what native chat would draw), fall back to a CT/NPC-record
--- lookup by sender name.
+-- Resolve portrait fields from a received chat message. Resolving from the
+-- speaking actor first keeps speech cards on the same priority as roll
+-- cards (picture -> token -> "?"); the message's own asset uses the
+-- engine's chat order (token first), so it is only a fallback, together
+-- with a CT/NPC-record lookup by sender name.
 function getMessagePortrait(msg)
+	local rActor = ActorManager.resolveActor(msg.sActorNode);
+	if rActor then
+		local tActorPortrait = getActorPortrait(rActor);
+		if (tActorPortrait.sIconAsset ~= "") or (tActorPortrait.sTokenAsset ~= "") then
+			return tActorPortrait;
+		end
+	end
+
 	local tAsset = msg.assets and msg.assets[1];
 	if type(tAsset) ~= "table" or ((tAsset.name or "") == "") then
 		tAsset = ChatIdentityManager.getAssetByName(msg.sender or "");
