@@ -388,13 +388,35 @@ function getActorPortrait(rActor)
 	return t;
 end
 
+-- Find the actor a chat message came from. msg.sActorNode does not survive
+-- network delivery (same as msg.dice), so on the receive side the sender
+-- label is matched against the combat tracker first, then the NPC and
+-- character records — the strategy ChatIdentityManager.getAssetByName uses.
+function findActorBySenderName(sName)
+	if (sName or "") == "" then
+		return nil;
+	end
+	for _, nodeCT in pairs(CombatManager.getCombatantNodes()) do
+		if DB.getValue(nodeCT, "name", "") == sName then
+			return ActorManager.resolveActor(nodeCT);
+		end
+	end
+	for _, sRecordType in ipairs({ "npc", "charsheet" }) do
+		local nodeRecord = RecordManager.findRecordByString(sRecordType, "name", sName);
+		if nodeRecord then
+			return ActorManager.resolveActor(nodeRecord);
+		end
+	end
+	return nil;
+end
+
 -- Resolve portrait fields from a received chat message. Resolving from the
 -- speaking actor first keeps speech cards on the same priority as roll
 -- cards (picture -> token -> "?"); the message's own asset uses the
--- engine's chat order (token first), so it is only a fallback, together
--- with a CT/NPC-record lookup by sender name.
+-- engine's chat order (token first), so it is only a fallback.
 function getMessagePortrait(msg)
-	local rActor = ActorManager.resolveActor(msg.sActorNode);
+	local rActor = ActorManager.resolveActor(msg.sActorNode)
+		or findActorBySenderName(msg.sender);
 	if rActor then
 		local tActorPortrait = getActorPortrait(rActor);
 		if (tActorPortrait.sIconAsset ~= "") or (tActorPortrait.sTokenAsset ~= "") then

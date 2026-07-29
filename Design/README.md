@@ -225,10 +225,12 @@ player label is therefore resolved from the engine identity list — match
 the same mapping `ChatManager.searchForIdentity` uses; CT then record
 ownership are fallbacks, and "Gamemaster" is the last resort.
 
-The portrait is likewise resolved from `msg.sActorNode` via
-`getActorPortrait`, so speech cards follow the roll cards' priority
-(picture → token → "?"). The message's own chat asset uses the engine's
-order (token first) and is only a fallback.
+The portrait is likewise resolved through `getActorPortrait` so speech cards
+follow the roll cards' priority (picture → token → "?") rather than the
+engine chat asset's token-first order. `msg.sActorNode` does not survive
+network delivery either (same as `msg.dice`), so the receive side finds the
+actor by matching the sender label against the combat tracker, then the NPC
+and character records.
 
 ### 2026-07-29 — OOB targeting: secret to the GM, everything else broadcast
 `Comm.deliverOOBMessage(msg, "")` targets the host only — `""` is the GM, the
