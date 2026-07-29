@@ -11,6 +11,7 @@ FONT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/fonts/NotoS
 GOLD = (180, 157, 93, 255)
 GOLD_DARK = (180, 157, 93, 255)
 PARCHMENT = (250, 244, 226, 255)  # card body
+CARD_FILL = (240, 232, 211, 255)  # #F0E8D3, the card art's fill
 CREAM = (255, 252, 242, 255)      # inner text panels
 RED = (178, 46, 46, 255)          # attack chip
 WHITE = (255, 255, 255, 255)
@@ -175,9 +176,10 @@ print("cc_portrait_mask")
 
 # Corner cover drawn on TOP of the avatar layers: FG cannot mask a token
 # control, so the rounding for NPC token art comes from covering the square
-# corners with the frame colour. Opaque outside a rounded window; matches
-# the portrait frame's border so the two read as one rounded frame.
-cover = Image.new("RGBA", (PORTRAIT_SRC * 4, PORTRAIT_SRC * 4), GOLD)
+# corners. Opaque outside a rounded window, in the card art's fill colour so
+# the covered corners blend into the card (the avatar has no border now).
+# Re-sample CARD_FILL if the card background art changes.
+cover = Image.new("RGBA", (PORTRAIT_SRC * 4, PORTRAIT_SRC * 4), CARD_FILL)
 ImageDraw.Draw(cover).rounded_rectangle(
     [0, 0, PORTRAIT_SRC * 4 - 1, PORTRAIT_SRC * 4 - 1],
     radius=PORTRAIT_RADIUS_SRC * 4, fill=(0, 0, 0, 0))

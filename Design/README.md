@@ -100,7 +100,7 @@ content is inset 5px from the window edge, matching the art's shadow border —
 so the usable interior is `height − 10` tall and `width − 10` wide.
 
 **Fixed-size pieces** (design these 1:1, no stretching):
-portrait frame 44x44 (avatar layers 40x40 at +2,+2, corners rounded 4px) · header bar 26px tall,
+avatar 40x40 at +5+2,+5+2 with 4px rounded corners (no border graphic) · header bar 26px tall,
 `card width − 44` wide · tag pills 14px tall, `label + 12px` wide ·
 result area 110px wide, spanning the card's full inner height (dice, total and
 outcome top-aligned inside it; the roll-type label lives in the left column
@@ -223,9 +223,10 @@ cannot be masked at all. For that last case a `cc_portrait_cover` icon —
 opaque in the frame colour outside a 4px-radius window — is drawn on top of
 the avatar (as a widget on the frame control, which is declared after both
 avatar layers) so the square corners are covered. It is drawn for every
-portrait type so all three look identical. Consequence: the covered corners
-take the *frame* colour, so `cc_portraitframe.png` wants a matching 4px
-radius on its outer edge for the whole portrait to read as rounded.
+portrait type so all three look identical. The avatar's border graphic was
+then dropped, so the cover is filled with the card art's colour
+(`CARD_FILL`, #F0E8D3) to blend the corners into the card — re-sample that
+constant if the card background art changes.
 
 ### 2026-07-29 — Asset resolution: what sharpening is possible where
 FG has no @2x/DPI mechanism (no scale attribute exists on `framedef` or

@@ -52,10 +52,12 @@
 		</genericcontrol>
 	</template>
 
+	<!-- Top avatar layer: no border graphic any more, but still the host for
+	     the corner-cover widget that rounds the avatar (see
+	     ChatCardsManager.setCardPortrait). -->
 	<template name="cc_portrait_frame">
 		<genericcontrol>
 			<anchored width="44" height="44" />
-			<frame name="cc_portraitframe" />
 		</genericcontrol>
 	</template>
 </root>
