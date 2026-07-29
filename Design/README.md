@@ -234,6 +234,21 @@ a skip-list of uppercase roll tags (`[ATTACK`, `[SAVE`, ...) suppresses the
 flattened roll texts, mixed-case apply texts (`[Attack ...]`) are dropped or
 converted to banners, and everything else becomes speech/banner cards.
 
+### 2026-07-29 — Transparent pixels must carry colour, not black
+FG filters textures as it draws them, so a soft edge pixel is averaged with
+its transparent neighbours' *colour* as well as their alpha. Image editors
+leave transparent pixels black, which ringed light art with a dark halo —
+clearly visible around the neutral tag pill, whose fill is barely darker than
+the card. Every asset had it; it simply did not show on dark art like the die
+glyphs.
+
+`Design/solidify_alpha.py` bleeds the nearest visible colour outwards into the
+transparent pixels and leaves every alpha untouched, so appearance is
+unchanged but there is no black left to average in. It is idempotent, runs
+over all frames and icons by default, and `gen_frames.py` calls it on its own
+output. **Run it after re-exporting art from an image editor**, or the fringe
+comes back with the export.
+
 ### 2026-07-29 — Layout spacers must not be `<invisible />`
 A control marked `<invisible />` stops taking part in the anchor layout, so
 sizing it from Lua moves nothing — which is why two attempts at vertically

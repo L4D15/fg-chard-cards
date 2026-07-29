@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Generate placeholder 9-slice frame PNGs for the ChatCards extension."""
+import os
+import sys
+
 from PIL import Image, ImageDraw, ImageFont
 
 OUT = "/home/ladis/.smiteworks/fgdata/extensions/ChatCards/graphics/frames"
@@ -189,3 +192,13 @@ ImageDraw.Draw(cover).rounded_rectangle(
 cover.resize((PORTRAIT_SRC, PORTRAIT_SRC), Image.LANCZOS).save(
     f"{ICONS}/cc_portrait_cover.png")
 print("cc_portrait_cover")
+
+
+# Freshly drawn art has black transparent pixels, which FG's texture filtering
+# bleeds into soft edges as a dark fringe. Clean every asset (idempotent, and
+# it leaves alpha untouched) — see Design/solidify_alpha.py.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import solidify_alpha  # noqa: E402
+
+print()
+solidify_alpha.main([])
