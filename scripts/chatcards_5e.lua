@@ -95,7 +95,8 @@ end
 
 -- Weapon properties ("Finesse, Light") live on the weapon entry of the
 -- source's sheet; the roll carries only the weapon's label, so match on
--- that. Range parentheses ("Thrown (20/60)") are dropped.
+-- that. Range parentheses ("Thrown (20/60)") are dropped, and placeholders
+-- are skipped: the field holds "-" when a weapon has no properties.
 function getWeaponProperties(rSource, sLabel)
 	local tProps = {};
 	if not rSource or ((sLabel or "") == "") then
@@ -111,7 +112,7 @@ function getWeaponProperties(rSource, sLabel)
 			local sProps = DB.getValue(nodeWeapon, "properties", "");
 			for _, sProp in ipairs(StringManager.splitByPattern(sProps, ",", true)) do
 				sProp = StringManager.trim(sProp:gsub("%s*%(.*%)", ""));
-				if sProp ~= "" then
+				if isRealProperty(sProp) then
 					table.insert(tProps, StringManager.capitalize(sProp));
 				end
 			end
@@ -263,6 +264,20 @@ function addEffectBreakdownItems(tParts, rActor, sTag, tData)
 		end
 	end
 	return nListedMod;
+end
+
+-- Placeholders used for "no properties": a bare dash (any kind), or an
+-- explicit none. Anything without a letter or digit is not a property.
+local _tPropertyPlaceholders = { ["none"] = true, ["n/a"] = true, ["na"] = true };
+
+function isRealProperty(sProp)
+	if (sProp or "") == "" then
+		return false;
+	end
+	if not sProp:match("%w") then
+		return false;
+	end
+	return not _tPropertyPlaceholders[sProp:lower()];
 end
 
 -- "[ATTACK (M)] Shortsword [EXTRA TAG]" -> "M", "Shortsword"
