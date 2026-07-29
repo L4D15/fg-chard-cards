@@ -84,12 +84,12 @@ spacing is a transparent gutter baked into the bottom of its bitmap.
 | card | height / frame canvas |
 |---|---|
 | banner (Turn / takes N damage) | 34px content, 42px canvas |
-| plain roll / save / check | 90px |
-| damage (target, chips, outcome) | 106px |
-| attack (target + modifiers, chips, outcome) | 112px |
+| plain roll / save / check (modifier line) | 93px |
+| damage (target + weapon line, chips, outcome) | 123px |
+| attack (target + modifiers, chips, outcome) | 123px |
 | speech, one line of text (+19px per extra line) | 105px |
-| damage 4d6 → 2 dice rows | 130px |
-| fireball 8d6 → 3 dice rows | 154px |
+| damage 4d6 → 2 dice rows | 123px |
+| fireball 8d6 → 3 dice rows | 147px |
 
 Each extra dice row adds 24px (22px glyph + 2px gap, 4 per row). All card
 content is inset 5px from the window edge, matching the art's shadow border —
@@ -98,8 +98,9 @@ so the usable interior is `height − 10` tall and `width − 10` wide.
 **Fixed-size pieces** (design these 1:1, no stretching):
 portrait frame 44x44 (avatar layers 40x40 at +2,+2) · header bar 26px tall,
 `card width − 44` wide · tag pills 14px tall, `label + 12px` wide ·
-result area 110px wide, spanning the card's full inner height (its roll-type
-label, dice, total and outcome are top-aligned inside it).
+result area 110px wide, spanning the card's full inner height (dice, total and
+outcome top-aligned inside it; the roll-type label lives in the left column
+under the actor and player names).
 
 **Authoring rule:** stretching softens, compression stays sharp — so author
 for the *largest* card you expect and let smaller ones compress. `cc_card` is

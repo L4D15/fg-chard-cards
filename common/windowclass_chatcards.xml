@@ -84,8 +84,9 @@
 	</windowclass>
 
 	<!-- Action card: attack / damage / generic roll. Left column carries the
-	     actor, body lines and chips; the result area owns the whole right
-	     side and holds the roll-type label, dice, total and outcome. -->
+	     actor name, player name, roll type, body lines and chips; the result
+	     area owns the right side with the dice, total and outcome.
+	     Controls are declared so that every anchor points at an earlier one. -->
 	<windowclass name="chatcard_action">
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_action.lua" />
@@ -100,31 +101,50 @@
 				<anchored position="insidetopleft" offset="5,5" />
 			</cc_portrait_frame>
 
-			<!-- Result area: full inner height of the card's right side.
-			     Declared before the controls that anchor to it. Its height
-			     is computed in Lua, since bottom anchors do not resolve
-			     inside list windows. -->
+			<!-- Result area: full inner height of the card's right side. Its
+			     height is computed in Lua, since bottom anchors do not
+			     resolve inside list windows. -->
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="84">
 					<top offset="5" />
 					<right offset="-5" />
 				</anchored>
 			</genericcontrol>
-			<!-- Roll type ("Melee Attack", "Check: Dexterity"), centered -->
-			<stringcontrol name="title">
-				<anchored height="18">
-					<top parent="resultbox" anchor="top" offset="2" />
-					<left parent="resultbox" anchor="left" offset="0" />
-					<right parent="resultbox" anchor="right" offset="0" />
+
+			<!-- Name block: actor name, player name tight beneath it, then
+			     the roll type. No background frame — the card art styles it. -->
+			<genericcontrol name="namebar">
+				<anchored height="21">
+					<top offset="5" />
+					<left offset="49" />
+					<right parent="resultbox" anchor="left" offset="-4" />
 				</anchored>
-				<font>cc_headertitle</font>
-				<center />
+			</genericcontrol>
+			<stringcontrol name="name">
+				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<font>cc_name</font>
 				<readonly />
 			</stringcontrol>
-			<!-- Individual die results + trailing modifier, as Lua widgets -->
+			<stringcontrol name="subtitle">
+				<anchored to="namebar" position="belowleft" offset="10,0" height="16" />
+				<font>cc_subtitle</font>
+				<readonly />
+			</stringcontrol>
+			<!-- Roll type ("Melee Attack", "Check: Dexterity") -->
+			<stringcontrol name="title">
+				<anchored height="18">
+					<top parent="subtitle" anchor="bottom" offset="2" />
+					<left parent="namebar" anchor="left" offset="10" />
+					<right parent="resultbox" anchor="left" offset="-4" />
+				</anchored>
+				<font>cc_headertitle</font>
+				<readonly />
+			</stringcontrol>
+
+			<!-- Individual die results, as Lua widgets -->
 			<genericcontrol name="diceresults">
 				<anchored height="0">
-					<top parent="title" anchor="bottom" offset="2" />
+					<top parent="resultbox" anchor="top" offset="2" />
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>
@@ -150,32 +170,11 @@
 				<readonly />
 			</stringcontrol>
 
-			<!-- Header row: no background frame (the card art carries the
-			     styling); inset by the art's 5px shadow and stopping where
-			     the result area begins. -->
-			<genericcontrol name="namebar">
-				<anchored height="26">
-					<top offset="5" />
-					<left offset="49" />
-					<right parent="resultbox" anchor="left" offset="-4" />
-				</anchored>
-			</genericcontrol>
-			<stringcontrol name="name">
-				<anchored to="namebar" position="insidetopleft" offset="10,3" />
-				<font>cc_name</font>
-				<readonly />
-			</stringcontrol>
-			<stringcontrol name="subtitle">
-				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
-				<font>cc_subtitle</font>
-				<readonly />
-			</stringcontrol>
-
 			<!-- Body lines, left of the result box; filled from Lua with a
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
 				<anchored height="16">
-					<top parent="subtitle" anchor="bottom" offset="2" />
+					<top parent="title" anchor="bottom" offset="2" />
 					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
