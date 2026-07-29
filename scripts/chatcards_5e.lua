@@ -41,7 +41,7 @@ end
 
 -- tContext: { rSource, rTarget, rRoll, sLabel }
 function getAttackTags(t)
-	local tTags = { { sText = "Attack", sStyle = "red" } };
+	local tTags = { { sText = "Attack", sStyle = "negative" } };
 	if t.rRoll and t.rRoll.sResult == "crit" then
 		table.insert(tTags, { sText = "Critical!" });
 	end
@@ -57,7 +57,7 @@ function getAttackTags(t)
 end
 
 function getDamageTags(t)
-	local tTags = { { sText = "Damage", sStyle = "red" } };
+	local tTags = { { sText = "Damage", sStyle = "negative" } };
 	local sDmgType = ((t.rRoll or {}).sDesc or ""):match("%[TYPE: (%a+)");
 	if sDmgType then
 		table.insert(tTags, { sText = StringManager.capitalize(sDmgType) });
@@ -86,9 +86,9 @@ function getAdvantageTags(t)
 		end
 	end
 	if bADV and not bDIS then
-		return { { sText = "Advantage", sStyle = "green" } };
+		return { { sText = "Advantage", sStyle = "positive" } };
 	elseif bDIS and not bADV then
-		return { { sText = "Disadvantage", sStyle = "red" } };
+		return { { sText = "Disadvantage", sStyle = "negative" } };
 	end
 	return {};
 end

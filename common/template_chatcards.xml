@@ -7,59 +7,18 @@
 		<genericcontrol>
 			<anchored height="14" />
 			<script>
-				-- The pill is built from three tinted bitmap widgets rather than
-				-- a 9-slice frame: widgets take an explicit draw size, so the art
-				-- can be authored at 3x and downsampled (frames draw their border
-				-- bands 1:1, so a bigger bitmap there just means a bigger pill),
-				-- and widgets can be tinted, so one white shape serves every
-				-- style. The caps keep their aspect and only the middle stretches.
-				local HEIGHT = 14;
-				local PADDING = 6;     -- each side of the label
-				local CAP_ART = "graphics/frames/cc_tag_left.png";
-				local CAP_FALLBACK = 7;
-
-				-- Caps are drawn at the same scale horizontally as vertically,
-				-- or their curve distorts, so the draw width follows the art's
-				-- own aspect: measured once at runtime, so re-exporting the art
-				-- at a different aspect needs no code change. (No library calls
-				-- at file scope here — a control script has no `math` until its
-				-- functions run.)
-				local _nCap = nil;
-				local function getCapWidth()
-					if _nCap then
-						return _nCap;
-					end
-					local nW, nH;
-					if Interface and Interface.getAssetSize then
-						nW, nH = Interface.getAssetSize(CAP_ART);
-					end
-					nW, nH = tonumber(nW) or 0, tonumber(nH) or 0;
-					if (nW > 0) and (nH > 0) then
-						_nCap = math.floor(((HEIGHT * nW) / nH) + 0.5);
-					else
-						_nCap = CAP_FALLBACK;
-					end
-					_nCap = math.max(_nCap, 2);
-					return _nCap;
-				end
-
-				-- sPill tints the shape, sLabel the text on top of it.
+				-- Pill styles, named for what they mean rather than their
+				-- colour, so a ruleset asks for "positive" and the art decides
+				-- how that looks. The label uses one font throughout and takes
+				-- its colour from the style, since the neutral art is light
+				-- while the other two are dark.
 				local _tStyles = {
-					red = { sPill = "FFB22E2E", sLabel = "FFFFFFFF" },
-					green = { sPill = "FF55A000", sLabel = "FFFFFFFF" },
-					neutral = { sPill = "FFD8D2BD", sLabel = "FF1A1A1A" },
+					negative = { sFrame = "cc_tag_negative", sColor = "FFFFFFFF" },
+					positive = { sFrame = "cc_tag_positive", sColor = "FFFFFFFF" },
+					neutral = { sFrame = "cc_tag_neutral", sColor = "FF1A1A1A" },
 				};
-
+				local _wLabel = nil;
 				function setText(sText, sStyle)
-					-- Widgets draw in creation order and cannot be reordered, so
-					-- the pill pieces have to be created before the label. Their
-					-- width depends on the label's measured width, and a bitmap
-					-- widget's draw size only reliably takes effect at creation
-					-- (setSize left them all cap-width) — so measure with a
-					-- throwaway label, drop it, then build everything in order.
-					for _, sWidget in ipairs({ "pill_l", "pill_m", "pill_r", "pill_label" }) do
-						deleteWidget(sWidget);
-					end
 					if (sText or "") == "" then
 						setVisible(false);
 						-- collapse so empty chip rows don't inflate the card
@@ -68,39 +27,16 @@
 						return;
 					end
 					local tStyle = _tStyles[sStyle or ""] or _tStyles["neutral"];
-
-					local wMeasure = addTextWidget({ name = "pill_measure", font = "cc_chip", text = sText, position = "center" });
-					local nText = (wMeasure and wMeasure.getSize()) or 24;
-					deleteWidget("pill_measure");
-
-					local nCap = getCapWidth();
-					local nWidth = math.max(nText + (PADDING * 2), (nCap * 2) + 2);
-					local nMiddle = nWidth - (nCap * 2);
-
-					-- Positions are the widget's centre within the control.
-					local tPieces = {
-						{ sName = "pill_l", sIcon = "cc_tag_left", nW = nCap, nX = nCap / 2 },
-						{ sName = "pill_m", sIcon = "cc_tag_middle", nW = nMiddle, nX = nCap + (nMiddle / 2) },
-						{ sName = "pill_r", sIcon = "cc_tag_right", nW = nCap, nX = nWidth - (nCap / 2) },
-					};
-					for _, tPiece in ipairs(tPieces) do
-						local wPiece = addBitmapWidget({
-							name = tPiece.sName, icon = tPiece.sIcon,
-							position = "topleft", x = tPiece.nX, y = HEIGHT / 2,
-							w = tPiece.nW, h = HEIGHT,
-						});
-						if wPiece then
-							wPiece.setColor(tStyle.sPill);
-						end
+					setFrame(tStyle.sFrame);
+					if not _wLabel then
+						_wLabel = addTextWidget({ font = "cc_chip", text = sText, position = "center" });
+					else
+						_wLabel.setText(sText);
 					end
-
-					local wLabel = addTextWidget({ name = "pill_label", font = "cc_chip", text = sText, position = "center" });
-					if wLabel then
-						wLabel.setColor(tStyle.sLabel);
-					end
-
-					setAnchoredWidth(nWidth);
-					setAnchoredHeight(HEIGHT);
+					_wLabel.setColor(tStyle.sColor);
+					local nTextWidth = _wLabel.getSize();
+					setAnchoredWidth((nTextWidth or 24) + 12);
+					setAnchoredHeight(14);
 					setVisible(true);
 				end
 			</script>

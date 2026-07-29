@@ -234,50 +234,30 @@ a skip-list of uppercase roll tags (`[ATTACK`, `[SAVE`, ...) suppresses the
 flattened roll texts, mixed-case apply texts (`[Attack ...]`) are dropped or
 converted to banners, and everything else becomes speech/banner cards.
 
-### 2026-07-29 — Tag pills: tinted widgets, not a 9-slice frame
-A framedef could not give us either of the two things the pills needed. Its
-border bands draw 1:1, so a higher-resolution pill bitmap renders a *bigger*
-pill rather than a sharper one (only stretched regions gain from resolution —
-the same reason the card's border cannot be sharpened), and there is no colour
-attribute on `<framedef>` nor any frame-tinting call in the rulesets.
+### 2026-07-29 — Tag pills: 9-slice per style, art at the drawn height
+Pills are 9-slice framedefs, one per style: `cc_tag_neutral`,
+`cc_tag_positive`, `cc_tag_negative`, each 28x14 with offsets `7,6,7,6`.
+Styles are named for **meaning rather than colour**, so a ruleset asks for
+`positive` and the art decides how that reads; the `cc_chip` template maps the
+name to a frame and a label colour (the neutral art is light, so its label is
+dark).
 
-Bitmap widgets have both: they take an explicit draw size, so art can be
-authored at 3x and downsampled, and they accept `setColor`, which CoreRPG uses
-to tint control icons. The pill is therefore assembled from three tinted
-widgets — `cc_tag_left`, `cc_tag_middle`, `cc_tag_right` — a single white
-shape reused for every style, with only the middle stretching so the caps keep
-their form. Style colours live in the `cc_chip` template (`sPill` tints the
-shape, `sLabel` the text). The caps are drawn at the same scale
-horizontally as vertically or their curve distorts, so the draw width follows
-the art's own aspect, measured once at runtime with
-`Interface.getAssetSize` (falling back to a literal if that returns nothing
-for an extension graphic). Re-exporting the caps at a different aspect
-therefore needs no code change. The middle's source width is free since it
-stretches.
+**Pill art must be at the height the pill is drawn (14px).** A frame's border
+bands are never scaled, so 32px-tall art renders a 32px-tall pill, and no
+offset combination shrinks the caps into a 14px row without cutting the curve
+and smearing it through the stretched middle. `Design/fit_pill_art.py`
+converts an export of any size down to the drawn height and re-solidifies it
+(the downscale re-mixes colour into the transparent pixels, so solidifying has
+to come after).
 
-Tinting makes the transparent-pixel colour matter even more: black transparent
-pixels tint to black, so `solidify_alpha.py` must be run on white shape art
-too — its transparent pixels need to be white, so filtered edges blend toward
-the tint rather than toward black.
-
-Building it needs care with widget lifecycle: widgets draw in **creation
-order** and cannot be reordered (`bringToFront` is a window API, not a widget
-one), so the three pill pieces must exist before the label — yet their width
-depends on the label's measured width. And a bitmap widget's draw size only
-takes effect at creation; `setSize` afterwards left every piece stuck at the
-cap width. So the template measures with a throwaway named text widget,
-deletes it (`deleteWidget`), creates the pieces at their final sizes, and adds
-the label last. Every widget is named so a re-fill deletes the previous set
-instead of stacking.
-
-Widget API notes, all easy to get wrong:
-`addBitmapWidget` takes a **table** (`{ icon = ..., w = ..., h = ... }`), and
-resizing is **`setSize(w, h)`** — there is no `setBitmapSize`. Also, an inline
-control script has **no standard libraries at chunk-load time** — a
-`math.floor` at file scope fails with "attempt to index global 'math'", and
-because the chunk then never finishes, every function it defines is missing
-too (the visible symptom is a cascade of "attempt to call field 'setText'").
-Use literals at file scope and keep library calls inside functions.
+A tinted-widget build was tried first — one white shape recoloured in FG, which
+would have given resolution independence *and* one asset for every style — and
+abandoned. Widgets draw in creation order with no way to reorder
+(`bringToFront` is a window API), a bitmap widget's draw size only takes effect
+at creation (`setSize` afterwards left every piece at cap width), and the
+result never rendered correctly. Worth knowing the two capabilities exist —
+`setColor` tints widgets and control icons, and CoreRPG uses it — but for a
+variable-width pill the 9-slice is the tool that works.
 
 ### 2026-07-29 — Transparent pixels must carry colour, not black
 FG filters textures as it draws them, so a soft edge pixel is averaged with

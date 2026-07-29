@@ -92,9 +92,9 @@ end
 -- Which tags exist is a ruleset concern: each supported system registers
 -- providers per card type and this manager stays ignorant of their content.
 -- A provider receives the card context and returns a list of
--- { sText = "Advantage", sStyle = "green" }; sStyle names a pill style
--- defined in the cc_chip template (red, green, neutral), and defaults to
--- neutral when omitted or unknown.
+-- { sText = "Advantage", sStyle = "positive" }; sStyle names a pill style
+-- defined in the cc_chip template (positive, negative, neutral) — named for
+-- meaning, not colour — and defaults to neutral when omitted or unknown.
 local _tTagProviders = {};
 
 function registerTagProvider(sCardType, fn)
