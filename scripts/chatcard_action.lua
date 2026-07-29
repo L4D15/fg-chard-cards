@@ -135,33 +135,40 @@ function setTags(sTags)
 	return #tTags > 0;
 end
 
--- Tint for a die: the engine prefixes the kept die's type with 'g' on an
--- advantage roll and 'r' on disadvantage (ActionD20.decodeAdvantage), and that
--- prefix survives in the card payload, so the kept die can carry the same
--- colour as the Advantage / Disadvantage pill. Dropped dice stay dimmed.
+-- A die type is a leading letter plus its number of sides: "d20" normally,
+-- and on an advantage or disadvantage roll ActionD20.decodeAdvantage *replaces*
+-- that letter on the kept die — "g20" for advantage, "r20" for disadvantage
+-- (not "gd20"; it swaps the character rather than prefixing). So both the
+-- shape and the tint key off the number, and the letter only picks the colour.
+function getDieSides(sType)
+	return tonumber((sType or ""):match("%d+"));
+end
+
+-- Tint for a die: the kept die of an advantage/disadvantage roll carries the
+-- same colour as its tag pill. Dropped dice stay dimmed.
 function getDieColor(sType, bDropped)
 	if bDropped then
 		return DIE_COLOR_DROPPED;
 	end
-	if sType:match("^gd%d") then
+	local sPrefix = (sType or ""):sub(1, 1);
+	if sPrefix == "g" then
 		return ChatCardsManager.COLOR_POSITIVE;
-	elseif sType:match("^rd%d") then
+	elseif sPrefix == "r" then
 		return ChatCardsManager.COLOR_NEGATIVE;
 	end
 	return DIE_COLOR;
 end
 
--- Known die shapes; anything else (custom dice) falls back to the square
+-- Known die shapes by side count; anything else (custom dice) falls back to
+-- the square, and percentile dice reuse the d10 shape.
 local _tDieIcons = {
-	d4 = "cc_die_d4", d6 = "cc_die_d6", d8 = "cc_die_d8",
-	d10 = "cc_die_d10", d12 = "cc_die_d12", d20 = "cc_die_d20",
-	d100 = "cc_die_d10",
+	[4] = "cc_die_d4", [6] = "cc_die_d6", [8] = "cc_die_d8",
+	[10] = "cc_die_d10", [12] = "cc_die_d12", [20] = "cc_die_d20",
+	[100] = "cc_die_d10",
 };
 
 function getDieIcon(sType)
-	-- strip advantage/disadvantage color prefixes (gd20 / rd20)
-	local sBase = sType:match("d%d+") or sType;
-	return _tDieIcons[sBase] or "cc_die_d6";
+	return _tDieIcons[getDieSides(sType)] or "cc_die_d6";
 end
 
 -- Render individual die results ("d20:15;gd20:15;d6:3:x", ':x' = dropped)
