@@ -174,7 +174,7 @@
 			     bold "Label:" widget and a regular value widget -->
 			<genericcontrol name="line1">
 				<anchored height="16">
-					<top parent="title" anchor="bottom" offset="4" />
+					<top parent="title" anchor="bottom" offset="0" />
 					<left offset="17" />
 					<right parent="resultbox" anchor="left" offset="-8" />
 				</anchored>
