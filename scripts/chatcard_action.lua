@@ -35,9 +35,9 @@ function setData(t)
 
 	local nDiceHeight = setDiceResults(t.sDice or "");
 
-	-- Result-area content: 4 pad + dice rows + 30 total + outcome line
-	-- when there is one (its row overlaps the total's by 4px).
-	local nBoxContent = 4 + nDiceHeight + 30;
+	-- Result-area content: dice rows + 30 total + outcome line when there is
+	-- one (its row overlaps the total's by 4px).
+	local nBoxContent = nDiceHeight + 30;
 	if sOutcome ~= "" then
 		nBoxContent = nBoxContent + 12;
 	end
@@ -53,12 +53,17 @@ function setData(t)
 	-- under the 44px avatar, which is the floor for this column.
 	local nLeftNeeds = INSET + 16 + 15 + 15 + 4 + nLine1 + 2 + nLine2 + 2
 		+ (bChips and 14 or 0) + 4 + INSET;
-	local nBoxNeeds = INSET + nBoxContent + 4 + INSET;
+	-- 4px of padding above and below the contents when the box is at its
+	-- minimum size.
+	local nBoxNeeds = INSET + 4 + nBoxContent + 4 + INSET;
 
 	-- The result area spans the card's full inner height, so it stretches
 	-- when the left column is taller and drives the card height otherwise.
 	local nCardHeight = math.max(nLeftNeeds, nBoxNeeds);
-	resultbox.setAnchoredHeight(nCardHeight - (2 * INSET));
+	local nBoxHeight = nCardHeight - (2 * INSET);
+	resultbox.setAnchoredHeight(nBoxHeight);
+	-- Split the box's free space evenly above and below the contents.
+	boxpad.setAnchoredHeight(math.max(4, math.floor((nBoxHeight - nBoxContent) / 2)));
 end
 
 -- Fill a body line ("Target: Elara (AC 13)") with two widgets: the
