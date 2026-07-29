@@ -155,6 +155,35 @@ Header bars, banners, card borders, avatar border, result box, and gold
 chips all use #B49D5D (from the mockup), defined once as `GOLD` in
 `Design/gen_frames.py`.
 
+### 2026-07-29 — Asset resolution: what sharpening is possible where
+FG has no @2x/DPI mechanism (no scale attribute exists on `framedef` or
+`icon` in CoreRPG, 5E or CoreRPG_2025), so sharpness depends on how each
+asset is drawn:
+
+- **Bitmap widgets** (`addBitmapWidget` with explicit `w`/`h`) — the render
+  size is ours, so the source can be authored at 3x and is downsampled once
+  at render time. Used for the die glyphs (66px source → 22px) and avatar
+  icons (120px → 40px). Real win, no extra on-screen space. The `ccard`
+  portraitset mask/base are 120px for the same reason: the engine then
+  composites PC portraits at 3x from the original image instead of baking a
+  40px thumbnail.
+- **Frames (9-slice)** — offsets are in *bitmap pixels* and the corner/edge
+  bands draw 1:1, so enlarging a frame bitmap while keeping its offsets
+  changes nothing about the border, and enlarging the offsets makes the
+  border physically thicker rather than sharper. What *does* improve is the
+  stretched regions: `cc_card`'s 24x24 centre is drawn across ~466x78
+  (≈19x horizontal stretch), `cc_header`'s is ≈13x. Any texture, gradient
+  or ornament there is smeared by that factor. **Recipe: keep the offset
+  numbers identical, grow the bitmap** — e.g. `cc_card` at 200x208 with
+  offsets still 12,12,12,20 drops the stretch to ≈1.7x with an unchanged
+  border. Flat-colour fills lose nothing to stretching, so they gain
+  nothing from this. Detail *across* the border thickness stays capped by
+  the offset value (12px for the card).
+- **Text** is TTF-rendered and resolution-independent; if labels look soft
+  that is font size/weight, not an asset problem.
+- Also worth ruling out: FGU's application-level interface scaling. Above
+  100% every 1:1 asset is upscaled and softens regardless of authoring.
+
 ### 2026-07-28 — Git flow branching
 We follow git flow: day-to-day work happens on **develop**, each feature gets
 its own **feature branch** off develop (merged back when done), and **master**

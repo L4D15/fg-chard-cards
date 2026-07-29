@@ -4,7 +4,13 @@
 	<!-- cc_card / cc_banner include an 8px transparent gutter at the bottom
 	     of the bitmap (inside the bottom 9-slice band): windowclass frames
 	     stretch over the window margins, so inter-card spacing lives in
-	     the art. Keep the gutter when replacing these graphics. -->
+	     the art. Keep the gutter when replacing these graphics.
+
+	     RESOLUTION: offsets are in bitmap pixels and the border bands draw
+	     1:1, so bigger art only sharpens the STRETCHED regions. To gain
+	     fill/ornament detail, grow the bitmap and keep these offset numbers
+	     unchanged (cc_card's 24x24 centre currently stretches ~19x wide).
+	     Raising the offsets thickens borders instead of sharpening them. -->
 	<framedef name="cc_card">
 		<bitmap file="graphics/frames/cc_card.png" />
 		<offset>12,12,12,20</offset>
