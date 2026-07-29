@@ -50,25 +50,25 @@
 			<!-- Header row: no background frame (the card art carries the
 			     styling); inset by the art's 5px shadow. -->
 			<genericcontrol name="namebar">
-				<anchored height="26">
+				<anchored height="16">
 					<top offset="5" />
 					<left offset="49" />
 					<right offset="-5" />
 				</anchored>
 			</genericcontrol>
 			<stringcontrol name="name">
-				<anchored to="namebar" position="insidetopleft" offset="10,3" />
+				<anchored to="namebar" position="insidetopleft" offset="10,2" />
 				<font>cc_name</font>
 				<readonly />
 			</stringcontrol>
 			<stringcontrol name="subtitle">
-				<anchored to="namebar" position="belowleft" offset="10,2" height="18" />
+				<anchored to="namebar" position="belowleft" offset="10,0" height="15" />
 				<font>cc_subtitle</font>
 				<readonly />
 			</stringcontrol>
 			<stringcontrol name="text">
 				<anchored>
-					<top parent="subtitle" anchor="bottom" offset="6" />
+					<top parent="subtitle" anchor="bottom" offset="15" />
 					<left offset="15" />
 					<right offset="-15" />
 				</anchored>
@@ -78,7 +78,7 @@
 				<readonly />
 			</stringcontrol>
 			<genericcontrol name="sizer">
-				<anchored to="text" position="belowleft" height="17" width="1" />
+				<anchored to="text" position="belowleft" height="9" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>

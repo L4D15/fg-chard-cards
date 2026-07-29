@@ -87,7 +87,7 @@ as its background.
 | plain roll / save / check (modifier line) | 84px |
 | damage (target + weapon line, chips, outcome) | 114px |
 | attack (target + modifiers, chips, outcome) | 114px |
-| speech, one line of text (+19px per extra line) | 105px |
+| speech, one line of text (+19px per extra line) | 101px |
 | damage 4d6 → 2 dice rows | 114px |
 | fireball 8d6 → 3 dice rows | 138px |
 

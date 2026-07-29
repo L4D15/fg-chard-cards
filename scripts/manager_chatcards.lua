@@ -170,6 +170,21 @@ function sendGenericRollCard(rSource, rRoll)
 	}, isRollSecret(rRoll));
 end
 
+-- Player label for a speech card: the username owning the speaking
+-- character, or "Gamemaster" for the GM's own voices (NPC identities, the
+-- GM identity, and unowned characters). Chat messages carry the speaking
+-- actor as msg.sActorNode but no username of their own.
+function getSpeakerUser(msg)
+	local rActor = ActorManager.resolveActor(msg.sActorNode);
+	if rActor then
+		local sOwner = ActorManager.getOwner(rActor);
+		if (sOwner or "") ~= "" then
+			return sOwner;
+		end
+	end
+	return "Gamemaster";
+end
+
 -- ===== Generic messages =====
 
 -- Speech-like modes get a speech card; everything else without dice gets a banner.
@@ -226,7 +241,7 @@ function onReceiveMessage(msg)
 		local bGM = tPortrait.bGM or (msg.sender == ChatIdentityManager.getGMIdentity());
 		addCard("chatcard_speech", {
 			sName = msg.sender,
-			sSub = "",
+			sSub = getSpeakerUser(msg),
 			sText = sText,
 			sIconAsset = tPortrait.sIconAsset,
 			sTokenAsset = tPortrait.sTokenAsset,
