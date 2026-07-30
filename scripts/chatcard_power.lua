@@ -83,8 +83,10 @@ function renderDescription()
 		desc.setAnchoredHeight(0);
 		return;
 	end
+	-- 4px top pad: breathing room under the toggle line, rendered into the
+	-- control so the folded state stays exactly 0.
 	local nHeight = ChatCardsManager.setRichText(desc,
-		{ { sText = _sDesc, sFont = FONT_TEXT } }, getSentenceWidth(), DESC_LINE_HEIGHT);
+		{ { sText = _sDesc, sFont = FONT_TEXT } }, getSentenceWidth(), DESC_LINE_HEIGHT, 4);
 	desc.setAnchoredHeight(nHeight);
 end
 

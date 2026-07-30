@@ -721,16 +721,18 @@ function clearRichText(cControl)
 	end
 end
 
--- Returns the height used, so the caller can size its control. Segments may
--- carry sLinkClass/sLinkPath to make their words clickable — the link events
--- are handled here (see the cc_rich_sentence template), so the caller only
+-- Returns the height used (including the optional nTopPad rendered above
+-- the first line), so the caller can size its control. Segments may carry
+-- sLinkClass/sLinkPath to make their words clickable — the link events are
+-- handled here (see the cc_rich_sentence template), so the caller only
 -- marks the segments.
-function setRichText(cControl, tSegments, nWidth, nLineHeight)
+function setRichText(cControl, tSegments, nWidth, nLineHeight, nTopPad)
 	clearRichText(cControl);
 
+	nTopPad = nTopPad or 0;
 	local tWords = {};
 	local nX = 0;
-	local nY = 0;
+	local nY = nTopPad;
 	local nLines = 1;
 	local nIndex = 0;
 	for nSegment, tSegment in ipairs(tSegments or {}) do
@@ -780,7 +782,7 @@ function setRichText(cControl, tSegments, nWidth, nLineHeight)
 	-- Kept for the link event handlers (onRichTextClick/Hover); a re-render
 	-- replaces it, so any hover tint from the old layout is gone with it.
 	_tRichState[cControl] = { tWords = tWords, tSegments = tSegments or {} };
-	return nLines * nLineHeight, tWords;
+	return nTopPad + (nLines * nLineHeight), tWords;
 end
 
 -- Which segment a control-local point is over, from setRichText's word
