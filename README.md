@@ -22,10 +22,11 @@ decision log — lives in [`Design/`](Design/README.md).
   `Comm.addChatMessage` (`SystemMessage`, GM turn/effect copies), secret or
   not (verified in-app on FGU v5.1.13) — and classifies each one: dice →
   generic roll card, speech modes → speech card, apply results → banner,
-  everything else → frameless notice. Received messages carry their icon in
-  `msg.assets` (`msg.icon` doesn't survive the trip), which is where notice
-  icons come from. Also defines the `chatcards_card` OOB message that
-  carries structured card data to every client.
+  recognized turn/round/effect notices → banner (rewritten as a sentence, see
+  `formatSystemNotice`), everything else → frameless notice. Received messages
+  carry their icon in `msg.assets` (`msg.icon` doesn't survive the trip),
+  which is where notice icons come from. Also defines the `chatcards_card`
+  OOB message that carries structured card data to every client.
 - **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — 5E hooks. Wraps
   `ActionAttack.onAttackResolve` and re-registers the `damage` result handler
   around `ActionDamageD20.onRoll` to capture structured data (`rRoll.nTotal`,
@@ -33,9 +34,19 @@ decision log — lives in [`Design/`](Design/README.md).
   chat text, then broadcasts a card OOB. The flattened `[ATTACK ...]` /
   `[DAMAGE ...]` text messages are suppressed on the card side to avoid
   duplicates (they still reach the hidden real chat log).
-- **`common/windowclass_chatcards.xml`** — the three card windowclasses:
+- **`common/windowclass_chatcards.xml`** — the card windowclasses:
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
-  keyword chips, result box), `chatcard_speech`, `chatcard_banner`.
+  keyword chips, result box), `chatcard_speech`, `chatcard_story`,
+  `chatcard_system` (apply banners and turn notices), `chatcard_effect`,
+  `chatcard_round` (centred) and `chatcard_notice` (frameless). A windowclass's
+  frame and text alignment are static, so variants of one layout are separate
+  classes rather than one class with overrides.
+- **`scripts/chatcard_effect.lua`** — the effect card's sentence, with the
+  source, effect and target names in bold. A text widget carries a single
+  font, so mixed-weight text is drawn per word by
+  `ChatCardsManager.setRichText`; those widgets don't reflow, so the card
+  re-renders from the sentence control's `onFirstLayout` /
+  `onLayoutSizeChanged` (the only place a resolved width is available).
 - **`graphics/`** — placeholder 9-slice frames (generated flat-color art) and
   fonts. Swap the PNGs in `graphics/frames/` and the colors in
   `graphics_chatcards.xml` to restyle everything without touching code.
