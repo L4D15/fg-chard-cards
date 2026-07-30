@@ -98,10 +98,12 @@
 				<font>cc_headertitle</font>
 				<readonly />
 			</stringcontrol>
-			<!-- The power's action buttons (cast/damage/effect...), as icon
-			     widgets on one control with click hit-testing: cards are not
-			     database-bound windows, so the sheet's action list (one
-			     button control per action node) cannot be reused here. -->
+			<!-- The power's action rows (attack/save/damage/heal/effect...),
+			     one per line: button, description, and the roll results
+			     right-justified — all as widgets on one control with click
+			     hit-testing, since cards are not database-bound windows and
+			     the sheet's action list (one button control per action
+			     node) cannot be reused here. -->
 			<genericcontrol name="actionbar">
 				<anchored height="0">
 					<top parent="actionsheader" anchor="bottom" offset="2" />

@@ -142,14 +142,20 @@ function sendPowerCard(rActor, nodePower, sVerb, bSecret)
 	local tPortrait = ChatCardsManager.getActorPortrait(rActor);
 	ChatCardsManager.sendCardOOB({
 		sCardType = "power",
+		-- Filed under this id on every client, so the action rows' results
+		-- can address the card after the fact.
+		sCardId = ChatCardsManager.nextCardId(),
+		-- The rows' own rolls must keep the card's reach: a GM-only card's
+		-- results stay GM-only.
+		sSecret = bSecret and "1" or "",
 		sName = ChatCardsManager.getActorName(rActor, nil),
 		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
 		sVerb = sVerb or "uses",
 		sPower = sPowerName,
 		sTypeLabel = getPowerTypeLabel(nodePower),
 		sDesc = getPowerDescription(nodePower),
-		-- For the card's action buttons. A path, not data: each receiving
-		-- client resolves it itself, so the buttons only appear where the
+		-- For the card's action rows. A path, not data: each receiving
+		-- client resolves it itself, so the rows only appear where the
 		-- node is readable AND owned (the caster's client, the GM).
 		sPowerNode = DB.getPath(nodePower),
 		sIconAsset = tPortrait.sIconAsset,
@@ -387,6 +393,26 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	tCard.sTags = ChatCardsManager.buildTags("attack",
 		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, bSecret);
+
+	-- Report into the power card's Attack row when the roll came from one:
+	-- one entry per target, coloured by outcome (neutral without a target).
+	local sEntry = tostring(rRoll.nTotal or 0);
+	if rRoll.sResult == "crit" then
+		sEntry = sEntry .. " Crit";
+	elseif rRoll.sResult == "fumble" then
+		sEntry = sEntry .. " Fumble";
+	end
+	ChatCardsManager.sendActionResult(rRoll, "add", sEntry, outcomeStyle(rRoll.sResult));
+end
+
+-- Row-entry colour from an attack result string.
+function outcomeStyle(sResult)
+	if (sResult == "hit") or (sResult == "crit") then
+		return "positive";
+	elseif (sResult == "miss") or (sResult == "fumble") then
+		return "negative";
+	end
+	return "";
 end
 
 function onDamageRoll(rSource, rTarget, rRoll)
@@ -419,6 +445,11 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	tCard.sTags = ChatCardsManager.buildTags("damage",
 		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
+
+	-- Damage rolls once and resolves per target: "set" keeps the shared
+	-- total from repeating in the power card's row.
+	ChatCardsManager.sendActionResult(rRoll, "set",
+		tostring(rRoll.nTotal or ActionsManager.total(rRoll)), "");
 end
 
 -- Healing and temporary hit points. rRoll.healtype distinguishes the two, and
@@ -460,6 +491,10 @@ function onHealRoll(rSource, rTarget, rRoll)
 	tCard.sTags = ChatCardsManager.buildTags("heal",
 		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
+
+	-- One shared total, like damage.
+	ChatCardsManager.sendActionResult(rRoll, "set",
+		tostring(rRoll.nTotal or ActionsManager.total(rRoll)), "positive");
 end
 
 --
@@ -479,6 +514,19 @@ function onSaveResolve(rSource, rRoll, rMessage)
 			{ { sTag = "SAVE", tFilter = { sAbility } } }),
 		sOutcome = outcomeVsDC(rRoll),
 	});
+
+	-- A save-vs from a power card marks each target's save through the
+	-- desc (rRoll.sSaveDesc); the save resolves here, on the target's side.
+	-- Green = the target saved, red = it failed.
+	local sOutcome = outcomeVsDC(rRoll);
+	local sStyle = "";
+	if sOutcome == "Success" then
+		sStyle = "positive";
+	elseif sOutcome == "Failure" then
+		sStyle = "negative";
+	end
+	ChatCardsManager.sendActionResult(rRoll, "add",
+		tostring(rRoll.nTotal or ActionsManager.total(rRoll)), sStyle);
 end
 
 -- Ability and skill checks. A skill roll takes both the CHECK effects for its

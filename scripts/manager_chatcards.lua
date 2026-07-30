@@ -6,6 +6,7 @@
 --
 
 OOB_MSGTYPE_CHATCARD = "chatcards_card";
+OOB_MSGTYPE_CARDRESULT = "chatcards_result";
 
 -- Card accent palette, in FG's AARRGGBB form. The advantage/disadvantage die
 -- tints use these, and the positive/negative tag pill art is drawn in the same
@@ -17,8 +18,28 @@ local MAX_CARDS = 150;
 local _cList = nil;
 local _tPending = {};
 
+-- Cards addressable after creation (action-row results): card window by the
+-- sCardId its payload carried. Entries are released from the card's onClose
+-- (the card cap, /clear, list teardown), like the control-link state below.
+local _tCardsById = {};
+local _fPerformAction = nil;
+local _fPerformMultiAction = nil;
+local _tPendingMark = nil;
+local _nNextCardId = 0;
+local _nNextVolley = 0;
+
 function onInit()
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
+	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CARDRESULT, handleCardResultOOB);
+	-- Every roll a card's action row triggers passes through one of these
+	-- (see performMarkedAction), so they are where the row marker is stamped
+	-- on: PowerManager.performAction funnels its rolls through
+	-- performMultiAction, single rolls (a target's save-vs) go through
+	-- performAction.
+	_fPerformAction = ActionsManager.performAction;
+	ActionsManager.performAction = onMarkedPerformAction;
+	_fPerformMultiAction = ActionsManager.performMultiAction;
+	ActionsManager.performMultiAction = onMarkedPerformMultiAction;
 	-- The receive event fires for every message: delivered ones AND local
 	-- injects via Comm.addChatMessage (SystemMessage, the GM copies of
 	-- turn/effect notices), secret or not — verified in-app on FGU v5.1.13.
@@ -37,8 +58,10 @@ end
 function clearCards()
 	_tPending = {};
 	if _cList then
+		-- closeAll releases the id registry card by card (onClose).
 		_cList.closeAll();
 	end
+	_tCardsById = {};
 end
 
 function setCardList(cList)
@@ -66,6 +89,11 @@ function addCard(sClass, tData)
 		return;
 	end
 	w.setData(tData);
+	-- Cards carrying an id stay addressable for later result updates. The
+	-- card MUST release itself via unregisterCard from onClose.
+	if ((tData.sCardId or "") ~= "") and w.applyActionResult then
+		_tCardsById[tData.sCardId] = w;
+	end
 
 	local tWindows = _cList.getWindows();
 	if #tWindows > MAX_CARDS then
@@ -122,6 +150,160 @@ local _tCardClasses = {
 
 function handleCardOOB(msgOOB)
 	addCard(_tCardClasses[msgOOB.sCardType or ""] or "chatcard_action", msgOOB);
+end
+
+-- ===== Action-row results =====
+-- A power card's action rows report back into the card that spawned them:
+-- the click stamps a marker (card id, row key, volley) onto every roll it
+-- triggers, the resolve hooks read it back and broadcast a result entry,
+-- and each client's copy of the card repaints that row.
+--
+-- A "volley" is one button press. Every roll of the press (one attack per
+-- target, one save per target) carries the same volley id, and the card
+-- aggregates entries of the current volley while a new volley replaces them
+-- — that is what makes repeated rolls override the previous result.
+
+-- The desc-embedded form of the marker, for rolls that cross clients: a
+-- save-vs travels through a fixed-field OOB where only the desc text
+-- survives (it comes back as rRoll.sSaveDesc on each target's save roll).
+local MARK_TAG = "CCMARK";
+
+-- Local identity slug for ids minted on this client; makes card and volley
+-- ids distinct across clients without any coordination.
+local function getUserSlug()
+	local s = (Session.UserName or ""):gsub("[^%w_%-]", "");
+	if s ~= "" then
+		return s;
+	end
+	return Session.IsHost and "gm" or "user";
+end
+
+-- Card ids are minted by the sending client (sendPowerCard) and travel in
+-- the card payload, so every client files its copy under the same id.
+function nextCardId()
+	_nNextCardId = _nNextCardId + 1;
+	return getUserSlug() .. "-" .. _nNextCardId;
+end
+
+-- Volley ids only need to differ between presses, including presses of the
+-- same row on different clients (the GM and the caster both see the rows).
+function nextVolleyId()
+	_nNextVolley = _nNextVolley + 1;
+	return getUserSlug() .. "-" .. _nNextVolley;
+end
+
+function unregisterCard(sCardId)
+	if (sCardId or "") ~= "" then
+		_tCardsById[sCardId] = nil;
+	end
+end
+
+local function encodeMark(tMark)
+	return table.concat({
+		tMark.sCardId, tMark.sRow, tMark.sVolley, tMark.bSecret and "1" or "0",
+	}, "|");
+end
+
+-- Marker of a resolved roll: the stamped field where the roll stayed on the
+-- rolling client, the desc tag where it crossed to a target's save.
+function getRollMark(rRoll)
+	if not rRoll then
+		return nil;
+	end
+	local s = rRoll.sCCMark
+		or (rRoll.sSaveDesc or ""):match("%[" .. MARK_TAG .. " ([^%]]+)%]");
+	if not s then
+		return nil;
+	end
+	local sCardId, sRow, sVolley, sSecret = s:match("^([^|]+)|([^|]+)|([^|]+)|([01])$");
+	if not sCardId then
+		return nil;
+	end
+	return { sCardId = sCardId, sRow = sRow, sVolley = sVolley, bSecret = (sSecret == "1") };
+end
+
+-- Run fn (which performs the row's action) with the marker pending, so
+-- onMarkedPerformAction stamps every roll the action creates. The rolls are
+-- created synchronously inside the perform call; only the dice come later.
+function performMarkedAction(sCardId, sRow, sVolley, bSecret, fn)
+	_tPendingMark = {
+		sCardId = sCardId, sRow = sRow, sVolley = sVolley,
+		bSecret = bSecret and true or false,
+	};
+	local bOK, vError = pcall(fn);
+	_tPendingMark = nil;
+	if not bOK then
+		Debug.console("ChatCardsManager.performMarkedAction: ", vError);
+	end
+end
+
+local function stampMarkedRoll(rRoll)
+	if not _tPendingMark or (type(rRoll) ~= "table") then
+		return;
+	end
+	rRoll.sCCMark = encodeMark(_tPendingMark);
+	-- Save-vs hops to the target's client through ActionPower's OOB,
+	-- which only carries the desc; ride along as a bracketed tag (the
+	-- card texts strip bracketed tags, and the native chat is hidden).
+	if rRoll.sType == "powersave" then
+		rRoll.sDesc = (rRoll.sDesc or "") .. " [" .. MARK_TAG .. " " .. rRoll.sCCMark .. "]";
+	end
+end
+
+function onMarkedPerformAction(draginfo, rActor, rRoll)
+	stampMarkedRoll(rRoll);
+	return _fPerformAction(draginfo, rActor, rRoll);
+end
+
+function onMarkedPerformMultiAction(draginfo, rActor, sType, rRolls)
+	if _tPendingMark then
+		for _, rRoll in ipairs(rRolls or {}) do
+			stampMarkedRoll(rRoll);
+		end
+	end
+	return _fPerformMultiAction(draginfo, rActor, sType, rRolls);
+end
+
+-- Broadcast one result entry for a marked roll; a no-op for unmarked rolls,
+-- so resolve hooks can call it unconditionally. sMode "add" appends to the
+-- row's current volley (per-target rolls), "set" replaces it (one shared
+-- total resolving once per target would otherwise repeat itself).
+function sendActionResult(rRoll, sMode, sText, sStyle)
+	local tMark = getRollMark(rRoll);
+	if not tMark then
+		return;
+	end
+	sendActionResultDirect(tMark, tMark.bSecret or isRollSecret(rRoll), sMode, sText, sStyle);
+end
+
+-- Direct form, for row actions that resolve without a roll (apply effect).
+function sendActionResultDirect(tMark, bSecret, sMode, sText, sStyle)
+	local msgOOB = {
+		type = OOB_MSGTYPE_CARDRESULT,
+		sCardId = tMark.sCardId,
+		sRow = tMark.sRow,
+		sVolley = tMark.sVolley,
+		sMode = sMode or "add",
+		sText = tostring(sText or ""),
+		sStyle = sStyle or "",
+	};
+	-- Same routing as the cards: secret results reach the GM only, whose
+	-- copy of a secret card is the only one that exists anyway.
+	if bSecret then
+		Comm.deliverOOBMessage(msgOOB, "");
+	else
+		Comm.deliverOOBMessage(msgOOB);
+	end
+end
+
+-- Clients that never saw the card (joined later, card past the cap, secret
+-- card elsewhere) simply have no window filed under the id.
+function handleCardResultOOB(msgOOB)
+	local w = _tCardsById[msgOOB.sCardId or ""];
+	if w and w.applyActionResult then
+		w.applyActionResult(msgOOB.sRow or "", msgOOB.sVolley or "",
+			msgOOB.sMode or "add", msgOOB.sText or "", msgOOB.sStyle or "");
+	end
 end
 
 -- ===== Tags (the pills on action cards) =====
