@@ -160,6 +160,14 @@
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
 		<color value="#1A1A1A" />
 	</font>
+	<!-- The rules text of an effect ("20 light; [D: 1 hour]"), under the effect
+	     card's sentence: deliberately the same italic gold as the roll card's
+	     player name (cc_subtitle) — secondary detail hanging off a heading —
+	     but its own font so either can be restyled alone. -->
+	<font name="cc_effectlogic">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
+		<color value="#8A7340" />
+	</font>
 	<!-- Engine/system notices: muted italic, so announcements, errors and
 	     turn/effect chatter read as background noise next to the cards. -->
 	<font name="cc_notice">

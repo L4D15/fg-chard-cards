@@ -415,12 +415,145 @@ function onReceiveMessage(msg)
 		return;
 	end
 
-	-- Everything left is engine/ruleset chatter (system messages, turn and
-	-- effect notifications, module loads, ...): a frameless notice, keeping
-	-- whatever icon the message carries.
+	-- Turn, round and effect notices are rewritten into plain sentences on a
+	-- system card (background, no icon); everything else keeps the raw text.
+	local sNoticeClass, tNotice = formatSystemNotice(sText);
+	if sNoticeClass then
+		addCard(sNoticeClass, tNotice);
+		return;
+	end
+
+	-- Everything left is engine/ruleset chatter (unrecognized system
+	-- messages, module loads, ...): a frameless notice, keeping whatever
+	-- icon the message carries.
 	if sText ~= "" then
 		addNoticeCard(sText, getMessageIcon(msg));
 	end
+end
+
+-- ===== Recognized system notices =====
+-- Engine chatter arrives as bracketed text built for the native chat log
+-- ("[TURN] Wololo", "Effect ['LIGHT: 20 light']\r-> [to Elara]"). The ones
+-- whose pieces can be pulled apart reliably become sentences on a system
+-- card; the rest fall through to a frameless notice unchanged. The bracketed
+-- tags themselves are localized (CoreRPG strings), so they are compared
+-- against Interface.getString rather than hardcoded in the patterns.
+
+-- Returns the card class to show the notice on plus its card data, or nil
+-- when the message is none of the recognized notices.
+function formatSystemNotice(sText)
+	local sRound = formatRoundNotice(sText);
+	if sRound then
+		return "chatcard_round", { sText = sRound };
+	end
+	local sTurn = formatTurnNotice(sText);
+	if sTurn then
+		return "chatcard_system", { sText = sTurn };
+	end
+	-- The effect card composes its own sentence: it needs the pieces apart to
+	-- render the names in bold.
+	local tEffect = parseEffectNotice(sText);
+	if tEffect then
+		return "chatcard_effect", tEffect;
+	end
+	return nil;
+end
+
+-- "[ROUND 3]" -> "Round 3", on the centred card.
+function formatRoundNotice(sText)
+	local sTag, sNumber = sText:match("^%[(%a[%a%s]-)%s+(%d+)%]%s*$");
+	if sTag ~= Interface.getString("combat_tag_round") then
+		return nil;
+	end
+	return StringManager.capitalize(sTag:lower()) .. " " .. sNumber;
+end
+
+-- "[TURN] Wololo" -> "Turn advanced. Is Wololo turn". With the "show effects
+-- on turn" option (RSHE) the engine appends the actor's effects as further
+-- indented lines, so only the first line is rewritten and the rest is kept.
+function formatTurnNotice(sText)
+	local sFirstLine, sRest = sText:match("^([^\r\n]*)([\r\n].*)$");
+	if not sFirstLine then
+		sFirstLine = sText;
+		sRest = "";
+	end
+	local sTag, sName = sFirstLine:match("^%[([^%]]+)%]%s*(.-)%s*$");
+	if (sTag ~= Interface.getString("combat_tag_turn")) or (sName == "") then
+		return nil;
+	end
+	return string.format("Turn advanced. Is %s turn", sName) .. sRest;
+end
+
+-- The effect-applied notice, from EffectManager.onEffectAddNotify:
+-- "Effect ['LIGHT: 20 light; [D: 1 hour]']\r-> [to Elara Brightwood]\r[by Wololo]"
+-- ("[by ...]" only when the effect has a source). The same "Effect ['...']"
+-- shape is also used for expiry/immunity/duplicate notices, which carry a
+-- status instead of a "[to ...]" target and are left as notices.
+-- Returns the card's pieces: name, rules logic, source (may be empty) and
+-- target. The wording is the card's business, not this one's.
+function parseEffectNotice(sText)
+	local sLabel, sEffect = sText:match("^([^%[]+)%s*%['(.-)'%]");
+	if not sLabel or (StringManager.trim(sLabel) ~= Interface.getString("effect_label")) then
+		return nil;
+	end
+	local sTarget = sText:match("%[to ([^%]]+)%]");
+	if not sTarget then
+		return nil;
+	end
+
+	local sName, sLogic = splitEffectName(sEffect);
+	-- "[from X]" names the power the effect came from. The 5E hooks add it
+	-- (as the notice's last line) exactly when the effect string carries no
+	-- name of its own, so it wins the name slot and the whole effect string
+	-- is rules text.
+	local sPower = sText:match("%[from ([^%]]+)%]%s*$");
+	if sPower then
+		sName = sPower;
+		sLogic = sEffect;
+	elseif sName == "" then
+		sName = "Unknown effect";
+	end
+	return {
+		sName = sName,
+		sLogic = sLogic,
+		-- Empty for effects applied without a source actor (the GM typing one
+		-- straight onto a combatant, most character-sheet effects).
+		sSource = sText:match("%[by ([^%]]+)%]") or "",
+		sTarget = sTarget,
+	};
+end
+
+-- An effect string is a list of ';'-separated clauses, optionally led by a
+-- display name: "LIGHT: 20 light; [D: 1 hour]" -> "LIGHT" + "20 light;
+-- [D: 1 hour]", "Celestial Resistance; RESIST: necrotic,radiant" ->
+-- "Celestial Resistance" + "RESIST: necrotic,radiant". The name ends at the
+-- first ';' or ':' outside brackets — a duration clause ("[D: 1 hour]") or a
+-- concentration marker carries separators of its own.
+-- NOTE: an effect written as bare rules text ("IMMUNE: poison") has no name
+-- to find, so its first tag becomes the name (unless a "[from ...]" marker
+-- supplied the originating power, see parseEffectNotice).
+-- Also returns the separator the name ended at, for hasEffectName.
+function splitEffectName(sEffect)
+	local nDepth = 0;
+	for i = 1, #sEffect do
+		local sChar = sEffect:sub(i, i);
+		if (sChar == "[") or (sChar == "(") then
+			nDepth = nDepth + 1;
+		elseif (sChar == "]") or (sChar == ")") then
+			nDepth = math.max(nDepth - 1, 0);
+		elseif (nDepth == 0) and ((sChar == ";") or (sChar == ":")) then
+			return StringManager.trim(sEffect:sub(1, i - 1)), StringManager.trim(sEffect:sub(i + 1)), sChar;
+		end
+	end
+	return StringManager.trim(sEffect), "", "";
+end
+
+-- Whether an effect string leads with a display name of its own: a first
+-- clause with no ':' inside it ("Bless; ...", plain "Prone"), as opposed to
+-- opening straight with a rules tag ("AC: 3", "LIGHT: 20 light").
+function hasEffectName(sEffect)
+	local sName, _, sSep = splitEffectName(sEffect or "");
+	return (sName ~= "") and (sSep ~= ":");
 end
 
 -- The received copy of a message carries its icon in msg.assets, as
@@ -520,6 +653,74 @@ function buildDiceFormula(aDice, nMod)
 		s = s .. string.format("%+d", nMod);
 	end
 	return s;
+end
+
+-- ===== Rich text (mixed-font sentences) =====
+-- A text widget carries a single font, so a sentence with bold parts in it
+-- cannot be one string control: it is drawn as one widget per word, measured
+-- and positioned by hand. Segments arrive as
+-- { sText = "Elara Brightwood", sFont = "cc_bodybold" } and every word of a
+-- segment keeps that font.
+--
+-- The words do NOT reflow by themselves, so the caller has to render again
+-- when its width changes (see chatcard_effect.lua's onLayoutSizeChanged).
+
+-- Stands in for the space between words: a measured widget reports the width
+-- of its glyphs, and trailing spaces cannot be relied on to survive that
+-- measurement, so the pen advances by a fixed gap instead.
+local RICH_WORD_GAP = 4;
+local RICH_WIDGET_NAME = "richword";
+
+-- Widgets are named consecutively so a re-render can drop the previous pass
+-- (there is no "destroy every widget" call).
+function clearRichText(cControl)
+	local nIndex = 1;
+	while true do
+		local wgt = cControl.findWidget(RICH_WIDGET_NAME .. nIndex);
+		if not wgt then
+			return;
+		end
+		wgt.destroy();
+		nIndex = nIndex + 1;
+	end
+end
+
+-- Returns the height used, so the caller can size its control.
+function setRichText(cControl, tSegments, nWidth, nLineHeight)
+	clearRichText(cControl);
+
+	local nX = 0;
+	local nY = 0;
+	local nLines = 1;
+	local nIndex = 0;
+	for _, tSegment in ipairs(tSegments or {}) do
+		for sWord in tostring(tSegment.sText or ""):gmatch("%S+") do
+			nIndex = nIndex + 1;
+			local wWord = cControl.addTextWidget({
+				name = RICH_WIDGET_NAME .. nIndex,
+				font = tSegment.sFont or "cc_body",
+				text = sWord,
+				position = "topleft", x = 0, y = 0,
+			});
+			if wWord then
+				local nWordWidth = wWord.getSize() or 0;
+				-- Wrap before a word that would overrun, unless it is the
+				-- first on its line: a word wider than the card has nowhere
+				-- better to go.
+				if (nX > 0) and ((nX + nWordWidth) > nWidth) then
+					nX = 0;
+					nY = nY + nLineHeight;
+					nLines = nLines + 1;
+				end
+				-- Widgets are positioned by their centre.
+				wWord.setPosition("topleft",
+					nX + math.floor(nWordWidth / 2),
+					nY + math.floor(nLineHeight / 2));
+				nX = nX + nWordWidth + RICH_WORD_GAP;
+			end
+		end
+	end
+	return nLines * nLineHeight;
 end
 
 -- ===== Portraits =====

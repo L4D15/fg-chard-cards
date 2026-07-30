@@ -7,6 +7,10 @@
 local _fAttackResolve = nil;
 local _fSaveResolve = nil;
 local _fResolveAction = nil;
+local _fPowerPerformAction = nil;
+local _fEffectRollEncode = nil;
+local _fEffectRollDecode = nil;
+local _fEffectAddNotify = nil;
 
 -- Roll types with a dedicated card hook; everything else gets a generic
 -- roll card from the resolveAction wrap. Types that roll no dice produce
@@ -42,6 +46,26 @@ function onInit()
 	_fResolveAction = ActionsManager.resolveAction;
 	ActionsManager.resolveAction = onResolveAction;
 
+	-- Effect origin. Every power use (PC, NPC, record sheet) funnels through
+	-- PowerManager.performAction, the only point that still holds the power
+	-- node an effect action belongs to; the name is tagged onto the action
+	-- there and carried to the host on custom fields — rRoll string fields
+	-- survive the dice throw, and the add-effect OOB is a JSON dump of the
+	-- whole effect table. The roll <-> effect copies use CoreRPG's official
+	-- hook points, chained in case another extension registered them first.
+	if PowerManager and PowerManager.performAction then
+		_fPowerPerformAction = PowerManager.performAction;
+		PowerManager.performAction = onPowerPerformAction;
+
+		_fEffectRollEncode = GameManager.getFunction("onEffectRollEncode");
+		EffectManager.setCustomOnEffectRollEncode(onEffectRollEncode);
+		_fEffectRollDecode = GameManager.getFunction("onEffectRollDecode");
+		EffectManager.setCustomOnEffectRollDecode(onEffectRollDecode);
+
+		_fEffectAddNotify = EffectManager.onEffectAddNotify;
+		EffectManager.onEffectAddNotify = onEffectAddNotify;
+	end
+
 	-- This ruleset's card tags. The manager knows nothing about them; other
 	-- systems (or plugin extensions) register their own the same way.
 	ChatCardsManager.registerTagProvider("attack", getAttackTags);
@@ -49,6 +73,78 @@ function onInit()
 	ChatCardsManager.registerTagProvider("heal", getHealTags);
 	-- Saves, checks and skills roll with advantage too
 	ChatCardsManager.registerTagProvider("roll", getAdvantageTags);
+end
+
+--
+--	EFFECT ORIGIN
+--
+
+-- The square brackets would collide with the notice's own [from ...] markers.
+function onPowerPerformAction(draginfo, rActor, rAction, nodePower)
+	if rAction and (rAction.type == "effect") and nodePower then
+		local sPowerName = StringManager.trim(DB.getValue(nodePower, "name", "")):gsub("[%[%]]", "");
+		if sPowerName ~= "" then
+			rAction.sChatCardsPower = sPowerName;
+		end
+	end
+	return _fPowerPerformAction(draginfo, rActor, rAction, nodePower);
+end
+
+function onEffectRollEncode(rRoll, rAction)
+	if _fEffectRollEncode then
+		_fEffectRollEncode(rRoll, rAction);
+	end
+	rRoll.sChatCardsPower = rAction.sChatCardsPower;
+end
+
+function onEffectRollDecode(rRoll, rEffect)
+	if _fEffectRollDecode then
+		_fEffectRollDecode(rRoll, rEffect);
+	end
+	rEffect.sChatCardsPower = rRoll.sChatCardsPower;
+end
+
+-- Runs on the host for every applied effect. When the effect opens straight
+-- with a rules tag ("AC: 3") and its originating power is known, the notice
+-- gets a "[from Mage Armor]" line, which the card parser prefers as the
+-- effect's name. Named effects and effects from outside a power (typed or
+-- dragged onto the CT) keep the stock notice, built by the original.
+--
+-- The tagged branch reproduces CoreRPG's message construction and delivery
+-- (manager_effect.lua onEffectAddNotify, checked against CoreRPG 2025-06):
+-- there is no seam to add a line to the message the original builds, since it
+-- delivers the message itself.
+function onEffectAddNotify(rActor, nodeEffect, rEffect)
+	local sPower = StringManager.trim(rEffect.sChatCardsPower or "");
+	if (sPower == "") or ChatCardsManager.hasEffectName(rEffect.sName or "") then
+		return _fEffectAddNotify(rActor, nodeEffect, rEffect);
+	end
+	if rEffect.bSkipAnnounce then
+		return;
+	end
+
+	local msg = { font = "msgfont", icon = "action_effect" };
+	msg.text = string.format("%s ['%s']\r-> [to %s]",
+		Interface.getString("effect_label"), rEffect.sName, ActorManager.getDisplayName(rActor));
+	if (rEffect.sSource or "") ~= "" then
+		msg.text = msg.text .. string.format("\r[by %s]", ActorManager.getDisplayName(DB.findNode(rEffect.sSource)));
+	end
+	msg.text = msg.text .. string.format("\r[from %s]", sPower);
+
+	if (rEffect.nGMOnly or 0) == 1 then
+		msg.secret = true;
+		Comm.addChatMessage(msg);
+	elseif CombatManager.isCTHidden(ActorManager.getCTNode(rActor)) then
+		if (rEffect.sUser or "") == "" then
+			msg.secret = true;
+			Comm.addChatMessage(msg);
+		else
+			Comm.addChatMessage(msg);
+			Comm.deliverChatMessage(msg, rEffect.sUser);
+		end
+	else
+		Comm.deliverChatMessage(msg);
+	end
 end
 
 --

@@ -28,6 +28,77 @@
 		</sheetdata>
 	</windowclass>
 
+	<!-- Effect applied: the system card, with the names and the effect name in
+	     bold inside the sentence. A string control carries one font, so the
+	     sentence is a generic control filled with per-word text widgets
+	     (ChatCardsManager.setRichText). The effect's rules text sits under it in
+	     a label of its own, in one (italic) font, so that one stays a string
+	     control and wraps on its own. -->
+	<windowclass name="chatcard_effect">
+		<frame>cc_system_card</frame>
+		<script file="scripts/chatcard_effect.lua" />
+		<sheetdata>
+			<genericcontrol name="sentence">
+				<anchored height="18">
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<script>
+					-- Text widgets do not reflow, and the width to wrap them at
+					-- is only known once the card has been laid out — and again
+					-- whenever the chat panel is resized.
+					function onFirstLayout()
+						window.renderSentence();
+					end
+					function onLayoutSizeChanged()
+						window.renderSentence();
+					end
+				</script>
+			</genericcontrol>
+			<stringcontrol name="logic">
+				<anchored>
+					<top parent="sentence" anchor="bottom" offset="1" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_effectlogic</font>
+				<multilinespacing>17</multilinespacing>
+				<readonly />
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="logic" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<!-- Round breaks: the same card as chatcard_system, centred, so a new round
+	     reads as a divider between the turns above and below it. -->
+	<windowclass name="chatcard_round">
+		<frame>cc_system_card</frame>
+		<script>
+			function setData(t)
+				text.setValue(t.sText or "");
+			end
+		</script>
+		<sheetdata>
+			<stringcontrol name="text">
+				<anchored>
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_bannertext</font>
+				<multilinespacing>18</multilinespacing>
+				<center />
+				<readonly />
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="text" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
 	<!-- Engine/system notices (SystemMessage errors, extension announcements,
 	     turn and effect chatter): no background frame — the text sits directly
 	     on the chat box — with the message's own icon, when it carries one,
