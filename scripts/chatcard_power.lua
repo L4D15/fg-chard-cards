@@ -7,6 +7,8 @@
 local FONT_TEXT = "cc_body";
 local FONT_BOLD = "cc_bodybold";
 local LINE_HEIGHT = 18;
+-- The description sets its own, tighter leading (the body font is 14px).
+local DESC_LINE_HEIGHT = 16;
 -- The sentence control's left/right anchors (width derivation, see
 -- chatcard_effect.lua for why the fallbacks exist).
 local INSET = 17;
@@ -82,7 +84,7 @@ function renderDescription()
 		return;
 	end
 	local nHeight = ChatCardsManager.setRichText(desc,
-		{ { sText = _sDesc, sFont = FONT_TEXT } }, getSentenceWidth(), LINE_HEIGHT);
+		{ { sText = _sDesc, sFont = FONT_TEXT } }, getSentenceWidth(), DESC_LINE_HEIGHT);
 	desc.setAnchoredHeight(nHeight);
 end
 
