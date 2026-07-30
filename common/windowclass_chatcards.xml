@@ -98,10 +98,12 @@
 				<font>cc_headertitle</font>
 				<readonly />
 			</stringcontrol>
-			<!-- The power's action buttons (cast/damage/effect...), as icon
-			     widgets on one control with click hit-testing: cards are not
-			     database-bound windows, so the sheet's action list (one
-			     button control per action node) cannot be reused here. -->
+			<!-- The power's action rows (attack/save/damage/heal/effect...),
+			     one per line: button, description, and the roll results
+			     right-justified — all as widgets on one control with click
+			     hit-testing, since cards are not database-bound windows and
+			     the sheet's action list (one button control per action
+			     node) cannot be reused here. -->
 			<genericcontrol name="actionbar">
 				<anchored height="0">
 					<top parent="actionsheader" anchor="bottom" offset="2" />
@@ -115,6 +117,12 @@
 					end
 					function onClickRelease(nButton, x, y)
 						return window.onActionClick(nButton, x, y);
+					end
+					-- Dragging a row's button carries its action, like the
+					-- sheet's buttons: drop an attack on a token to roll
+					-- against it, a save on targets, damage to apply it.
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onActionDrag(nButton, x, y, draginfo);
 					end
 					function onHoverUpdate(x, y)
 						window.onActionHover(x, y);

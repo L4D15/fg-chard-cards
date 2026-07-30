@@ -41,9 +41,12 @@ decision log — lives in [`Design/`](Design/README.md).
   Armor]` line that the effect card uses as the effect's name. Power use is
   carded too (`chatcard_power`: who, the power name, what it is, its
   description — folded behind a "Show description" toggle by default —
-  and the power's action buttons — driven through the same
-  `PowerActionManagerCore` handlers as the sheet's Actions tab, shown only
-  where the power node resolves and is owned, i.e. the caster and the GM;
+  and the power's actions as a vertical row list — button, description,
+  results right-justified — driven through the same
+  `PowerActionManagerCore` handlers as the sheet's Actions tab (a compound
+  `cast` action splits into Attack and Save rows the way the sheet's full
+  view does), shown only where the power node resolves and is owned, i.e.
+  the caster and the GM;
   the bold power name is also a link that opens the record wherever the node
   resolves, with a hand cursor and a colour shift on hover — the same link
   treatment character names get on every card, see below):
@@ -52,6 +55,30 @@ decision log — lives in [`Design/`](Design/README.md).
   button by wrapping `PowerManagerCore.usePower` — there the card *replaces*
   the default power-name text message, which carries no tag receivers could
   suppress it by.
+- **Action-row results** — rolls made from a power card's rows report back
+  into that card, on every client. Power cards carry a `sCardId` minted by
+  the sender; each client files its copy in `ChatCardsManager`'s id
+  registry (released from the card's `onClose`). A row click wraps the
+  perform in `performMarkedAction`, which stamps card id + row key +
+  volley id onto every roll the press creates (via wraps of
+  `ActionsManager.performMultiAction` — the path `PowerManager.performAction`
+  funnels all power rolls through — and `ActionsManager.performAction`;
+  custom `rRoll` string fields survive the throw). A *volley* is one press: per-target entries of the same
+  volley aggregate on the row ("17 · 9", coloured by outcome), and the next
+  press replaces them. The 5E resolve hooks read the marker back and
+  broadcast a `chatcards_result` OOB (attack: total + Crit/Fumble, coloured
+  hit/miss; save: each target's total, green = saved; damage/heal: the
+  shared total, mode `set` so per-target resolves don't repeat it; effect:
+  "Applied", reported from the diceless effect roll's resolution). Row
+  buttons also drag like the sheet's: the marked rolls are encoded into the
+  draginfo at drag start and resolve wherever the drop lands (a token to
+  attack/damage/save that target, the chat for a plain roll) — a cancelled
+  drag never reports. Save-vs is the
+  cross-client case: the marker rides the powersave roll's desc as a
+  `[CCMARK ...]` tag, which `ActionPower`'s save-vs OOB carries into each
+  target's save roll (`rRoll.sSaveDesc`), so whichever client rolls the
+  save reports it. Secret cards (NPC power use) keep their reach: their
+  row results are delivered GM-only.
 - **`common/windowclass_chatcards.xml`** — the card windowclasses:
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
   keyword chips, result box), `chatcard_speech`, `chatcard_story`,
