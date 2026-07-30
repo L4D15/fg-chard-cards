@@ -62,7 +62,7 @@ function getSentenceWidth()
 	return FALLBACK_WIDTH;
 end
 
--- "**Wololo** has applied effect **LIGHT** to **Elara Brightwood**.", or when
+-- "**Wololo** applies the effect **LIGHT** to **Elara Brightwood**.", or when
 -- the effect has no separate source (none at all, or the target did it to
 -- themselves): "**Elara Brightwood** gains the effect **LIGHT**."
 -- The full stop rides on the last bold segment so it can never wrap onto a
@@ -74,7 +74,7 @@ function getSentenceSegments()
 	if (sSource ~= "") and (sSource ~= sTarget) then
 		return {
 			{ sText = sSource, sFont = FONT_BOLD },
-			{ sText = "has applied effect", sFont = FONT_TEXT },
+			{ sText = "applies the effect", sFont = FONT_TEXT },
 			{ sText = sName, sFont = FONT_BOLD },
 			{ sText = "to", sFont = FONT_TEXT },
 			{ sText = sTarget .. ".", sFont = FONT_BOLD },
