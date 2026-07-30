@@ -159,7 +159,7 @@
 			     would stick and pin it at 0. -->
 			<stringcontrol name="desc">
 				<anchored>
-					<top parent="desctoggle" anchor="bottom" offset="2" />
+					<top parent="desctoggle" anchor="bottom" offset="0" />
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
@@ -167,8 +167,11 @@
 				<multilinespacing>18</multilinespacing>
 				<readonly />
 			</stringcontrol>
+			<!-- 4px bottom pad; with the folded (empty) description the same
+			     4px is the toggle-to-border gap, so keep the desc top offset
+			     at 0 or the folded card grows by it. -->
 			<genericcontrol name="sizer">
-				<anchored to="desc" position="belowleft" height="8" width="1" />
+				<anchored to="desc" position="belowleft" height="4" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
