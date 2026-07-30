@@ -23,9 +23,9 @@ local _sDesc = "";
 local _bExpanded = false;
 
 -- No weak tables in FG's sandbox: the manager's link state is released by
--- hand when the card closes.
+-- hand when the card closes (desc renders through setRichText too).
 function onClose()
-	ChatCardsManager.releaseControlState(sentence);
+	ChatCardsManager.releaseControlState(sentence, desc);
 end
 
 function setData(t)
@@ -39,9 +39,7 @@ function setData(t)
 
 	_sDesc = t.sDesc or "";
 	if _sDesc == "" then
-		-- Never expandable, so pinning the heights is safe here.
 		desctoggle.setAnchoredHeight(0);
-		desc.setAnchoredHeight(0);
 	end
 	updateDescription();
 
@@ -51,9 +49,10 @@ end
 
 -- ===== Foldable description =====
 -- Collapsed by default: spell texts run long, and the card announces the
--- use — the details are one click away. NOTE: the body's height is driven
--- purely by setValue autosizing (empty string when folded), never by
--- setAnchoredHeight, which would stick and keep the fold from reopening.
+-- use — the details are one click away. The body is rich text on a generic
+-- control (one plain segment; setRichText honours its line breaks), so both
+-- states set an exact height — string-control autosizing kept a one-line
+-- height for the empty folded value.
 
 function hasDescription()
 	return _sDesc ~= "";
@@ -70,11 +69,21 @@ end
 function updateDescription()
 	if _sDesc == "" then
 		desctoggle.setValue("");
-		desc.setValue("");
 		return;
 	end
 	desctoggle.setValue(_bExpanded and "Hide description" or "Show description");
-	desc.setValue(_bExpanded and _sDesc or "");
+	renderDescription();
+end
+
+function renderDescription()
+	if not _bExpanded or (_sDesc == "") then
+		ChatCardsManager.clearRichText(desc);
+		desc.setAnchoredHeight(0);
+		return;
+	end
+	local nHeight = ChatCardsManager.setRichText(desc,
+		{ { sText = _sDesc, sFont = FONT_TEXT } }, getSentenceWidth(), LINE_HEIGHT);
+	desc.setAnchoredHeight(nHeight);
 end
 
 -- The same buttons as the power's row on the Actions tab, one per action
@@ -153,6 +162,9 @@ function renderSentence()
 
 	local nHeight = ChatCardsManager.setRichText(sentence, getSentenceSegments(), nWidth, LINE_HEIGHT);
 	sentence.setAnchoredHeight(nHeight);
+	-- The description wraps at the same width, so it re-renders with the
+	-- sentence (the toggle path re-renders it directly).
+	renderDescription();
 end
 
 function getSentenceWidth()

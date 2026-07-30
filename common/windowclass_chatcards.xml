@@ -154,22 +154,19 @@
 					end
 				</script>
 			</stringcontrol>
-			<!-- Description body. Its height must come from setValue autosizing
-			     alone for the fold to reopen — an explicit setAnchoredHeight
-			     would stick and pin it at 0. -->
-			<stringcontrol name="desc">
-				<anchored>
+			<!-- Description body, as rich text (one plain segment): a generic
+			     control never autosizes, so the fold's height is set
+			     explicitly in both states — an empty stringcontrol keeps a
+			     one-line intrinsic height that broke the folded spacing. -->
+			<genericcontrol name="desc">
+				<anchored height="0">
 					<top parent="desctoggle" anchor="bottom" offset="0" />
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
-				<font>cc_body</font>
-				<multilinespacing>18</multilinespacing>
-				<readonly />
-			</stringcontrol>
-			<!-- 4px bottom pad; with the folded (empty) description the same
-			     4px is the toggle-to-border gap, so keep the desc top offset
-			     at 0 or the folded card grows by it. -->
+			</genericcontrol>
+			<!-- 4px bottom pad in both states: the folded desc is exactly 0
+			     high, the expanded one exactly its lines. -->
 			<genericcontrol name="sizer">
 				<anchored to="desc" position="belowleft" height="4" width="1" />
 			</genericcontrol>

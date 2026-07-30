@@ -734,35 +734,46 @@ function setRichText(cControl, tSegments, nWidth, nLineHeight)
 	local nLines = 1;
 	local nIndex = 0;
 	for nSegment, tSegment in ipairs(tSegments or {}) do
-		for sWord in tostring(tSegment.sText or ""):gmatch("%S+") do
-			nIndex = nIndex + 1;
-			local wWord = cControl.addTextWidget({
-				name = RICH_WIDGET_NAME .. nIndex,
-				font = tSegment.sFont or "cc_body",
-				text = sWord,
-				position = "topleft", x = 0, y = 0,
-			});
-			if wWord then
-				local nWordWidth = wWord.getSize() or 0;
-				-- Wrap before a word that would overrun, unless it is the
-				-- first on its line: a word wider than the card has nowhere
-				-- better to go.
-				if (nX > 0) and ((nX + nWordWidth) > nWidth) then
-					nX = 0;
-					nY = nY + nLineHeight;
-					nLines = nLines + 1;
-				end
-				-- Widgets are positioned by their centre.
-				wWord.setPosition("topleft",
-					nX + math.floor(nWordWidth / 2),
-					nY + math.floor(nLineHeight / 2));
-				table.insert(tWords, {
-					nSegment = nSegment,
-					sWidget = RICH_WIDGET_NAME .. nIndex,
-					x = nX, y = nY,
-					w = nWordWidth, h = nLineHeight,
+		-- Line breaks inside a segment's text are honoured (the power
+		-- description's paragraphs); segment boundaries still flow inline.
+		local bFirstLine = true;
+		for sLine in tostring(tSegment.sText or ""):gmatch("[^\r\n]+") do
+			if not bFirstLine and (nX > 0) then
+				nX = 0;
+				nY = nY + nLineHeight;
+				nLines = nLines + 1;
+			end
+			bFirstLine = false;
+			for sWord in sLine:gmatch("%S+") do
+				nIndex = nIndex + 1;
+				local wWord = cControl.addTextWidget({
+					name = RICH_WIDGET_NAME .. nIndex,
+					font = tSegment.sFont or "cc_body",
+					text = sWord,
+					position = "topleft", x = 0, y = 0,
 				});
-				nX = nX + nWordWidth + RICH_WORD_GAP;
+				if wWord then
+					local nWordWidth = wWord.getSize() or 0;
+					-- Wrap before a word that would overrun, unless it is the
+					-- first on its line: a word wider than the card has
+					-- nowhere better to go.
+					if (nX > 0) and ((nX + nWordWidth) > nWidth) then
+						nX = 0;
+						nY = nY + nLineHeight;
+						nLines = nLines + 1;
+					end
+					-- Widgets are positioned by their centre.
+					wWord.setPosition("topleft",
+						nX + math.floor(nWordWidth / 2),
+						nY + math.floor(nLineHeight / 2));
+					table.insert(tWords, {
+						nSegment = nSegment,
+						sWidget = RICH_WIDGET_NAME .. nIndex,
+						x = nX, y = nY,
+						w = nWordWidth, h = nLineHeight,
+					});
+					nX = nX + nWordWidth + RICH_WORD_GAP;
+				end
 			end
 		end
 	end
