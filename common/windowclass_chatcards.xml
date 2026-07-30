@@ -167,10 +167,10 @@
 					<right offset="-17" />
 				</anchored>
 			</genericcontrol>
-			<!-- 4px bottom pad in both states: the folded desc is exactly 0
+			<!-- 8px bottom pad in both states: the folded desc is exactly 0
 			     high, the expanded one exactly its lines. -->
 			<genericcontrol name="sizer">
-				<anchored to="desc" position="belowleft" height="4" width="1" />
+				<anchored to="desc" position="belowleft" height="8" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
