@@ -309,6 +309,29 @@ function getActionIndexAt(x, y)
 	return nIndex;
 end
 
+-- Perform a row's action, marked so its rolls report back into this card.
+-- draginfo is nil for a click; on a drag the (already stamped) rolls are
+-- encoded into it at drag start and resolve wherever the drop lands, so a
+-- cancelled drag simply never reports.
+function performRowAction(tRow, draginfo)
+	local tActionData = tRow.sSubRoll and { sSubRoll = tRow.sSubRoll } or nil;
+
+	local sCardId = (_tData or {}).sCardId or "";
+	if sCardId == "" then
+		-- Cards from before result support (or without an id) still roll.
+		PowerActionManagerCore.performAction(draginfo, tRow.nodeAction, tActionData);
+		return;
+	end
+
+	-- One press = one volley: every roll it triggers reports back under
+	-- this id, and the next press starts the row over.
+	local sVolley = ChatCardsManager.nextVolleyId();
+	local bSecret = ((_tData or {}).sSecret == "1");
+	ChatCardsManager.performMarkedAction(sCardId, tRow.sKey, sVolley, bSecret, function()
+		PowerActionManagerCore.performAction(draginfo, tRow.nodeAction, tActionData);
+	end);
+end
+
 function onActionClick(nButton, x, y)
 	if nButton ~= 1 then
 		return;
@@ -317,31 +340,18 @@ function onActionClick(nButton, x, y)
 	if not nIndex then
 		return;
 	end
-	local tRow = _tRows[nIndex];
-	local tActionData = tRow.sSubRoll and { sSubRoll = tRow.sSubRoll } or nil;
+	performRowAction(_tRows[nIndex], nil);
+	return true;
+end
 
-	local sCardId = (_tData or {}).sCardId or "";
-	if sCardId == "" then
-		-- Cards from before result support (or without an id) still roll.
-		PowerActionManagerCore.performAction(nil, tRow.nodeAction, tActionData);
-		return true;
+-- Same action as the click, carried by a drag: like the sheet's buttons,
+-- the drop decides the targets (a token to attack, the chat to roll plain).
+function onActionDrag(nButton, x, y, draginfo)
+	local nIndex = getActionIndexAt(x, y);
+	if not nIndex then
+		return;
 	end
-
-	-- One press = one volley: every roll it triggers reports back under
-	-- this id, and the next press starts the row over.
-	local sVolley = ChatCardsManager.nextVolleyId();
-	local bSecret = ((_tData or {}).sSecret == "1");
-	ChatCardsManager.performMarkedAction(sCardId, tRow.sKey, sVolley, bSecret, function()
-		PowerActionManagerCore.performAction(nil, tRow.nodeAction, tActionData);
-	end);
-
-	-- Effects apply without a roll that could report back, so the click
-	-- itself is the result.
-	if DB.getValue(tRow.nodeAction, "type", "") == "effect" then
-		ChatCardsManager.sendActionResultDirect(
-			{ sCardId = sCardId, sRow = tRow.sKey, sVolley = sVolley },
-			bSecret, "set", "Applied", "positive");
-	end
+	performRowAction(_tRows[nIndex], draginfo);
 	return true;
 end
 

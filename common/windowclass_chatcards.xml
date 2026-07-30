@@ -118,6 +118,12 @@
 					function onClickRelease(nButton, x, y)
 						return window.onActionClick(nButton, x, y);
 					end
+					-- Dragging a row's button carries its action, like the
+					-- sheet's buttons: drop an attack on a token to roll
+					-- against it, a save on targets, damage to apply it.
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onActionDrag(nButton, x, y, draginfo);
+					end
 					function onHoverUpdate(x, y)
 						window.onActionHover(x, y);
 					end

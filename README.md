@@ -69,7 +69,11 @@ decision log — lives in [`Design/`](Design/README.md).
   broadcast a `chatcards_result` OOB (attack: total + Crit/Fumble, coloured
   hit/miss; save: each target's total, green = saved; damage/heal: the
   shared total, mode `set` so per-target resolves don't repeat it; effect:
-  "Applied" sent directly from the click, there is no roll). Save-vs is the
+  "Applied", reported from the diceless effect roll's resolution). Row
+  buttons also drag like the sheet's: the marked rolls are encoded into the
+  draginfo at drag start and resolve wherever the drop lands (a token to
+  attack/damage/save that target, the chat for a plain roll) — a cancelled
+  drag never reports. Save-vs is the
   cross-client case: the marker rides the powersave roll's desc as a
   `[CCMARK ...]` tag, which `ActionPower`'s save-vs OOB carries into each
   target's save roll (`rRoll.sSaveDesc`), so whichever client rolls the

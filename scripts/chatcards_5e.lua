@@ -352,6 +352,14 @@ end
 function onResolveAction(rSource, rTarget, rRoll)
 	_fResolveAction(rSource, rTarget, rRoll);
 
+	-- Effects apply through a diceless roll; a power card's Effect row
+	-- reports from its resolution, which covers the click (resolves
+	-- immediately) and a drag (resolves on drop — or never, if cancelled).
+	-- "set": applying to several targets resolves once per target.
+	if rRoll.sType == "effect" then
+		ChatCardsManager.sendActionResult(rRoll, "set", "Applied", "positive");
+	end
+
 	if _tDedicatedTypes[rRoll.sType or ""] then
 		return;
 	end
