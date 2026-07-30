@@ -115,8 +115,13 @@ function sendCardOOB(tFields, bSecret)
 	end
 end
 
+-- Card classes by OOB card type; rolls of every kind share the action card.
+local _tCardClasses = {
+	power = "chatcard_power",
+};
+
 function handleCardOOB(msgOOB)
-	addCard("chatcard_action", msgOOB);
+	addCard(_tCardClasses[msgOOB.sCardType or ""] or "chatcard_action", msgOOB);
 end
 
 -- ===== Tags (the pills on action cards) =====
@@ -258,6 +263,7 @@ function sendRollCard(rSource, rRoll, tExtra)
 	sendCardOOB({
 		sCardType = "roll",
 		sName = sName or "",
+		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
 		sSub = rRoll.sUser or (Session.IsHost and "Gamemaster" or User.getUsername()),
 		sTitle = sTitle,
 		sFormula = buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
@@ -404,10 +410,15 @@ function onReceiveMessage(msg)
 	if _tSpeechModes[msg.mode or ""] and (msg.sender or "") ~= "" then
 		local tPortrait = getMessagePortrait(msg);
 		local bGM = tPortrait.bGM or (msg.sender == ChatIdentityManager.getGMIdentity());
+		-- For the name link. msg.sActorNode does not survive delivery, so
+		-- received messages fall back to the sender-name lookup.
+		local rSpeaker = ActorManager.resolveActor(msg.sActorNode)
+			or findActorBySenderName(msg.sender);
 		addCard("chatcard_speech", {
 			sName = msg.sender,
 			sSub = getSpeakerUser(msg),
 			sText = sText,
+			sActorNode = rSpeaker and ActorManager.getCreatureNodeName(rSpeaker) or "",
 			sIconAsset = tPortrait.sIconAsset,
 			sTokenAsset = tPortrait.sTokenAsset,
 			sIsGM = bGM and "1" or "",
@@ -671,6 +682,31 @@ end
 local RICH_WORD_GAP = 4;
 local RICH_WIDGET_NAME = "richword";
 
+-- ===== Links =====
+-- A rich-text segment with sLinkClass/sLinkPath (or a whole control given to
+-- setControlLink) becomes clickable: hand cursor and a colour shift on hover,
+-- Interface.openWindow on click. State is keyed by control; FG's sandbox has
+-- no setmetatable (so no weak tables), so every card whose controls register
+-- state MUST release it from onClose via releaseControlState, or closed
+-- cards (the card cap, /clear) accumulate entries.
+
+-- Hover tint: the theme gold of cc_subtitle / cc_effectlogic.
+local LINK_HOVER_COLOR = "FF8A7340";
+-- What linked rich-text words return to when the pointer leaves: a widget's
+-- setColor cannot be reset to "whatever the font had", so this must match
+-- cc_body / cc_bodybold in graphics_chatcards.xml.
+local RICH_TEXT_COLOR = "FF1A1A1A";
+
+local _tRichState = {};
+local _tControlLinks = {};
+
+function releaseControlState(...)
+	for _, cControl in ipairs({ ... }) do
+		_tRichState[cControl] = nil;
+		_tControlLinks[cControl] = nil;
+	end
+end
+
 -- Widgets are named consecutively so a re-render can drop the previous pass
 -- (there is no "destroy every widget" call).
 function clearRichText(cControl)
@@ -685,15 +721,19 @@ function clearRichText(cControl)
 	end
 end
 
--- Returns the height used, so the caller can size its control.
+-- Returns the height used, so the caller can size its control. Segments may
+-- carry sLinkClass/sLinkPath to make their words clickable — the link events
+-- are handled here (see the cc_rich_sentence template), so the caller only
+-- marks the segments.
 function setRichText(cControl, tSegments, nWidth, nLineHeight)
 	clearRichText(cControl);
 
+	local tWords = {};
 	local nX = 0;
 	local nY = 0;
 	local nLines = 1;
 	local nIndex = 0;
-	for _, tSegment in ipairs(tSegments or {}) do
+	for nSegment, tSegment in ipairs(tSegments or {}) do
 		for sWord in tostring(tSegment.sText or ""):gmatch("%S+") do
 			nIndex = nIndex + 1;
 			local wWord = cControl.addTextWidget({
@@ -716,11 +756,183 @@ function setRichText(cControl, tSegments, nWidth, nLineHeight)
 				wWord.setPosition("topleft",
 					nX + math.floor(nWordWidth / 2),
 					nY + math.floor(nLineHeight / 2));
+				table.insert(tWords, {
+					nSegment = nSegment,
+					sWidget = RICH_WIDGET_NAME .. nIndex,
+					x = nX, y = nY,
+					w = nWordWidth, h = nLineHeight,
+				});
 				nX = nX + nWordWidth + RICH_WORD_GAP;
 			end
 		end
 	end
-	return nLines * nLineHeight;
+	-- Kept for the link event handlers (onRichTextClick/Hover); a re-render
+	-- replaces it, so any hover tint from the old layout is gone with it.
+	_tRichState[cControl] = { tWords = tWords, tSegments = tSegments or {} };
+	return nLines * nLineHeight, tWords;
+end
+
+-- Which segment a control-local point is over, from setRichText's word
+-- boxes; nil between words and outside the text.
+function getRichTextSegmentAt(tWords, x, y)
+	for _, tWord in ipairs(tWords or {}) do
+		if (x >= tWord.x) and (x <= (tWord.x + tWord.w))
+				and (y >= tWord.y) and (y <= (tWord.y + tWord.h)) then
+			return tWord.nSegment;
+		end
+	end
+	return nil;
+end
+
+-- The linked segment under a control-local point, or nil.
+local function getRichLinkAt(cControl, x, y)
+	local tState = _tRichState[cControl];
+	if not tState then
+		return nil;
+	end
+	local nSegment = getRichTextSegmentAt(tState.tWords, x, y);
+	local tSegment = nSegment and tState.tSegments[nSegment];
+	if tSegment and tSegment.sLinkClass and tSegment.sLinkPath then
+		return nSegment, tSegment;
+	end
+	return nil;
+end
+
+-- Whether a rich-text control has any linked segment (the template's
+-- onClickDown claims the press only then, so linkless sentences stay
+-- transparent to clicks).
+function hasRichTextLink(cControl)
+	local tState = _tRichState[cControl];
+	for _, tSegment in ipairs(tState and tState.tSegments or {}) do
+		if tSegment.sLinkClass and tSegment.sLinkPath then
+			return true;
+		end
+	end
+	return false;
+end
+
+-- Event forwarders for controls rendered with setRichText (wired up by the
+-- cc_rich_sentence template).
+function onRichTextClick(cControl, nButton, x, y)
+	if nButton ~= 1 then
+		return;
+	end
+	local _, tSegment = getRichLinkAt(cControl, x, y);
+	if not tSegment then
+		return;
+	end
+	Interface.openWindow(tSegment.sLinkClass, tSegment.sLinkPath);
+	return true;
+end
+
+function onRichTextHover(cControl, x, y)
+	local tState = _tRichState[cControl];
+	if not tState then
+		return;
+	end
+	local nSegment = getRichLinkAt(cControl, x, y);
+	if nSegment == tState.nHoverSegment then
+		return;
+	end
+
+	local function tintSegment(nTarget, sColor)
+		for _, tWord in ipairs(tState.tWords) do
+			if tWord.nSegment == nTarget then
+				local wWord = cControl.findWidget(tWord.sWidget);
+				if wWord then
+					wWord.setColor(sColor);
+				end
+			end
+		end
+	end
+	if tState.nHoverSegment then
+		tintSegment(tState.nHoverSegment, RICH_TEXT_COLOR);
+	end
+	if nSegment then
+		tintSegment(nSegment, LINK_HOVER_COLOR);
+	end
+	tState.nHoverSegment = nSegment;
+
+	if cControl.setHoverCursor then
+		cControl.setHoverCursor(nSegment and "hand" or "arrow");
+	end
+end
+
+-- Whole-control links (the header name on action and speech cards).
+-- sNormalColor is the control font's colour, restored on hover end.
+function setControlLink(cControl, sClass, sPath, sNormalColor)
+	if sClass and sPath then
+		_tControlLinks[cControl] = { sClass = sClass, sPath = sPath, sNormal = sNormalColor };
+	else
+		_tControlLinks[cControl] = nil;
+	end
+end
+
+function hasControlLink(cControl)
+	return _tControlLinks[cControl] ~= nil;
+end
+
+function onLinkControlClick(cControl, nButton)
+	local tLink = _tControlLinks[cControl];
+	if not tLink or (nButton ~= 1) then
+		return;
+	end
+	Interface.openWindow(tLink.sClass, tLink.sPath);
+	return true;
+end
+
+function onLinkControlHover(cControl, bOver)
+	local tLink = _tControlLinks[cControl];
+	if not tLink then
+		return;
+	end
+	if cControl.setHoverCursor then
+		cControl.setHoverCursor(bOver and "hand" or "arrow");
+	end
+	cControl.setColor(bOver and LINK_HOVER_COLOR or tLink.sNormal);
+end
+
+-- ===== Actor links =====
+-- Where a character name can open the sheet behind it. Class comes from the
+-- node: charsheet nodes open the character sheet for anyone who can resolve
+-- them (the engine only syncs what a client may see); anything else is an
+-- NPC record or CT entry, whose stat block stays GM-only.
+function resolveActorLink(sActorNode)
+	sActorNode = sActorNode or "";
+	if (sActorNode == "") or not DB.findNode(sActorNode) then
+		return nil;
+	end
+	if sActorNode:match("^charsheet%.") then
+		return "charsheet", sActorNode;
+	end
+	if Session.IsHost then
+		return "npc", sActorNode;
+	end
+	return nil;
+end
+
+-- Attach an actor link to a rich-text segment (in place, returns it back).
+function applyActorLink(tSegment, sActorNode)
+	tSegment.sLinkClass, tSegment.sLinkPath = resolveActorLink(sActorNode);
+	return tSegment;
+end
+
+-- Header name colour: must match cc_name in graphics_chatcards.xml.
+local NAME_COLOR = "FF3B2A12";
+
+function setActorNameLink(cControl, sActorNode)
+	local sClass, sPath = resolveActorLink(sActorNode);
+	setControlLink(cControl, sClass, sPath, NAME_COLOR);
+end
+
+-- Actor node path for a display name parsed back out of a chat message
+-- (the effect card's source and target).
+function getActorNodeByName(sName)
+	local rActor = findActorBySenderName(sName);
+	if not rActor then
+		return "";
+	end
+	return ActorManager.getCreatureNodeName(rActor) or "";
 end
 
 -- ===== Portraits =====

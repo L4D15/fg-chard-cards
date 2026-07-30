@@ -38,24 +38,13 @@
 		<frame>cc_system_card</frame>
 		<script file="scripts/chatcard_effect.lua" />
 		<sheetdata>
-			<genericcontrol name="sentence">
+			<cc_rich_sentence name="sentence">
 				<anchored height="18">
 					<top offset="8" />
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
-				<script>
-					-- Text widgets do not reflow, and the width to wrap them at
-					-- is only known once the card has been laid out — and again
-					-- whenever the chat panel is resized.
-					function onFirstLayout()
-						window.renderSentence();
-					end
-					function onLayoutSizeChanged()
-						window.renderSentence();
-					end
-				</script>
-			</genericcontrol>
+			</cc_rich_sentence>
 			<stringcontrol name="logic">
 				<anchored>
 					<top parent="sentence" anchor="bottom" offset="1" />
@@ -68,6 +57,118 @@
 			</stringcontrol>
 			<genericcontrol name="sizer">
 				<anchored to="logic" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<!-- Power use / spell cast: same family as the effect card — a rich-text
+	     sentence ("<b>Elara</b> casts <b>Mage Armor</b>."), what the power is
+	     in the italic detail font, and the power's description text below. -->
+	<windowclass name="chatcard_power">
+		<frame>cc_system_card</frame>
+		<script file="scripts/chatcard_power.lua" />
+		<sheetdata>
+			<cc_rich_sentence name="sentence">
+				<anchored height="18">
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+			</cc_rich_sentence>
+			<stringcontrol name="typeline">
+				<anchored>
+					<top parent="sentence" anchor="bottom" offset="1" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_effectlogic</font>
+				<multilinespacing>17</multilinespacing>
+				<readonly />
+			</stringcontrol>
+			<!-- Section header over the action buttons; collapsed with them
+			     when the power has no actions to show. -->
+			<stringcontrol name="actionsheader">
+				<anchored height="0">
+					<top parent="typeline" anchor="bottom" offset="4" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_headertitle</font>
+				<readonly />
+			</stringcontrol>
+			<!-- The power's action buttons (cast/damage/effect...), as icon
+			     widgets on one control with click hit-testing: cards are not
+			     database-bound windows, so the sheet's action list (one
+			     button control per action node) cannot be reused here. -->
+			<genericcontrol name="actionbar">
+				<anchored height="0">
+					<top parent="actionsheader" anchor="bottom" offset="2" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<script>
+					-- Claim the press so the release lands here too.
+					function onClickDown()
+						return true;
+					end
+					function onClickRelease(nButton, x, y)
+						return window.onActionClick(nButton, x, y);
+					end
+					function onHoverUpdate(x, y)
+						window.onActionHover(x, y);
+					end
+				</script>
+			</genericcontrol>
+			<!-- Fold toggle for the description: a link-styled line the window
+			     script drives ("Show description" / "Hide description"). -->
+			<stringcontrol name="desctoggle">
+				<anchored height="15">
+					<top parent="actionbar" anchor="bottom" offset="3" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_foldtoggle</font>
+				<center />
+				<readonly />
+				<script>
+					local HOVER_COLOR = "FF3B2A12";
+					-- Matches cc_foldtoggle in graphics_chatcards.xml.
+					local NORMAL_COLOR = "FF79756C";
+					function onClickDown()
+						if window.hasDescription() then
+							return true;
+						end
+					end
+					function onClickRelease(nButton)
+						if nButton == 1 then
+							window.toggleDescription();
+							return true;
+						end
+					end
+					function onHover(bOver)
+						if not window.hasDescription() then
+							return;
+						end
+						setHoverCursor(bOver and "hand" or "arrow");
+						setColor(bOver and HOVER_COLOR or NORMAL_COLOR);
+					end
+				</script>
+			</stringcontrol>
+			<!-- Description body. Its height must come from setValue autosizing
+			     alone for the fold to reopen — an explicit setAnchoredHeight
+			     would stick and pin it at 0. -->
+			<stringcontrol name="desc">
+				<anchored>
+					<top parent="desctoggle" anchor="bottom" offset="2" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_body</font>
+				<multilinespacing>18</multilinespacing>
+				<readonly />
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="desc" position="belowleft" height="8" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>
@@ -176,9 +277,14 @@
 		<script>
 			function setData(t)
 				name.setValue(t.sName or "");
+				ChatCardsManager.setActorNameLink(name, t.sActorNode);
 				subtitle.setValue(t.sSub or "");
 				text.setValue(t.sText or "");
 				ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
+			end
+			-- No weak tables in FG's sandbox: release the name link state.
+			function onClose()
+				ChatCardsManager.releaseControlState(name);
 			end
 		</script>
 		<sheetdata>
@@ -200,11 +306,9 @@
 					<right offset="-5" />
 				</anchored>
 			</genericcontrol>
-			<stringcontrol name="name">
+			<cc_name_link name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,2" />
-				<font>cc_name</font>
-				<readonly />
-			</stringcontrol>
+			</cc_name_link>
 			<stringcontrol name="subtitle">
 				<anchored to="namebar" position="belowleft" offset="10,0" height="15" />
 				<font>cc_subtitle</font>
@@ -271,11 +375,9 @@
 					<right parent="resultbox" anchor="left" offset="-4" />
 				</anchored>
 			</genericcontrol>
-			<stringcontrol name="name">
+			<cc_name_link name="name">
 				<anchored to="namebar" position="insidetopleft" offset="10,2" />
-				<font>cc_name</font>
-				<readonly />
-			</stringcontrol>
+			</cc_name_link>
 			<stringcontrol name="subtitle">
 				<anchored to="namebar" position="belowleft" offset="10,0" height="15" />
 				<font>cc_subtitle</font>

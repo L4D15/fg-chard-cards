@@ -43,6 +43,66 @@
 		</genericcontrol>
 	</template>
 
+	<!-- A rich-text sentence (mixed bold/regular words, drawn by
+	     ChatCardsManager.setRichText from the window's getSentenceSegments,
+	     via a renderSentence the window must define). The layout events
+	     re-render because text widgets do not reflow; clicks and hovers go
+	     to the manager, which resolves them against segment links. -->
+	<template name="cc_rich_sentence">
+		<genericcontrol>
+			<script>
+				function onFirstLayout()
+					window.renderSentence();
+				end
+				function onLayoutSizeChanged()
+					window.renderSentence();
+				end
+				-- Claim the press so the release lands here too, but only
+				-- when the sentence has links at all.
+				function onClickDown()
+					if ChatCardsManager.hasRichTextLink(self) then
+						return true;
+					end
+				end
+				function onClickRelease(nButton, x, y)
+					return ChatCardsManager.onRichTextClick(self, nButton, x, y);
+				end
+				function onHoverUpdate(x, y)
+					ChatCardsManager.onRichTextHover(self, x, y);
+				end
+				function onHover(bOver)
+					if not bOver then
+						ChatCardsManager.onRichTextHover(self, -1, -1);
+					end
+				end
+			</script>
+		</genericcontrol>
+	</template>
+
+	<!-- Header name that doubles as a link to the actor's sheet when
+	     ChatCardsManager.setActorNameLink armed it (the whole control is the
+	     hit area). Without a link the click is not claimed and falls
+	     through. -->
+	<template name="cc_name_link">
+		<stringcontrol>
+			<font>cc_name</font>
+			<readonly />
+			<script>
+				function onClickDown()
+					if ChatCardsManager.hasControlLink(self) then
+						return true;
+					end
+				end
+				function onClickRelease(nButton)
+					return ChatCardsManager.onLinkControlClick(self, nButton);
+				end
+				function onHover(bOver)
+					ChatCardsManager.onLinkControlHover(self, bOver);
+				end
+			</script>
+		</stringcontrol>
+	</template>
+
 	<!-- Portrait box shown at the top-left of cards, as three stacked
 	     layers (declare in this order so the border draws on top):
 	     cc_portrait_token (NPC token/picture art), cc_portrait_icon

@@ -15,8 +15,15 @@ local DIE_COLOR = "FFD8D2BD";
 local DIE_COLOR_DROPPED = "80D8D2BD";
 local DIE_LABEL_DROPPED = "80FFFFFF";
 
+-- No weak tables in FG's sandbox: the manager's link state is released by
+-- hand when the card closes.
+function onClose()
+	ChatCardsManager.releaseControlState(name);
+end
+
 function setData(t)
 	name.setValue(t.sName or "");
+	ChatCardsManager.setActorNameLink(name, t.sActorNode);
 	subtitle.setValue(t.sSub or "");
 	title.setValue(t.sTitle or "");
 	ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
