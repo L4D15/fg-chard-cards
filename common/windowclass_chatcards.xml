@@ -61,11 +61,13 @@
 		</sheetdata>
 	</windowclass>
 
-	<!-- Power use / spell cast: same family as the effect card — a rich-text
-	     sentence ("<b>Elara</b> casts <b>Mage Armor</b>."), what the power is
-	     in the italic detail font, and the power's description text below. -->
+	<!-- Power use / spell cast: a rich-text sentence ("<b>Elara</b> casts
+	     <b>Mage Armor</b>."), what the power is in the italic detail font,
+	     the power's action buttons, and its description folded below. On the
+	     standard card background (cc_card, like the roll cards): it is a
+	     player action rather than engine chatter. -->
 	<windowclass name="chatcard_power">
-		<frame>cc_system_card</frame>
+		<frame>cc_card</frame>
 		<script file="scripts/chatcard_power.lua" />
 		<sheetdata>
 			<cc_rich_sentence name="sentence">
