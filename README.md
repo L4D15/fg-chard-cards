@@ -33,7 +33,12 @@ decision log — lives in [`Design/`](Design/README.md).
   `nDefenseVal`, `sResult`, target, modifiers) *before* it is flattened into
   chat text, then broadcasts a card OOB. The flattened `[ATTACK ...]` /
   `[DAMAGE ...]` text messages are suppressed on the card side to avoid
-  duplicates (they still reach the hidden real chat log).
+  duplicates (they still reach the hidden real chat log). Also tags effect
+  actions with their originating power's name (wrapping
+  `PowerManager.performAction`, carried roll→effect through CoreRPG's
+  `onEffectRollEncode`/`Decode` hooks and the JSON add-effect OOB); when an
+  unnamed effect ("AC: 3") lands, the host's notice gains a `[from Mage
+  Armor]` line that the effect card uses as the effect's name.
 - **`common/windowclass_chatcards.xml`** — the card windowclasses:
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
   keyword chips, result box), `chatcard_speech`, `chatcard_story`,

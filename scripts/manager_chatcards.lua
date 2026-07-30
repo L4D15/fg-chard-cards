@@ -502,7 +502,15 @@ function parseEffectNotice(sText)
 	end
 
 	local sName, sLogic = splitEffectName(sEffect);
-	if sName == "" then
+	-- "[from X]" names the power the effect came from. The 5E hooks add it
+	-- (as the notice's last line) exactly when the effect string carries no
+	-- name of its own, so it wins the name slot and the whole effect string
+	-- is rules text.
+	local sPower = sText:match("%[from ([^%]]+)%]%s*$");
+	if sPower then
+		sName = sPower;
+		sLogic = sEffect;
+	elseif sName == "" then
 		sName = "Unknown effect";
 	end
 	return {
@@ -522,7 +530,9 @@ end
 -- first ';' or ':' outside brackets — a duration clause ("[D: 1 hour]") or a
 -- concentration marker carries separators of its own.
 -- NOTE: an effect written as bare rules text ("IMMUNE: poison") has no name
--- to find, so its first tag becomes the name.
+-- to find, so its first tag becomes the name (unless a "[from ...]" marker
+-- supplied the originating power, see parseEffectNotice).
+-- Also returns the separator the name ended at, for hasEffectName.
 function splitEffectName(sEffect)
 	local nDepth = 0;
 	for i = 1, #sEffect do
@@ -532,10 +542,18 @@ function splitEffectName(sEffect)
 		elseif (sChar == "]") or (sChar == ")") then
 			nDepth = math.max(nDepth - 1, 0);
 		elseif (nDepth == 0) and ((sChar == ";") or (sChar == ":")) then
-			return StringManager.trim(sEffect:sub(1, i - 1)), StringManager.trim(sEffect:sub(i + 1));
+			return StringManager.trim(sEffect:sub(1, i - 1)), StringManager.trim(sEffect:sub(i + 1)), sChar;
 		end
 	end
-	return StringManager.trim(sEffect), "";
+	return StringManager.trim(sEffect), "", "";
+end
+
+-- Whether an effect string leads with a display name of its own: a first
+-- clause with no ':' inside it ("Bless; ...", plain "Prone"), as opposed to
+-- opening straight with a rules tag ("AC: 3", "LIGHT: 20 light").
+function hasEffectName(sEffect)
+	local sName, _, sSep = splitEffectName(sEffect or "");
+	return (sName ~= "") and (sSep ~= ":");
 end
 
 -- The received copy of a message carries its icon in msg.assets, as
