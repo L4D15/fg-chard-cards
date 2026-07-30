@@ -38,12 +38,26 @@ decision log — lives in [`Design/`](Design/README.md).
   `PowerManager.performAction`, carried roll→effect through CoreRPG's
   `onEffectRollEncode`/`Decode` hooks and the JSON add-effect OOB); when an
   unnamed effect ("AC: 3") lands, the host's notice gains a `[from Mage
-  Armor]` line that the effect card uses as the effect's name.
+  Armor]` line that the effect card uses as the effect's name. Power use is
+  carded too (`chatcard_power`: who, the power name, what it is, its
+  description — folded behind a "Show description" toggle by default —
+  and the power's action buttons — driven through the same
+  `PowerActionManagerCore` handlers as the sheet's Actions tab, shown only
+  where the power node resolves and is owned, i.e. the caster and the GM;
+  the bold power name is also a link that opens the record wherever the node
+  resolves, with a hand cursor and a colour shift on hover — the same link
+  treatment character names get on every card, see below):
+  full casts from the `PowerManager.performAction` wrap (their
+  `[CAST]` text was already skipped as a roll tag), and the sheet's "use"
+  button by wrapping `PowerManagerCore.usePower` — there the card *replaces*
+  the default power-name text message, which carries no tag receivers could
+  suppress it by.
 - **`common/windowclass_chatcards.xml`** — the card windowclasses:
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
   keyword chips, result box), `chatcard_speech`, `chatcard_story`,
   `chatcard_system` (apply banners and turn notices), `chatcard_effect`,
-  `chatcard_round` (centred) and `chatcard_notice` (frameless). A windowclass's
+  `chatcard_power` (spell casts / power uses, with the power's type and
+  description), `chatcard_round` (centred) and `chatcard_notice` (frameless). A windowclass's
   frame and text alignment are static, so variants of one layout are separate
   classes rather than one class with overrides.
 - **`scripts/chatcard_effect.lua`** — the effect card's sentence, with the
@@ -52,6 +66,16 @@ decision log — lives in [`Design/`](Design/README.md).
   `ChatCardsManager.setRichText`; those widgets don't reflow, so the card
   re-renders from the sentence control's `onFirstLayout` /
   `onLayoutSizeChanged` (the only place a resolved width is available).
+- **Links** — character names on action, speech, power and effect cards (and
+  the power name on power cards) open the record behind them:
+  `ChatCardsManager` owns the machinery (weak-keyed per-control state, hand
+  cursor + gold hover tint, `Interface.openWindow` on click), wired through
+  the `cc_rich_sentence` / `cc_name_link` templates. Rich-text segments carry
+  `sLinkClass`/`sLinkPath`; header names are armed with `setActorNameLink`.
+  Gating: charsheet nodes link wherever they resolve; NPC/CT nodes are
+  GM-only (their stat blocks are not for players). The hover/unhover colours
+  are constants that must match `cc_bodybold` / `cc_name` in
+  `graphics_chatcards.xml`.
 - **`graphics/`** — placeholder 9-slice frames (generated flat-color art) and
   fonts. Swap the PNGs in `graphics/frames/` and the colors in
   `graphics_chatcards.xml` to restyle everything without touching code.

@@ -11,6 +11,7 @@ local _fPowerPerformAction = nil;
 local _fEffectRollEncode = nil;
 local _fEffectRollDecode = nil;
 local _fEffectAddNotify = nil;
+local _fUsePower = nil;
 
 -- Roll types with a dedicated card hook; everything else gets a generic
 -- roll card from the resolveAction wrap. Types that roll no dice produce
@@ -66,6 +67,16 @@ function onInit()
 		EffectManager.onEffectAddNotify = onEffectAddNotify;
 	end
 
+	-- Power-use card. The "use" button funnels through
+	-- PowerManagerCore.usePower(node) with the power record itself, whose
+	-- default output is just the power name as text; the card replaces it
+	-- (see onUsePower). Cast actions get their card in onPowerPerformAction:
+	-- their "[CAST] ..." text was already being skipped as a roll tag.
+	if PowerManagerCore and PowerManagerCore.usePower then
+		_fUsePower = PowerManagerCore.usePower;
+		PowerManagerCore.usePower = onUsePower;
+	end
+
 	-- This ruleset's card tags. The manager knows nothing about them; other
 	-- systems (or plugin extensions) register their own the same way.
 	ChatCardsManager.registerTagProvider("attack", getAttackTags);
@@ -87,7 +98,100 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodePower)
 			rAction.sChatCardsPower = sPowerName;
 		end
 	end
-	return _fPowerPerformAction(draginfo, rActor, rAction, nodePower);
+	local bResult = _fPowerPerformAction(draginfo, rActor, rAction, nodePower);
+	-- A full cast (subtype "" — the sub-roll buttons re-run only the attack
+	-- or save part) announces the power. Its "[CAST] ..." text message is
+	-- one of the skipped roll tags, so the card is the announcement.
+	if bResult and rAction and (rAction.type == "cast") and ((rAction.subtype or "") == "") then
+		sendPowerCard(rActor, nodePower, "casts");
+	end
+	return bResult;
+end
+
+--
+--	POWER-USE CARDS
+--
+
+-- The 5E ruleset registers no fnUsePower handler, so the original's only
+-- work is PowerManagerCore.performDefaultPowerUse: the power name as a text
+-- message. When a card is sent the original is skipped — its message would
+-- show as a duplicate notice, and unlike the roll texts it carries no tag a
+-- receiving client could suppress it by. If the card cannot be built the
+-- original runs unchanged.
+function onUsePower(node)
+	local rActor = ActorManager.resolveActor(PowerManagerCore.getPowerActorNode(node));
+	-- Mirror the default output's reach: NPC power use stays GM-only.
+	local bSecret = not (rActor and ActorManager.isPC(rActor));
+	if sendPowerCard(rActor, node, "uses", bSecret) then
+		return;
+	end
+	_fUsePower(node);
+end
+
+-- Broadcast a power card: who, the power's name, what it is ("Level 1 Spell
+-- · Abjuration", the power's group otherwise) and its description text.
+function sendPowerCard(rActor, nodePower, sVerb, bSecret)
+	if not nodePower then
+		return false;
+	end
+	local sPowerName = StringManager.trim(DB.getValue(nodePower, "name", ""));
+	if sPowerName == "" then
+		return false;
+	end
+
+	local tPortrait = ChatCardsManager.getActorPortrait(rActor);
+	ChatCardsManager.sendCardOOB({
+		sCardType = "power",
+		sName = ChatCardsManager.getActorName(rActor, nil),
+		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
+		sVerb = sVerb or "uses",
+		sPower = sPowerName,
+		sTypeLabel = getPowerTypeLabel(nodePower),
+		sDesc = getPowerDescription(nodePower),
+		-- For the card's action buttons. A path, not data: each receiving
+		-- client resolves it itself, so the buttons only appear where the
+		-- node is readable AND owned (the caster's client, the GM).
+		sPowerNode = DB.getPath(nodePower),
+		sIconAsset = tPortrait.sIconAsset,
+		sTokenAsset = tPortrait.sTokenAsset,
+		sIsGM = (not rActor and Session.IsHost) and "1" or "",
+	}, bSecret or false);
+	return true;
+end
+
+-- What kind of power this is. A spell is recognized by its school or by a
+-- "spell" group ("Spells (Wizard)"); anything else shows its group name,
+-- which on a sheet is where the power lives ("Class Features", "Feats").
+function getPowerTypeLabel(nodePower)
+	local sGroup = StringManager.trim(DB.getValue(nodePower, "group", ""));
+	local sSchool = StringManager.trim(DB.getValue(nodePower, "school", ""));
+	local nLevel = DB.getValue(nodePower, "level", 0);
+	if (sSchool ~= "") or sGroup:lower():match("spell") then
+		local sLabel = (nLevel == 0) and "Cantrip" or string.format("Level %d Spell", nLevel);
+		if sSchool ~= "" then
+			-- middot, as on the action card's modifier row
+			sLabel = sLabel .. " \194\183 " .. sSchool;
+		end
+		return sLabel;
+	end
+	if sGroup ~= "" then
+		return sGroup;
+	end
+	return "Power";
+end
+
+-- Description text for the card. PC powers and library spells carry a
+-- formattedtext "description" (an XML string when read through getValue);
+-- NPC spells a plain "desc". Formatting is flattened: paragraph breaks
+-- become line breaks and the remaining markup is stripped.
+function getPowerDescription(nodePower)
+	local s = DB.getValue(nodePower, "description", "");
+	if s == "" then
+		s = DB.getValue(nodePower, "desc", "");
+	end
+	s = s:gsub("</p>%s*<p>", "\r"):gsub("<br%s*/?>", "\r"):gsub("<[^>]->", "");
+	s = s:gsub("&amp;", "&"):gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&quot;", "\""):gsub("&#39;", "'");
+	return StringManager.trim(s);
 end
 
 function onEffectRollEncode(rRoll, rAction)
@@ -261,6 +365,7 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	local tCard = {
 		sCardType = "attack",
 		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+		sActorNode = rSource and ActorManager.getCreatureNodeName(rSource) or "",
 		sSub = rRoll.sUser or "Gamemaster",
 		sTitle = rangeWord(sRange) .. "Attack",
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
@@ -296,6 +401,7 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	local tCard = {
 		sCardType = "damage",
 		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+		sActorNode = rSource and ActorManager.getCreatureNodeName(rSource) or "",
 		sSub = rRoll.sUser or "Gamemaster",
 		sTitle = "Damage Roll",
 		sFormula = ChatCardsManager.buildDiceFormula(rRoll.aDice, rRoll.nMod or 0),
@@ -336,6 +442,7 @@ function onHealRoll(rSource, rTarget, rRoll)
 	local tCard = {
 		sCardType = "heal",
 		sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+		sActorNode = rSource and ActorManager.getCreatureNodeName(rSource) or "",
 		sSub = rRoll.sUser or "Gamemaster",
 		sTitle = bTemp and "Temporary HP" or "Healing",
 		sFormula = sFormula,

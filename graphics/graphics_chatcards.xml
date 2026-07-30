@@ -168,6 +168,14 @@
 		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
 		<color value="#8A7340" />
 	</font>
+	<!-- The power card's "Show/Hide description" fold toggle: italic like the
+	     detail lines, in the muted grey of cc_headertitle so it pairs with
+	     the "Actions" header. The toggle's script tints it on hover — keep
+	     its NORMAL_COLOR in step with this. -->
+	<font name="cc_foldtoggle">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
+		<color value="#79756C" />
+	</font>
 	<!-- Engine/system notices: muted italic, so announcements, errors and
 	     turn/effect chatter read as background noise next to the cards. -->
 	<font name="cc_notice">

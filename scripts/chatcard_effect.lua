@@ -18,6 +18,12 @@ local FALLBACK_WIDTH = 300;
 local _tData = nil;
 local _nRenderedWidth = nil;
 
+-- No weak tables in FG's sandbox: the manager's link state is released by
+-- hand when the card closes.
+function onClose()
+	ChatCardsManager.releaseControlState(sentence);
+end
+
 function setData(t)
 	_tData = t;
 
@@ -67,21 +73,30 @@ end
 -- themselves): "**Elara Brightwood** gains the effect **LIGHT**."
 -- The full stop rides on the last bold segment so it can never wrap onto a
 -- line of its own.
+-- The names came out of the notice text, so their sheets are looked up by
+-- display name (CT first) — where that resolves, the name links to the
+-- sheet; link handling lives in the manager.
+local function actorSegment(sName, sSuffix)
+	return ChatCardsManager.applyActorLink(
+		{ sText = sName .. (sSuffix or ""), sFont = FONT_BOLD },
+		ChatCardsManager.getActorNodeByName(sName));
+end
+
 function getSentenceSegments()
 	local sName = _tData.sName or "";
 	local sSource = _tData.sSource or "";
 	local sTarget = _tData.sTarget or "";
 	if (sSource ~= "") and (sSource ~= sTarget) then
 		return {
-			{ sText = sSource, sFont = FONT_BOLD },
+			actorSegment(sSource),
 			{ sText = "applies the effect", sFont = FONT_TEXT },
 			{ sText = sName, sFont = FONT_BOLD },
 			{ sText = "to", sFont = FONT_TEXT },
-			{ sText = sTarget .. ".", sFont = FONT_BOLD },
+			actorSegment(sTarget, "."),
 		};
 	end
 	return {
-		{ sText = sTarget, sFont = FONT_BOLD },
+		actorSegment(sTarget),
 		{ sText = "gains the effect", sFont = FONT_TEXT },
 		{ sText = sName .. ".", sFont = FONT_BOLD },
 	};
