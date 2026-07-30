@@ -154,10 +154,16 @@
 		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="14" />
 		<color value="#1A1A1A" />
 	</font>
-	<!-- System messages: same colour as the card body text (#1A1A1A), kept as
+	<!-- Apply banners: same colour as the card body text (#1A1A1A), kept as
 	     its own font so they can be restyled independently. -->
 	<font name="cc_bannertext">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
 		<color value="#1A1A1A" />
+	</font>
+	<!-- Engine/system notices: muted italic, so announcements, errors and
+	     turn/effect chatter read as background noise next to the cards. -->
+	<font name="cc_notice">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
+		<color value="#5F5B52" />
 	</font>
 </root>

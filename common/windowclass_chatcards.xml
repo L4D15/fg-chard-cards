@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <root>
-	<!-- Full-width text cards. System messages and story text share this
-	     layout but differ in background and font, and a windowclass frame is
-	     static, so they are separate classes rather than one with overrides. -->
+	<!-- Full-width text cards. Apply banners ("takes N damage") and story
+	     text share this layout but differ in background and font, and a
+	     windowclass frame is static, so they are separate classes rather
+	     than one with overrides. -->
 	<windowclass name="chatcard_system">
 		<frame>cc_system_card</frame>
 		<script>
@@ -23,6 +24,52 @@
 			</stringcontrol>
 			<genericcontrol name="sizer">
 				<anchored to="text" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<!-- Engine/system notices (SystemMessage errors, extension announcements,
+	     turn and effect chatter): no background frame — the text sits directly
+	     on the chat box — with the message's own icon, when it carries one,
+	     leading the first line. The icon slot collapses when empty so
+	     iconless text lands on the same 17px inset as the cards. -->
+	<windowclass name="chatcard_notice">
+		<script>
+			local ICON_SIZE = 18;
+			function setData(t)
+				text.setValue(t.sText or "");
+				if (t.sIcon or "") ~= "" then
+					noticeicon.setAnchoredWidth(ICON_SIZE);
+					noticeicon.addBitmapWidget({
+						icon = t.sIcon,
+						position = "topleft",
+						x = ICON_SIZE / 2, y = ICON_SIZE / 2,
+						w = ICON_SIZE, h = ICON_SIZE,
+					});
+				end
+			end
+		</script>
+		<sheetdata>
+			<!-- width 1, not 0: degenerate sizes can drop a control out of the
+			     anchor layout (see the action card's boxpad note). -->
+			<genericcontrol name="noticeicon">
+				<anchored width="1" height="18">
+					<top offset="4" />
+					<left offset="11" />
+				</anchored>
+			</genericcontrol>
+			<stringcontrol name="text">
+				<anchored>
+					<top offset="5" />
+					<left parent="noticeicon" anchor="right" offset="5" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_notice</font>
+				<multilinespacing>17</multilinespacing>
+				<readonly />
+			</stringcontrol>
+			<genericcontrol name="sizer">
+				<anchored to="text" position="belowleft" height="5" width="1" />
 			</genericcontrol>
 		</sheetdata>
 	</windowclass>

@@ -17,9 +17,14 @@ decision log — lives in [`Design/`](Design/README.md).
   A `windowlist` named `cards` takes over the display area and accepts
   dice/number/string drops like the original chat window did.
 - **`scripts/manager_chatcards.lua`** (`ChatCardsManager`) — global manager.
-  Listens to `ChatManager.registerReceiveMessageCallback` and classifies every
-  incoming message: dice → generic roll card, speech modes → speech card,
-  everything else → banner. Also defines the `chatcards_card` OOB message that
+  Listens to `ChatManager.registerReceiveMessageCallback`, which the engine
+  fires for *every* message — delivered or locally injected via
+  `Comm.addChatMessage` (`SystemMessage`, GM turn/effect copies), secret or
+  not (verified in-app on FGU v5.1.13) — and classifies each one: dice →
+  generic roll card, speech modes → speech card, apply results → banner,
+  everything else → frameless notice. Received messages carry their icon in
+  `msg.assets` (`msg.icon` doesn't survive the trip), which is where notice
+  icons come from. Also defines the `chatcards_card` OOB message that
   carries structured card data to every client.
 - **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — 5E hooks. Wraps
   `ActionAttack.onAttackResolve` and re-registers the `damage` result handler

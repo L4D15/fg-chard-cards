@@ -19,6 +19,9 @@ local _tPending = {};
 
 function onInit()
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
+	-- The receive event fires for every message: delivered ones AND local
+	-- injects via Comm.addChatMessage (SystemMessage, the GM copies of
+	-- turn/effect notices), secret or not — verified in-app on FGU v5.1.13.
 	ChatManager.registerReceiveMessageCallback(onReceiveMessage);
 	-- /clear is handled inside the engine, which clears the (hidden) chat
 	-- control it owns and knows nothing about the card list beside it. A
@@ -74,6 +77,12 @@ end
 
 function addSystemCard(sText)
 	return addCard("chatcard_system", { sText = sText });
+end
+
+-- Frameless notice with an optional leading icon: system messages,
+-- announcements, and the rest of the engine's chatter.
+function addNoticeCard(sText, sIcon)
+	return addCard("chatcard_notice", { sText = sText, sIcon = sIcon or "" });
 end
 
 function addStoryCard(sText)
@@ -406,9 +415,34 @@ function onReceiveMessage(msg)
 		return;
 	end
 
+	-- Everything left is engine/ruleset chatter (system messages, turn and
+	-- effect notifications, module loads, ...): a frameless notice, keeping
+	-- whatever icon the message carries.
 	if sText ~= "" then
-		addSystemCard(sText);
+		addNoticeCard(sText, getMessageIcon(msg));
 	end
+end
+
+-- The received copy of a message carries its icon in msg.assets, as
+-- { type = "icon", name = "turn_flag", w = 0, h = 0 } — msg.icon does not
+-- survive the trip (both verified in-app). msg.icon is still read first for
+-- robustness (a string or a list of names depending on the sender). Portrait
+-- assets (identity icons on speech-like messages, at their real size rather
+-- than 0x0) are not message icons, so they are skipped.
+function getMessageIcon(msg)
+	local vIcon = msg.icon;
+	if type(vIcon) == "table" then
+		vIcon = vIcon[1];
+	end
+	if (type(vIcon) == "string") and (vIcon ~= "") then
+		return vIcon;
+	end
+	local tAsset = msg.assets and msg.assets[1];
+	if (type(tAsset) == "table") and (tAsset.type == "icon")
+			and ((tAsset.name or "") ~= "") and not tAsset.name:match("^portrait_") then
+		return tAsset.name;
+	end
+	return "";
 end
 
 -- "[Damage (M)] Rapier [7] -> [Ireena Kolyana] [WOUNDED]" ->
