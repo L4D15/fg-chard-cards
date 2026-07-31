@@ -404,19 +404,21 @@ function outcomeStyle(sResult)
 	return "";
 end
 
+-- The card goes out BEFORE the original resolves: resolution applies the
+-- damage when the roll landed on a target, and its "takes N damage" banner
+-- must follow the roll that caused it. Everything the card shows (dice
+-- results, total, target, type tags in the desc) exists before resolution.
 function onDamageRoll(rSource, rTarget, rRoll)
-	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
-
-	if rRoll.sType ~= "damage" then
-		return;
-	end
 	-- A result dragged off a card resolves through the normal action path
 	-- when dropped (that is what applies it) — but it was already carded
 	-- when it was rolled, so don't card it again.
-	if rRoll.sChatCardsRedrop then
-		return;
+	if (rRoll.sType == "damage") and not rRoll.sChatCardsRedrop then
+		sendDamageCard(rSource, rTarget, rRoll);
 	end
+	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
+end
 
+function sendDamageCard(rSource, rTarget, rRoll)
 	local _, sLabel = parseDesc(rRoll.sDesc, "DAMAGE");
 	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
 	local tCard = {
@@ -456,18 +458,17 @@ end
 
 -- Healing and temporary hit points. rRoll.healtype distinguishes the two, and
 -- the source (a spell, a potion) names the roll the way a weapon does on a
--- damage card.
+-- damage card. Card before resolution, as on the damage side, so the
+-- "recovers N hit points" banner follows the roll.
 function onHealRoll(rSource, rTarget, rRoll)
-	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
-
-	if rRoll.sType ~= "heal" then
-		return;
-	end
 	-- Re-dropped result: apply without re-carding, as on the damage side.
-	if rRoll.sChatCardsRedrop then
-		return;
+	if (rRoll.sType == "heal") and not rRoll.sChatCardsRedrop then
+		sendHealCard(rSource, rTarget, rRoll);
 	end
+	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
+end
 
+function sendHealCard(rSource, rTarget, rRoll)
 	local bTemp = ((rRoll.healtype or "") == "temp");
 	local sLabel = rRoll.sLabel or "";
 	if sLabel == "" then
