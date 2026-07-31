@@ -22,6 +22,12 @@
 		<bitmap file="graphics/frames/cc_system_card.png" />
 		<offset>10,10,10,10</offset>
 	</framedef>
+	<!-- Effect notices (applied / expired), distinct from the plain system
+	     card. Same geometry again (5px inset, ~4px radius). -->
+	<framedef name="cc_effect_card">
+		<bitmap file="graphics/frames/cc_effect_card.png" />
+		<offset>10,10,10,10</offset>
+	</framedef>
 	<framedef name="cc_header">
 		<bitmap file="graphics/frames/cc_header.png" />
 		<offset>8,6,8,6</offset>
