@@ -108,6 +108,12 @@ decision log — lives in [`Design/`](Design/README.md).
   so the damage/heal hooks apply it without carding it a second time. The
   result area shows a hand cursor while the card is draggable. Attack and
   generic roll cards carry no roll data and don't drag.
+- **Link cards** — a record link dropped onto the card list broadcasts a
+  `chatcard_link` to every client (class + record path + name over the card
+  OOB), like dropping it into native chat: the class link icon (a
+  `linkcontrol`) and the name both open the record. A host drop makes the
+  campaign record public, mirroring the native share gesture; module records
+  and charsheets keep their own gating.
 - **Links** — character names on action, speech, power and effect cards (and
   the power name on power cards) open the record behind them:
   `ChatCardsManager` owns the machinery (weak-keyed per-control state, hand

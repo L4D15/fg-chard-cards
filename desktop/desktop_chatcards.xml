@@ -65,6 +65,7 @@
 					<type>dice</type>
 					<type>number</type>
 					<type>string</type>
+					<type>shortcut</type>
 				</droptypes>
 				<script>
 					-- Radial menu entry, so clearing works even if the engine
@@ -81,6 +82,11 @@
 						return ActionsManager.onChatDragStart(draginfo);
 					end
 					function onDrop(_, _, draginfo)
+						-- A record link: shown to everyone as a link card,
+						-- like dropping it into the native chat window.
+						if draginfo.isType("shortcut") then
+							return ChatCardsManager.onLinkDrop(draginfo);
+						end
 						if ChatManager.onDrop(draginfo) then
 							return true;
 						end
