@@ -28,14 +28,14 @@
 		</sheetdata>
 	</windowclass>
 
-	<!-- Effect applied: the system card, with the names and the effect name in
-	     bold inside the sentence. A string control carries one font, so the
-	     sentence is a generic control filled with per-word text widgets
+	<!-- Effect applied/expired: its own card art, with the names and the effect
+	     name in bold inside the sentence. A string control carries one font, so
+	     the sentence is a generic control filled with per-word text widgets
 	     (ChatCardsManager.setRichText). The effect's rules text sits under it in
 	     a label of its own, in one (italic) font, so that one stays a string
 	     control and wraps on its own. -->
 	<windowclass name="chatcard_effect">
-		<frame>cc_system_card</frame>
+		<frame>cc_effect_card</frame>
 		<script file="scripts/chatcard_effect.lua" />
 		<sheetdata>
 			<cc_rich_sentence name="sentence">
