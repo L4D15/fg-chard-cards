@@ -933,7 +933,7 @@ local RICH_WIDGET_NAME = "richword";
 -- state MUST release it from onClose via releaseControlState, or closed
 -- cards (the card cap, /clear) accumulate entries.
 
--- Hover tint: the theme gold of cc_subtitle / cc_effectlogic.
+-- Hover tint: the theme gold of cc_subtitle / cc_powertype.
 local LINK_HOVER_COLOR = "FF8A7340";
 -- What linked rich-text words return to when the pointer leaves: a widget's
 -- setColor cannot be reset to "whatever the font had", so this must match

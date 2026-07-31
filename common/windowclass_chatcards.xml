@@ -83,7 +83,7 @@
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
-				<font>cc_effectlogic</font>
+				<font>cc_powertype</font>
 				<multilinespacing>17</multilinespacing>
 				<readonly />
 			</stringcontrol>
