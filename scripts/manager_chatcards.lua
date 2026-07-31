@@ -146,10 +146,49 @@ end
 -- Card classes by OOB card type; rolls of every kind share the action card.
 local _tCardClasses = {
 	power = "chatcard_power",
+	link = "chatcard_link",
 };
 
 function handleCardOOB(msgOOB)
 	addCard(_tCardClasses[msgOOB.sCardType or ""] or "chatcard_action", msgOOB);
+end
+
+-- ===== Link cards =====
+-- A record link dropped onto the card list: broadcast to everyone as a link
+-- card (the class link icon plus the record's name, both opening it), like
+-- dropping the link into the native chat window. A host drop shares the way
+-- the native drop does — the campaign record is made public. Module records
+-- are gated by module access and charsheets by their owners, so both are
+-- left alone.
+function onLinkDrop(draginfo)
+	local sClass, sRecord = draginfo.getShortcutData();
+	if ((sClass or "") == "") or ((sRecord or "") == "") then
+		return false;
+	end
+
+	-- The dragged link's own label (how link_record.lua fills the drag);
+	-- links dragged by other means fall back to the record's name field.
+	local sName = StringManager.trim(draginfo.getDescription() or "");
+	local nodeRecord = DB.findNode(sRecord);
+	if (sName == "") and nodeRecord then
+		sName = StringManager.trim(DB.getValue(nodeRecord, "name", ""));
+	end
+	if sName == "" then
+		sName = sClass;
+	end
+
+	if Session.IsHost and nodeRecord and not sRecord:find("@", 1, true)
+			and not sRecord:match("^charsheet%.") then
+		DB.setPublic(nodeRecord, true);
+	end
+
+	sendCardOOB({
+		sCardType = "link",
+		sClass = sClass,
+		sRecord = sRecord,
+		sName = sName,
+	});
+	return true;
 end
 
 -- ===== Action-row results =====

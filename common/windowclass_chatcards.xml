@@ -256,6 +256,48 @@
 		</sheetdata>
 	</windowclass>
 
+	<!-- A record link dropped into the chat, like the native chat's link
+	     line: the class link icon (a linkcontrol, so the engine picks the
+	     icon and opens the record on click) and the record's name, which
+	     opens it too through the manager's control-link machinery. -->
+	<windowclass name="chatcard_link">
+		<script>
+			function onClose()
+				ChatCardsManager.releaseControlState(name);
+			end
+			function setData(t)
+				local sClass = t.sClass or "";
+				local sRecord = t.sRecord or "";
+				link.setValue(sClass, sRecord);
+				name.setValue(t.sName or "");
+				if (sClass ~= "") and (sRecord ~= "") then
+					-- Restore colour must match the control's font (cc_body).
+					ChatCardsManager.setControlLink(name, sClass, sRecord, "FF1A1A1A");
+				end
+			end
+		</script>
+		<sheetdata>
+			<linkcontrol name="link">
+				<anchored width="20" height="20">
+					<top offset="3" />
+					<left offset="10" />
+				</anchored>
+				<readonly />
+			</linkcontrol>
+			<cc_name_link name="name">
+				<anchored height="20">
+					<top offset="5" />
+					<left parent="link" anchor="right" offset="6" />
+					<right offset="-17" />
+				</anchored>
+				<font>cc_body</font>
+			</cc_name_link>
+			<genericcontrol name="sizer">
+				<anchored to="link" position="belowleft" height="4" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
 	<!-- Story / narration: the standard card background, italic text. -->
 	<windowclass name="chatcard_story">
 		<frame>cc_card</frame>
