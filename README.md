@@ -93,6 +93,15 @@ decision log — lives in [`Design/`](Design/README.md).
   `ChatCardsManager.setRichText`; those widgets don't reflow, so the card
   re-renders from the sentence control's `onFirstLayout` /
   `onLayoutSizeChanged` (the only place a resolved width is available).
+- **Result drag & drop** — damage and heal cards drag like a rolled entry in
+  native chat: the 5E hooks put the roll's raw pieces on the card OOB
+  (`sRollType`, `sRollDesc`, `sRollMod`; the dice with results already travel
+  as `sDice`), and the action card's result area rebuilds the roll at drag
+  start and encodes it with `ActionsManager.encodeActionForDrag`. The drop
+  then resolves through the stock `ActionsManager.actionDrop` path — a token
+  or CT entry applies the rolled damage/healing (FGU keeps preset die
+  results, so nothing rerolls). Attack and generic roll cards carry no roll
+  data and don't drag.
 - **Links** — character names on action, speech, power and effect cards (and
   the power name on power cards) open the record behind them:
   `ChatCardsManager` owns the machinery (weak-keyed per-control state, hand
