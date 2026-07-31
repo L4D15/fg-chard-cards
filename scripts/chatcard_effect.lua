@@ -1,7 +1,8 @@
 --
--- ChatCards: effect-applied card. The sentence names the source, the effect
--- and the target in bold, so it is drawn as text widgets rather than set on a
--- string control (see ChatCardsManager.setRichText).
+-- ChatCards: effect card, for the applied notice and the lifecycle notices
+-- (expired, disabled, ...). The sentence names the source, the effect and the
+-- target in bold, so it is drawn as text widgets rather than set on a string
+-- control (see ChatCardsManager.setRichText).
 --
 
 local FONT_TEXT = "cc_body";
@@ -86,6 +87,23 @@ function getSentenceSegments()
 	local sName = _tData.sName or "";
 	local sSource = _tData.sSource or "";
 	local sTarget = _tData.sTarget or "";
+	-- Lifecycle notice, phrased by the parser: "The effect **Bless** on
+	-- **Elara Brightwood** expired." (the "on ..." only when the actor is
+	-- known). The full stop rides on the phrase, which is short enough to
+	-- carry it without wrapping oddly.
+	local sStatus = _tData.sStatus or "";
+	if sStatus ~= "" then
+		local tSegments = {
+			{ sText = "The effect", sFont = FONT_TEXT },
+			{ sText = sName, sFont = FONT_BOLD },
+		};
+		if sTarget ~= "" then
+			table.insert(tSegments, { sText = "on", sFont = FONT_TEXT });
+			table.insert(tSegments, actorSegment(sTarget));
+		end
+		table.insert(tSegments, { sText = sStatus .. ".", sFont = FONT_TEXT });
+		return tSegments;
+	end
 	if (sSource ~= "") and (sSource ~= sTarget) then
 		return {
 			actorSegment(sSource),
