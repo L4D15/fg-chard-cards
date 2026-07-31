@@ -430,6 +430,12 @@ function onDamageRoll(rSource, rTarget, rRoll)
 	if rRoll.sType ~= "damage" then
 		return;
 	end
+	-- A result dragged off a card resolves through the normal action path
+	-- when dropped (that is what applies it) — but it was already carded
+	-- when it was rolled, so don't card it again.
+	if rRoll.sChatCardsRedrop then
+		return;
+	end
 
 	local _, sLabel = parseDesc(rRoll.sDesc, "DAMAGE");
 	local tPortrait = ChatCardsManager.getActorPortrait(rSource);
@@ -475,6 +481,10 @@ function onHealRoll(rSource, rTarget, rRoll)
 	ActionDamageD20.onRoll(rSource, rTarget, rRoll);
 
 	if rRoll.sType ~= "heal" then
+		return;
+	end
+	-- Re-dropped result: apply without re-carding, as on the damage side.
+	if rRoll.sChatCardsRedrop then
 		return;
 	end
 

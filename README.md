@@ -103,8 +103,11 @@ decision log — lives in [`Design/`](Design/README.md).
   start and encodes it with `ActionsManager.encodeActionForDrag`. The drop
   then resolves through the stock `ActionsManager.actionDrop` path — a token
   or CT entry applies the rolled damage/healing (FGU keeps preset die
-  results, so nothing rerolls). Attack and generic roll cards carry no roll
-  data and don't drag.
+  results, so nothing rerolls). The rebuilt roll is stamped
+  `sChatCardsRedrop`, which survives the drag and the drop's re-resolution,
+  so the damage/heal hooks apply it without carding it a second time. The
+  result area shows a hand cursor while the card is draggable. Attack and
+  generic roll cards carry no roll data and don't drag.
 - **Links** — character names on action, speech, power and effect cards (and
   the power name on power cards) open the record behind them:
   `ChatCardsManager` owns the machinery (weak-keyed per-control state, hand
