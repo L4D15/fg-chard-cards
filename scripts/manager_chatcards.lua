@@ -649,6 +649,10 @@ function formatSystemNotice(sText)
 	if tEffect then
 		return "chatcard_effect", tEffect;
 	end
+	local tStatus = parseEffectStatusNotice(sText);
+	if tStatus then
+		return "chatcard_effect", tStatus;
+	end
 	return nil;
 end
 
@@ -680,8 +684,9 @@ end
 -- The effect-applied notice, from EffectManager.onEffectAddNotify:
 -- "Effect ['LIGHT: 20 light; [D: 1 hour]']\r-> [to Elara Brightwood]\r[by Wololo]"
 -- ("[by ...]" only when the effect has a source). The same "Effect ['...']"
--- shape is also used for expiry/immunity/duplicate notices, which carry a
--- status instead of a "[to ...]" target and are left as notices.
+-- shape is also used for status notices, which carry a status instead of a
+-- "[to ...]" target — the lifecycle ones get their own effect card (see
+-- parseEffectStatusNotice), the rest stay notices.
 -- Returns the card's pieces: name, rules logic, source (may be empty) and
 -- target. The wording is the card's business, not this one's.
 function parseEffectNotice(sText)
@@ -713,6 +718,62 @@ function parseEffectNotice(sText)
 		-- straight onto a combatant, most character-sheet effects).
 		sSource = sText:match("%[by ([^%]]+)%]") or "",
 		sTarget = sTarget,
+	};
+end
+
+-- The effect lifecycle notices, from EffectManager's expire/disable paths:
+-- "Effect ['AC: 5'] -> [EXPIRED] [on Elara Brightwood]" ("[on ...]" only
+-- when the actor is known). Statuses become the card sentence's verb phrase;
+-- only these read as an event on the effect — the apply-time statuses
+-- (ALREADY EXISTS, TARGET IMMUNE, ...) and the follow-on rewrite
+-- ("Effect [X] -> [Y]") fall through to a notice. The tags are localized
+-- CoreRPG strings, so the keys are read through Interface.getString —
+-- lazily, since strings load after this script.
+local _tEffectStatusPhrases = nil;
+function getEffectStatusPhrase(sStatus)
+	if not _tEffectStatusPhrases then
+		_tEffectStatusPhrases = {
+			[Interface.getString("effect_status_expired")] = "expired",
+			[Interface.getString("effect_status_singleused")] = "was used up",
+			[Interface.getString("effect_status_disabled")] = "was disabled",
+			[Interface.getString("effect_status_deactivated")] = "was deactivated",
+		};
+	end
+	return _tEffectStatusPhrases[sStatus];
+end
+
+-- Returns the card pieces of a lifecycle notice (sTarget may be empty;
+-- sStatus carries the phrase), or nil for any other message.
+function parseEffectStatusNotice(sText)
+	local sLabel, sEffect, sRest = sText:match("^([^%[]+)%['(.-)'%]%s*%->%s*(.+)$");
+	if not sLabel then
+		-- With the "shorten effects" option (EFFSHORT) a multi-clause effect
+		-- arrives unquoted, cut to its first clause plus '*': "[Bless*]".
+		sLabel, sEffect, sRest = sText:match("^([^%[]+)%[([^%]]*)%]%s*%->%s*(.+)$");
+	end
+	if not sLabel or (StringManager.trim(sLabel) ~= Interface.getString("effect_label")) then
+		return nil;
+	end
+	local sStatus = getEffectStatusPhrase(sRest:match("^%[([^%]]+)%]") or "");
+	if not sStatus then
+		return nil;
+	end
+
+	local sName, sLogic = splitEffectName(sEffect);
+	-- Unlike the applied notice there is no "[from ...]" power to name a
+	-- bare rules string ("AC: 5"), so it goes in the name slot whole.
+	if not hasEffectName(sEffect) then
+		sName = StringManager.trim(sEffect);
+		sLogic = "";
+	end
+	if sName == "" then
+		return nil;
+	end
+	return {
+		sName = sName,
+		sLogic = sLogic,
+		sTarget = sRest:match("%[on ([^%]]+)%]") or "",
+		sStatus = sStatus,
 	};
 end
 
