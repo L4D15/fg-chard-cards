@@ -44,6 +44,10 @@ function onInit()
 	-- injects via Comm.addChatMessage (SystemMessage, the GM copies of
 	-- turn/effect notices), secret or not — verified in-app on FGU v5.1.13.
 	ChatManager.registerReceiveMessageCallback(onReceiveMessage);
+	-- What it does NOT fire for: lines the engine writes straight into the
+	-- native chat control, like player connects/disconnects. Those are
+	-- reproduced from the user events, which fire on every client.
+	User.addEventHandler("onLogin", onUserLogin);
 	-- /clear is handled inside the engine, which clears the (hidden) chat
 	-- control it owns and knows nothing about the card list beside it. A
 	-- handler of our own covers the card list; the card list's radial menu
@@ -115,6 +119,17 @@ end
 
 function addStoryCard(sText)
 	return addCard("chatcard_story", { sText = sText });
+end
+
+-- Player connect/disconnect, from the engine's user login event (wired in
+-- onInit): a frameless notice, like the native chat's own line. The local
+-- user's own event is skipped — the joining client would otherwise greet
+-- itself on every login.
+function onUserLogin(sUser, bActivated)
+	if ((sUser or "") == "") or (sUser == Session.UserName) then
+		return;
+	end
+	addNoticeCard(string.format("'%s' %s", sUser, bActivated and "connected" or "disconnected"));
 end
 
 -- ===== Structured cards via OOB =====
