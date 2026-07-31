@@ -1,18 +1,20 @@
 --
--- ChatCards: power-use / spell-cast card. The sentence puts the actor and the
--- power name in bold, so it is drawn as text widgets (see
--- ChatCardsManager.setRichText and chatcard_effect.lua, this card's sibling).
+-- ChatCards: power-use / spell-cast card. The header mirrors the roll cards
+-- (portrait, actor name, player name) with the power's name in the title
+-- slot, linking to its record; the action rows follow, and the description
+-- folds at the bottom.
 --
 
 local FONT_TEXT = "cc_body";
-local FONT_BOLD = "cc_bodybold";
-local LINE_HEIGHT = 18;
 -- The description sets its own, tighter leading (the body font is 14px).
 local DESC_LINE_HEIGHT = 16;
--- The sentence control's left/right anchors (width derivation, see
+-- The description control's left/right anchors (width derivation, see
 -- chatcard_effect.lua for why the fallbacks exist).
 local INSET = 17;
 local FALLBACK_WIDTH = 300;
+-- setControlLink's restore colour for the power-name title: must match
+-- cc_headertitle in graphics_chatcards.xml.
+local TITLE_COLOR = "FF79756C";
 
 -- Action-row geometry: button on the left, the row's description next to
 -- it, the results inline after it behind a middot (bold, tinted by outcome,
@@ -31,21 +33,28 @@ local _sDesc = "";
 local _bExpanded = false;
 
 -- No weak tables in FG's sandbox: the manager's link state is released by
--- hand when the card closes (desc renders through setRichText too), and so
--- is the card-id registry entry that routes result updates here.
+-- hand when the card closes (the desc renders through setRichText, and the
+-- name/title carry control links), and so is the card-id registry entry
+-- that routes result updates here.
 function onClose()
-	ChatCardsManager.releaseControlState(sentence, desc);
+	ChatCardsManager.releaseControlState(desc, name, title);
 	ChatCardsManager.unregisterCard((_tData or {}).sCardId);
 end
 
 function setData(t)
 	_tData = t;
 
-	local sType = t.sTypeLabel or "";
-	typeline.setValue(sType);
-	if sType == "" then
-		typeline.setAnchoredHeight(0);
+	name.setValue(t.sName or "");
+	ChatCardsManager.setActorNameLink(name, t.sActorNode);
+	subtitle.setValue(t.sSub or "");
+	title.setValue(t.sPower or "");
+	-- The power's name opens its record where the node resolves (the
+	-- caster's client, the GM, loaded library records).
+	local sPowerNode = t.sPowerNode or "";
+	if (sPowerNode ~= "") and DB.findNode(sPowerNode) then
+		ChatCardsManager.setControlLink(title, "power", sPowerNode, TITLE_COLOR);
 	end
+	ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
 
 	_sDesc = t.sDesc or "";
 	if _sDesc == "" then
@@ -54,7 +63,6 @@ function setData(t)
 	updateDescription();
 
 	buildActionRows(t.sPowerNode or "");
-	renderSentence();
 end
 
 -- ===== Foldable description =====
@@ -128,9 +136,6 @@ function buildActionRows(sPowerNode)
 		end
 	end
 	actionbar.setAnchoredHeight((#_tRows > 0) and (#_tRows * ROW_H + 2) or 0);
-	-- Section header, only when there are rows under it.
-	actionsheader.setValue((#_tRows > 0) and "Actions" or "");
-	actionsheader.setAnchoredHeight((#_tRows > 0) and 15 or 0);
 	renderActionRows();
 end
 
@@ -417,6 +422,11 @@ function applyActionResult(sKey, sVolley, sMode, sText, sStyle)
 	renderActionRows();
 end
 
+-- Layout-event entry point (the desc control is a cc_rich_sentence, whose
+-- onFirstLayout/onLayoutSizeChanged call this): with the header on plain
+-- controls, the only thing that reflows with the card's width is the
+-- description. The width memo keeps the height change made by a render from
+-- bouncing back as another one; the toggle path re-renders directly.
 function renderSentence()
 	if not _tData then
 		return;
@@ -426,16 +436,11 @@ function renderSentence()
 		return;
 	end
 	_nRenderedWidth = nWidth;
-
-	local nHeight = ChatCardsManager.setRichText(sentence, getSentenceSegments(), nWidth, LINE_HEIGHT);
-	sentence.setAnchoredHeight(nHeight);
-	-- The description wraps at the same width, so it re-renders with the
-	-- sentence (the toggle path re-renders it directly).
 	renderDescription();
 end
 
 function getSentenceWidth()
-	local nWidth = sentence.getSize();
+	local nWidth = desc.getSize();
 	if (nWidth or 0) > 0 then
 		return nWidth;
 	end
@@ -445,25 +450,4 @@ function getSentenceWidth()
 		return nCardWidth - (2 * INSET);
 	end
 	return FALLBACK_WIDTH;
-end
-
--- "**Elara Brightwood** casts **Mage Armor**." — the verb arrives in the
--- data ("casts" from a cast action, "uses" from the use button). The actor
--- links to their sheet and the power name to its record (a power link
--- wherever the node resolves: the caster's client, the GM, loaded library
--- records); link handling lives in the manager.
-function getSentenceSegments()
-	local tActor = ChatCardsManager.applyActorLink(
-		{ sText = _tData.sName or "", sFont = FONT_BOLD }, _tData.sActorNode);
-	local tPower = { sText = (_tData.sPower or "") .. ".", sFont = FONT_BOLD };
-	local sPowerNode = _tData.sPowerNode or "";
-	if (sPowerNode ~= "") and DB.findNode(sPowerNode) then
-		tPower.sLinkClass = "power";
-		tPower.sLinkPath = sPowerNode;
-	end
-	return {
-		tActor,
-		{ sText = _tData.sVerb or "uses", sFont = FONT_TEXT },
-		tPower,
-	};
 end

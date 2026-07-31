@@ -61,52 +61,61 @@
 		</sheetdata>
 	</windowclass>
 
-	<!-- Power use / spell cast: a rich-text sentence ("<b>Elara</b> casts
-	     <b>Mage Armor</b>."), what the power is in the italic detail font,
-	     the power's action buttons, and its description folded below. On the
-	     standard card background (cc_card, like the roll cards): it is a
-	     player action rather than engine chatter. -->
+	<!-- Power use / spell cast: the roll cards' header (portrait, actor name,
+	     player name, then the power's name in the title slot, opening its
+	     record), the power's action rows right below, and its description
+	     folded at the bottom. On the standard card background (cc_card, like
+	     the roll cards): it is a player action rather than engine chatter. -->
 	<windowclass name="chatcard_power">
 		<frame>cc_card</frame>
 		<script file="scripts/chatcard_power.lua" />
 		<sheetdata>
-			<cc_rich_sentence name="sentence">
-				<anchored height="18">
-					<top offset="8" />
-					<left offset="17" />
+			<cc_portrait_token name="tokenview">
+				<anchored position="insidetopleft" offset="7,7" />
+			</cc_portrait_token>
+			<cc_portrait_icon name="porticon">
+				<anchored position="insidetopleft" offset="7,7" />
+			</cc_portrait_icon>
+			<cc_portrait_frame name="portraitframe">
+				<anchored position="insidetopleft" offset="5,5" />
+			</cc_portrait_frame>
+
+			<!-- Name block, as on the action card: actor name, player name
+			     tight beneath it, then the power's name in the title slot. -->
+			<genericcontrol name="namebar">
+				<anchored height="16">
+					<top offset="5" />
+					<left offset="49" />
 					<right offset="-17" />
 				</anchored>
-			</cc_rich_sentence>
-			<stringcontrol name="typeline">
-				<anchored>
-					<top parent="sentence" anchor="bottom" offset="1" />
-					<left offset="17" />
-					<right offset="-17" />
-				</anchored>
-				<font>cc_powertype</font>
-				<multilinespacing>17</multilinespacing>
+			</genericcontrol>
+			<cc_name_link name="name">
+				<anchored to="namebar" position="insidetopleft" offset="10,2" />
+			</cc_name_link>
+			<stringcontrol name="subtitle">
+				<anchored to="namebar" position="belowleft" offset="10,0" height="15" />
+				<font>cc_subtitle</font>
 				<readonly />
 			</stringcontrol>
-			<!-- Section header over the action buttons; collapsed with them
-			     when the power has no actions to show. -->
-			<stringcontrol name="actionsheader">
-				<anchored height="0">
-					<top parent="typeline" anchor="bottom" offset="4" />
-					<left offset="17" />
+			<!-- The power's name; a link to its record where it resolves. -->
+			<cc_name_link name="title">
+				<anchored height="15">
+					<top parent="subtitle" anchor="bottom" offset="0" />
+					<left parent="namebar" anchor="left" offset="10" />
 					<right offset="-17" />
 				</anchored>
 				<font>cc_headertitle</font>
-				<readonly />
-			</stringcontrol>
+			</cc_name_link>
+
 			<!-- The power's action rows (attack/save/damage/heal/effect...),
 			     one per line: button, description, and the roll results
-			     right-justified — all as widgets on one control with click
+			     inline after it — all as widgets on one control with click
 			     hit-testing, since cards are not database-bound windows and
 			     the sheet's action list (one button control per action
 			     node) cannot be reused here. -->
 			<genericcontrol name="actionbar">
 				<anchored height="0">
-					<top parent="actionsheader" anchor="bottom" offset="2" />
+					<top parent="title" anchor="bottom" offset="6" />
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
@@ -167,14 +176,17 @@
 			<!-- Description body, as rich text (one plain segment): a generic
 			     control never autosizes, so the fold's height is set
 			     explicitly in both states — an empty stringcontrol keeps a
-			     one-line intrinsic height that broke the folded spacing. -->
-			<genericcontrol name="desc">
+			     one-line intrinsic height that broke the folded spacing.
+			     A cc_rich_sentence, so its layout events drive the reflow
+			     (window.renderSentence) now that the header is plain
+			     controls. -->
+			<cc_rich_sentence name="desc">
 				<anchored height="0">
 					<top parent="desctoggle" anchor="bottom" offset="0" />
 					<left offset="17" />
 					<right offset="-17" />
 				</anchored>
-			</genericcontrol>
+			</cc_rich_sentence>
 			<!-- 8px bottom pad in both states: the folded desc is exactly 0
 			     high, the expanded one exactly its lines. -->
 			<genericcontrol name="sizer">
