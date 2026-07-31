@@ -30,6 +30,7 @@ local _sDragActorNode = "";
 function setData(t)
 	_tDragRoll = buildDragRoll(t);
 	_sDragActorNode = t.sActorNode or "";
+	setResultCursor(_tDragRoll and "hand" or "arrow");
 	name.setValue(t.sName or "");
 	ChatCardsManager.setActorNameLink(name, t.sActorNode);
 	subtitle.setValue(t.sSub or "");
@@ -116,7 +117,21 @@ function buildDragRoll(t)
 		sDesc = t.sRollDesc or "",
 		aDice = aDice,
 		nMod = tonumber(t.sRollMod) or 0,
+		-- Rides the drag (metadata) and the drop's re-resolution (throw
+		-- metadata): the resolve hooks apply a re-dropped roll but don't
+		-- card it again — the roll was carded when it was rolled.
+		sChatCardsRedrop = "1",
 	};
+end
+
+-- The drag affordance: a hand cursor over the result area when the card's
+-- result can be dragged off, like native chat over a damage or heal number.
+function setResultCursor(sCursor)
+	for _, cControl in ipairs({ resultbox, diceresults, total, outcome }) do
+		if cControl.setHoverCursor then
+			cControl.setHoverCursor(sCursor);
+		end
+	end
 end
 
 -- Drag from anywhere on the result area (box, dice, total, outcome — each
