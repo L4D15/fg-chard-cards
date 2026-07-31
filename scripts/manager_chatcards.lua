@@ -48,6 +48,11 @@ function onInit()
 	-- native chat control, like player connects/disconnects. Those are
 	-- reproduced from the user events, which fire on every client.
 	User.addEventHandler("onLogin", onUserLogin);
+	-- Same story for the load-time announcements (ruleset version lines and
+	-- extension <announcement> tags): engine-drawn, so equivalent notices
+	-- are rebuilt here from the session/extension APIs. Queued via
+	-- _tPending until the chat window exists, like any early message.
+	announceLoadedContent();
 	-- /clear is handled inside the engine, which clears the (hidden) chat
 	-- control it owns and knows nothing about the card list beside it. A
 	-- handler of our own covers the card list; the card list's radial menu
@@ -119,6 +124,36 @@ end
 
 function addStoryCard(sText)
 	return addCard("chatcard_story", { sText = sText });
+end
+
+-- The load-time lines the engine draws into the native chat: the ruleset
+-- and each loaded extension, as frameless notices. The engine's exact
+-- announcement texts are not readable from Lua, so the notices carry the
+-- same information instead (name and version). The info-table field names
+-- are read defensively — they are engine API surface, not ruleset code.
+function announceLoadedContent()
+	local sRuleset = (Session and Session.RulesetName)
+		or (User and User.getRulesetName and User.getRulesetName()) or "";
+	if sRuleset ~= "" then
+		addNoticeCard(string.format("Ruleset loaded: %s", sRuleset));
+	end
+
+	if not (Extension and Extension.getExtensions) then
+		return;
+	end
+	for _, sName in ipairs(Extension.getExtensions() or {}) do
+		local tInfo = Extension.getExtensionInfo and Extension.getExtensionInfo(sName);
+		local sLabel = sName;
+		local sVersion = "";
+		if type(tInfo) == "table" then
+			sLabel = tInfo.sDisplayName or tInfo.sName or tInfo.name or sName;
+			sVersion = tostring(tInfo.sVersion or tInfo.version or "");
+		end
+		if sVersion ~= "" then
+			sLabel = string.format("%s (v%s)", sLabel, sVersion);
+		end
+		addNoticeCard(string.format("Extension loaded: %s", sLabel));
+	end
 end
 
 -- Player connect/disconnect, from the engine's user login event (wired in
