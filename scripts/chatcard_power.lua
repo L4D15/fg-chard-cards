@@ -15,11 +15,12 @@ local INSET = 17;
 local FALLBACK_WIDTH = 300;
 
 -- Action-row geometry: button on the left, the row's description next to
--- it, the roll results right-justified.
+-- it, the results inline after it behind a middot (bold, tinted by outcome,
+-- with a success/failure mark where the roll has one).
 local BUTTON_SIZE = 22;
 local ROW_H = 24;
 local ROW_TEXT_X = BUTTON_SIZE + 8;
-local RESULT_GAP = 8;
+local ICON_GAP = 3;
 local ROW_WIDGET = "actrow";
 
 local _tData = nil;
@@ -165,6 +166,14 @@ end
 
 local _tResultColors = nil;
 
+-- Outcome marks by entry style, drawn after the entry's text (or alone for
+-- textless entries — a performed-only action like applying an effect reports
+-- just the check). Sizes keep each PNG's aspect at the rows' 13px mark height.
+local _tResultIcons = {
+	positive = { sIcon = "cc_icon_success", nW = 16, nH = 13 },
+	negative = { sIcon = "cc_icon_failure", nW = 13, nH = 13 },
+};
+
 function renderActionRows()
 	-- Drop the previous pass; widgets are named consecutively (there is no
 	-- "destroy every widget" call).
@@ -200,65 +209,95 @@ function renderActionRows()
 			w = BUTTON_SIZE, h = BUTTON_SIZE,
 		});
 
-		-- Results first: their width decides how much room the description
-		-- has. Entries are middot-separated, each in its outcome colour.
-		local nResultX = nWidth;
+		-- Results are built (and measured) first: they keep priority over
+		-- the description's room, but sit inline after it, behind a middot.
+		-- Entries are themselves middot-separated, each bold in its outcome
+		-- colour, with the outcome's mark after the number; a textless entry
+		-- (a performed-only action, "Applied") is just the mark.
+		local tPieces = {};
+		local nResultsW = 0;
+		local function addPiece(w, nW)
+			table.insert(tPieces, { w = w, nW = nW });
+			nResultsW = nResultsW + nW;
+		end
 		local tEntries = (_tResults[tRow.sKey] or {}).tEntries or {};
-		if #tEntries > 0 then
-			local tPieces = {};
-			local nTotalW = 0;
-			for i, tEntry in ipairs(tEntries) do
-				if i > 1 then
-					local wSep = actionbar.addTextWidget({
-						name = nextName(), font = "cc_body",
-						text = " \194\183 ", position = "topleft", x = 0, y = yMid,
-					});
-					table.insert(tPieces, { w = wSep, nW = wSep and (wSep.getSize() or 0) or 0 });
-					nTotalW = nTotalW + tPieces[#tPieces].nW;
-				end
-				local wEntry = actionbar.addTextWidget({
+		for i, tEntry in ipairs(tEntries) do
+			if i > 1 then
+				local wSep = actionbar.addTextWidget({
 					name = nextName(), font = "cc_body",
-					text = tEntry.sText or "", position = "topleft", x = 0, y = yMid,
+					text = " \194\183 ", position = "topleft", x = 0, y = yMid,
+				});
+				addPiece(wSep, wSep and (wSep.getSize() or 0) or 0);
+			end
+			local sText = tEntry.sText or "";
+			if sText ~= "" then
+				local wEntry = actionbar.addTextWidget({
+					name = nextName(), font = "cc_bodybold",
+					text = sText, position = "topleft", x = 0, y = yMid,
 				});
 				if wEntry and _tResultColors[tEntry.sStyle or ""] then
 					wEntry.setColor(_tResultColors[tEntry.sStyle]);
 				end
-				table.insert(tPieces, { w = wEntry, nW = wEntry and (wEntry.getSize() or 0) or 0 });
-				nTotalW = nTotalW + tPieces[#tPieces].nW;
+				addPiece(wEntry, wEntry and (wEntry.getSize() or 0) or 0);
 			end
-			-- Right-justified: lay the pieces out ending at the row's edge.
-			local nX = math.max(nWidth - nTotalW, ROW_TEXT_X);
-			nResultX = nX;
-			for _, tPiece in ipairs(tPieces) do
-				if tPiece.w then
-					tPiece.w.setPosition("topleft", nX + math.floor(tPiece.nW / 2), yMid);
+			local tIcon = _tResultIcons[tEntry.sStyle or ""];
+			if tIcon then
+				if sText ~= "" then
+					addPiece(nil, ICON_GAP);
 				end
-				nX = nX + tPiece.nW;
+				local wIcon = actionbar.addBitmapWidget({
+					name = nextName(), icon = tIcon.sIcon,
+					position = "topleft", x = 0, y = yMid,
+					w = tIcon.nW, h = tIcon.nH,
+				});
+				addPiece(wIcon, tIcon.nW);
 			end
+		end
+		-- The middot between the description and the results, measured with
+		-- them so the text truncation accounts for the whole result block.
+		local wLeadSep = nil;
+		local nLeadSepW = 0;
+		if #tPieces > 0 then
+			wLeadSep = actionbar.addTextWidget({
+				name = nextName(), font = "cc_body",
+				text = " \194\183 ", position = "topleft", x = 0, y = yMid,
+			});
+			nLeadSepW = wLeadSep and (wLeadSep.getSize() or 0) or 0;
 		end
 
 		-- Bold label, then the action's own text, truncated to the room the
-		-- results leave.
-		local nMaxText = nResultX - RESULT_GAP - ROW_TEXT_X;
+		-- result block leaves; the results flow right after it.
+		local nTextRoom = nWidth - ROW_TEXT_X - nLeadSepW - nResultsW;
 		local nX = ROW_TEXT_X;
 		local wLabel = actionbar.addTextWidget({
 			name = nextName(), font = "cc_bodybold",
 			text = tRow.sLabel, position = "topleft", x = 0, y = yMid,
 		});
 		if wLabel then
-			local nLabelW = fitTextWidget(wLabel, tRow.sLabel, nMaxText);
+			local nLabelW = fitTextWidget(wLabel, tRow.sLabel, nTextRoom);
 			wLabel.setPosition("topleft", nX + math.floor(nLabelW / 2), yMid);
 			nX = nX + nLabelW + 4;
 		end
-		if (tRow.sDetail ~= "") and ((nResultX - RESULT_GAP - nX) > 12) then
+		if (tRow.sDetail ~= "") and ((ROW_TEXT_X + nTextRoom - nX) > 12) then
 			local wDetail = actionbar.addTextWidget({
 				name = nextName(), font = "cc_body",
 				text = tRow.sDetail, position = "topleft", x = 0, y = yMid,
 			});
 			if wDetail then
-				local nDetailW = fitTextWidget(wDetail, tRow.sDetail, nResultX - RESULT_GAP - nX);
+				local nDetailW = fitTextWidget(wDetail, tRow.sDetail, ROW_TEXT_X + nTextRoom - nX);
 				wDetail.setPosition("topleft", nX + math.floor(nDetailW / 2), yMid);
+				nX = nX + nDetailW;
 			end
+		end
+		if wLeadSep then
+			wLeadSep.setPosition("topleft", nX + math.floor(nLeadSepW / 2), yMid);
+			nX = nX + nLeadSepW;
+		end
+		for _, tPiece in ipairs(tPieces) do
+			if tPiece.w then
+				tPiece.w.setPosition("topleft", nX + math.floor(tPiece.nW / 2), yMid);
+			end
+			nX = nX + tPiece.nW;
 		end
 	end
 end
