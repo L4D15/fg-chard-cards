@@ -446,6 +446,13 @@ function onDamageRoll(rSource, rTarget, rRoll)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
+		-- The rolled result stays draggable, like the entry in native chat:
+		-- these plus sDice rebuild the roll at drag start (see the action
+		-- card's onResultDrag). The desc carries the damage type tags, which
+		-- is what ActionDamage reads when the drop applies.
+		sRollType = rRoll.sType,
+		sRollDesc = rRoll.sDesc or "",
+		sRollMod = tostring(rRoll.nMod or 0),
 	};
 	if rTarget then
 		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
@@ -492,6 +499,11 @@ function onHealRoll(rSource, rTarget, rRoll)
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
+		-- Draggable result, as on the damage card. The desc's [HEAL]/[TEMP]
+		-- tags tell ActionHeal what to apply on drop.
+		sRollType = rRoll.sType,
+		sRollDesc = rRoll.sDesc or "",
+		sRollMod = tostring(rRoll.nMod or 0),
 	};
 	if rTarget then
 		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);

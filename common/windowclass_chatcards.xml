@@ -368,12 +368,19 @@
 
 			<!-- Result area: full inner height of the card's right side. Its
 			     height is computed in Lua, since bottom anchors do not
-			     resolve inside list windows. -->
+			     resolve inside list windows. The whole area is a drag source
+			     for the rolled result (damage/heal cards; see onResultDrag),
+			     so the controls stacked on it delegate their drags too. -->
 			<genericcontrol name="resultbox">
 				<anchored width="110" height="84">
 					<top offset="5" />
 					<right offset="-5" />
 				</anchored>
+				<script>
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onResultDrag(draginfo);
+					end
+				</script>
 			</genericcontrol>
 
 			<!-- Name block: actor name, player name tight beneath it, then
@@ -421,6 +428,11 @@
 					<left parent="resultbox" anchor="left" offset="4" />
 					<right parent="resultbox" anchor="right" offset="-4" />
 				</anchored>
+				<script>
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onResultDrag(draginfo);
+					end
+				</script>
 			</genericcontrol>
 			<stringcontrol name="total">
 				<anchored height="30">
@@ -431,6 +443,11 @@
 				<font>cc_total</font>
 				<center />
 				<readonly />
+				<script>
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onResultDrag(draginfo);
+					end
+				</script>
 			</stringcontrol>
 			<stringcontrol name="outcome">
 				<anchored height="16">
@@ -441,6 +458,11 @@
 				<font>cc_success</font>
 				<center />
 				<readonly />
+				<script>
+					function onDragStart(nButton, x, y, draginfo)
+						return window.onResultDrag(draginfo);
+					end
+				</script>
 			</stringcontrol>
 
 			<!-- Body lines, left of the result box; filled from Lua with a

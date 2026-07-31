@@ -21,7 +21,15 @@ function onClose()
 	ChatCardsManager.releaseControlState(name);
 end
 
+-- The rolled result drags back out of the result box, like a rolled entry in
+-- native chat: nil when the card carries no roll data (attack and generic
+-- roll cards), so those simply don't drag.
+local _tDragRoll = nil;
+local _sDragActorNode = "";
+
 function setData(t)
+	_tDragRoll = buildDragRoll(t);
+	_sDragActorNode = t.sActorNode or "";
 	name.setValue(t.sName or "");
 	ChatCardsManager.setActorNameLink(name, t.sActorNode);
 	subtitle.setValue(t.sSub or "");
@@ -82,6 +90,50 @@ function setData(t)
 	resultbox.setAnchoredHeight(nBoxHeight);
 	-- Split the box's free space evenly above and below the contents.
 	boxpad.setAnchoredHeight(math.max(4, math.floor((nBoxHeight - nBoxContent) / 2)));
+end
+
+-- Rebuild the roll a draggable card carries. sDice's "type:result" entries
+-- become result-carrying dice again, so a drop applies the rolled numbers
+-- rather than rerolling (FGU's dice throw keeps preset results — the same
+-- mechanism behind dragging a rolled entry out of native chat).
+function buildDragRoll(t)
+	if (t.sRollType or "") == "" then
+		return nil;
+	end
+	local aDice = {};
+	for sEntry in string.gmatch(t.sDice or "", "[^;]+") do
+		local sType, sResult, sDropped = sEntry:match("^([^:]+):(%-?%d+):?(x?)$");
+		if sType then
+			table.insert(aDice, {
+				type = sType,
+				result = tonumber(sResult) or 0,
+				dropped = (sDropped == "x") or nil,
+			});
+		end
+	end
+	return {
+		sType = t.sRollType,
+		sDesc = t.sRollDesc or "",
+		aDice = aDice,
+		nMod = tonumber(t.sRollMod) or 0,
+	};
+end
+
+-- Drag from anywhere on the result area (box, dice, total, outcome — each
+-- delegates here from the windowclass). The roll is encoded exactly the way
+-- the ruleset encodes a fresh action drag, so the drop resolves through the
+-- regular ActionsManager.actionDrop path: a token or CT entry applies the
+-- damage/healing, like dropping the same roll from native chat.
+function onResultDrag(draginfo)
+	if not _tDragRoll then
+		return;
+	end
+	local rActor = nil;
+	if _sDragActorNode ~= "" then
+		rActor = ActorManager.resolveActor(_sDragActorNode);
+	end
+	ActionsManager.encodeActionForDrag(draginfo, rActor, _tDragRoll.sType, { _tDragRoll });
+	return true;
 end
 
 -- Fill a body line ("Target: Elara (AC 13)") with two widgets: the
