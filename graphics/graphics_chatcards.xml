@@ -167,10 +167,17 @@
 		<color value="#1A1A1A" />
 	</font>
 	<!-- The rules text of an effect ("20 light; [D: 1 hour]"), under the effect
-	     card's sentence: deliberately the same italic gold as the roll card's
-	     player name (cc_subtitle) — secondary detail hanging off a heading —
-	     but its own font so either can be restyled alone. -->
+	     card's sentence: a muted mauve of its own, matching the effect card's
+	     art rather than the gold detail lines. -->
 	<font name="cc_effectlogic">
+		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
+		<color value="#9E768D" />
+	</font>
+	<!-- The power card's type line ("Level 1 Spell · Abjuration"): the same
+	     italic gold as the roll card's player name (cc_subtitle) — secondary
+	     detail hanging off a heading — but its own font so either can be
+	     restyled alone. -->
+	<font name="cc_powertype">
 		<ttf file="graphics/fonts/NotoSans-Italic.ttf" name="Noto Sans Italic" size="13" />
 		<color value="#8A7340" />
 	</font>
