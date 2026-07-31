@@ -8,11 +8,12 @@ local GAP = 2;       -- spacing between glyphs
 local PER_ROW = 4;   -- glyphs per row inside the 110px result box
 
 -- The die art is white so it can be tinted here; without a tint it would be
--- invisible on the card. Normal dice take the neutral tag pill's colour, so the
--- two read as one family; the mockup's understated grey was #C0C0C0.
-local DIE_COLOR = "FFD8D2BD";
+-- invisible on the card. Normal dice sit a step darker than the neutral tag
+-- pill (a ~90% shade of its #D8D2BD), so the shapes read against the result
+-- box; the mockup's understated grey was #C0C0C0.
+local DIE_COLOR = "FFC2BDAA";
 -- Dropped by advantage/disadvantage: dimmed the way native chat dims it.
-local DIE_COLOR_DROPPED = "80D8D2BD";
+local DIE_COLOR_DROPPED = "80C2BDAA";
 local DIE_LABEL_DROPPED = "80FFFFFF";
 
 -- No weak tables in FG's sandbox: the manager's link state is released by
