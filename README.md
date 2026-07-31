@@ -39,15 +39,16 @@ decision log — lives in [`Design/`](Design/README.md).
   `onEffectRollEncode`/`Decode` hooks and the JSON add-effect OOB); when an
   unnamed effect ("AC: 3") lands, the host's notice gains a `[from Mage
   Armor]` line that the effect card uses as the effect's name. Power use is
-  carded too (`chatcard_power`: who, the power name, what it is, its
-  description — folded behind a "Show description" toggle by default —
-  and the power's actions as a vertical row list — button, description,
-  results right-justified — driven through the same
+  carded too (`chatcard_power`: the roll cards' header — portrait, actor
+  name, player name — with the power's name in the title slot, its
+  description folded behind a "Show description" toggle at the bottom,
+  and the power's actions between them as a vertical row list — button,
+  description, results inline after it — driven through the same
   `PowerActionManagerCore` handlers as the sheet's Actions tab (a compound
   `cast` action splits into Attack and Save rows the way the sheet's full
   view does), shown only where the power node resolves and is owned, i.e.
   the caster and the GM;
-  the bold power name is also a link that opens the record wherever the node
+  the power name is also a link that opens the record wherever the node
   resolves, with a hand cursor and a colour shift on hover — the same link
   treatment character names get on every card, see below):
   full casts from the `PowerManager.performAction` wrap (their
@@ -86,8 +87,9 @@ decision log — lives in [`Design/`](Design/README.md).
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
   keyword chips, result box), `chatcard_speech`, `chatcard_story`,
   `chatcard_system` (apply banners and turn notices), `chatcard_effect`,
-  `chatcard_power` (spell casts / power uses, with the power's type and
-  description), `chatcard_round` (centred) and `chatcard_notice` (frameless). A windowclass's
+  `chatcard_power` (spell casts / power uses: roll-card header, action rows,
+  folded description), `chatcard_link` (a dropped record link),
+  `chatcard_round` (centred) and `chatcard_notice` (frameless). A windowclass's
   frame and text alignment are static, so variants of one layout are separate
   classes rather than one class with overrides.
 - **`scripts/chatcard_effect.lua`** — the effect card's sentence, with the

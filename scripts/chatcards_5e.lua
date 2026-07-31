@@ -103,7 +103,7 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodePower)
 	-- or save part) announces the power. Its "[CAST] ..." text message is
 	-- one of the skipped roll tags, so the card is the announcement.
 	if bResult and rAction and (rAction.type == "cast") and ((rAction.subtype or "") == "") then
-		sendPowerCard(rActor, nodePower, "casts");
+		sendPowerCard(rActor, nodePower);
 	end
 	return bResult;
 end
@@ -122,15 +122,15 @@ function onUsePower(node)
 	local rActor = ActorManager.resolveActor(PowerManagerCore.getPowerActorNode(node));
 	-- Mirror the default output's reach: NPC power use stays GM-only.
 	local bSecret = not (rActor and ActorManager.isPC(rActor));
-	if sendPowerCard(rActor, node, "uses", bSecret) then
+	if sendPowerCard(rActor, node, bSecret) then
 		return;
 	end
 	_fUsePower(node);
 end
 
--- Broadcast a power card: who, the power's name, what it is ("Level 1 Spell
--- · Abjuration", the power's group otherwise) and its description text.
-function sendPowerCard(rActor, nodePower, sVerb, bSecret)
+-- Broadcast a power card: who (actor + player, as on the roll cards), the
+-- power's name and its description text.
+function sendPowerCard(rActor, nodePower, bSecret)
 	if not nodePower then
 		return false;
 	end
@@ -150,9 +150,10 @@ function sendPowerCard(rActor, nodePower, sVerb, bSecret)
 		sSecret = bSecret and "1" or "",
 		sName = ChatCardsManager.getActorName(rActor, nil),
 		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
-		sVerb = sVerb or "uses",
+		-- The header's player line, as on the roll cards: the card is sent
+		-- by the acting client.
+		sSub = Session.IsHost and "Gamemaster" or (Session.UserName or ""),
 		sPower = sPowerName,
-		sTypeLabel = getPowerTypeLabel(nodePower),
 		sDesc = getPowerDescription(nodePower),
 		-- For the card's action rows. A path, not data: each receiving
 		-- client resolves it itself, so the rows only appear where the
@@ -163,27 +164,6 @@ function sendPowerCard(rActor, nodePower, sVerb, bSecret)
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
 	}, bSecret or false);
 	return true;
-end
-
--- What kind of power this is. A spell is recognized by its school or by a
--- "spell" group ("Spells (Wizard)"); anything else shows its group name,
--- which on a sheet is where the power lives ("Class Features", "Feats").
-function getPowerTypeLabel(nodePower)
-	local sGroup = StringManager.trim(DB.getValue(nodePower, "group", ""));
-	local sSchool = StringManager.trim(DB.getValue(nodePower, "school", ""));
-	local nLevel = DB.getValue(nodePower, "level", 0);
-	if (sSchool ~= "") or sGroup:lower():match("spell") then
-		local sLabel = (nLevel == 0) and "Cantrip" or string.format("Level %d Spell", nLevel);
-		if sSchool ~= "" then
-			-- middot, as on the action card's modifier row
-			sLabel = sLabel .. " \194\183 " .. sSchool;
-		end
-		return sLabel;
-	end
-	if sGroup ~= "" then
-		return sGroup;
-	end
-	return "Power";
 end
 
 -- Description text for the card. PC powers and library spells carry a
