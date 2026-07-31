@@ -87,12 +87,25 @@ function getSentenceSegments()
 	local sName = _tData.sName or "";
 	local sSource = _tData.sSource or "";
 	local sTarget = _tData.sTarget or "";
-	-- Lifecycle notice, phrased by the parser: "The effect **Bless** on
-	-- **Elara Brightwood** expired." (the "on ..." only when the actor is
-	-- known). The full stop rides on the phrase, which is short enough to
-	-- carry it without wrapping oddly.
+	-- Status notice, phrased by the parser: "The effect **Bless** on
+	-- **Elara Brightwood** expired.", or with bStatusFirst "Effect **Prone**
+	-- already exists on **Acolyte**." (the "on ..." only when the actor is
+	-- known). The full stop rides on the last segment either way.
 	local sStatus = _tData.sStatus or "";
 	if sStatus ~= "" then
+		if _tData.bStatusFirst then
+			local tSegments = {
+				{ sText = "Effect", sFont = FONT_TEXT },
+				{ sText = sName, sFont = FONT_BOLD },
+			};
+			if sTarget ~= "" then
+				table.insert(tSegments, { sText = sStatus .. " on", sFont = FONT_TEXT });
+				table.insert(tSegments, actorSegment(sTarget, "."));
+			else
+				table.insert(tSegments, { sText = sStatus .. ".", sFont = FONT_TEXT });
+			end
+			return tSegments;
+		end
 		local tSegments = {
 			{ sText = "The effect", sFont = FONT_TEXT },
 			{ sText = sName, sFont = FONT_BOLD },

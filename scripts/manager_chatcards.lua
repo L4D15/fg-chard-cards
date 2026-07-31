@@ -685,7 +685,7 @@ end
 -- "Effect ['LIGHT: 20 light; [D: 1 hour]']\r-> [to Elara Brightwood]\r[by Wololo]"
 -- ("[by ...]" only when the effect has a source). The same "Effect ['...']"
 -- shape is also used for status notices, which carry a status instead of a
--- "[to ...]" target — the lifecycle ones get their own effect card (see
+-- "[to ...]" target — the recognized ones get their own effect card (see
 -- parseEffectStatusNotice), the rest stay notices.
 -- Returns the card's pieces: name, rules logic, source (may be empty) and
 -- target. The wording is the card's business, not this one's.
@@ -721,29 +721,32 @@ function parseEffectNotice(sText)
 	};
 end
 
--- The effect lifecycle notices, from EffectManager's expire/disable paths:
--- "Effect ['AC: 5'] -> [EXPIRED] [on Elara Brightwood]" ("[on ...]" only
--- when the actor is known). Statuses become the card sentence's verb phrase;
--- only these read as an event on the effect — the apply-time statuses
--- (ALREADY EXISTS, TARGET IMMUNE, ...) and the follow-on rewrite
--- ("Effect [X] -> [Y]") fall through to a notice. The tags are localized
--- CoreRPG strings, so the keys are read through Interface.getString —
--- lazily, since strings load after this script.
+-- The effect status notices, from EffectManager's expire/disable/duplicate
+-- paths: "Effect ['AC: 5'] -> [EXPIRED] [on Elara Brightwood]" ("[on ...]"
+-- only when the actor is known). Statuses become the card sentence's verb
+-- phrase; bStatusFirst puts the phrase right after the name ("Effect Prone
+-- already exists on Acolyte") instead of the lifecycle order ("The effect
+-- AC: 5 on Elara Brightwood expired"). Unrecognized statuses (TARGET
+-- IMMUNE, ...) and the follow-on rewrite ("Effect [X] -> [Y]") fall through
+-- to a notice. The tags are localized CoreRPG strings, so the keys are read
+-- through Interface.getString — lazily, since strings load after this script.
 local _tEffectStatusPhrases = nil;
 function getEffectStatusPhrase(sStatus)
 	if not _tEffectStatusPhrases then
 		_tEffectStatusPhrases = {
-			[Interface.getString("effect_status_expired")] = "expired",
-			[Interface.getString("effect_status_singleused")] = "was used up",
-			[Interface.getString("effect_status_disabled")] = "was disabled",
-			[Interface.getString("effect_status_deactivated")] = "was deactivated",
+			[Interface.getString("effect_status_expired")] = { sPhrase = "expired" },
+			[Interface.getString("effect_status_singleused")] = { sPhrase = "was used up" },
+			[Interface.getString("effect_status_disabled")] = { sPhrase = "was disabled" },
+			[Interface.getString("effect_status_deactivated")] = { sPhrase = "was deactivated" },
+			[Interface.getString("effect_status_exists")] = { sPhrase = "already exists", bStatusFirst = true },
 		};
 	end
 	return _tEffectStatusPhrases[sStatus];
 end
 
--- Returns the card pieces of a lifecycle notice (sTarget may be empty;
--- sStatus carries the phrase), or nil for any other message.
+-- Returns the card pieces of a status notice (sTarget may be empty; sStatus
+-- carries the phrase, bStatusFirst its ordering), or nil for any other
+-- message.
 function parseEffectStatusNotice(sText)
 	local sLabel, sEffect, sRest = sText:match("^([^%[]+)%['(.-)'%]%s*%->%s*(.+)$");
 	if not sLabel then
@@ -754,8 +757,8 @@ function parseEffectStatusNotice(sText)
 	if not sLabel or (StringManager.trim(sLabel) ~= Interface.getString("effect_label")) then
 		return nil;
 	end
-	local sStatus = getEffectStatusPhrase(sRest:match("^%[([^%]]+)%]") or "");
-	if not sStatus then
+	local tStatus = getEffectStatusPhrase(sRest:match("^%[([^%]]+)%]") or "");
+	if not tStatus then
 		return nil;
 	end
 
@@ -773,7 +776,8 @@ function parseEffectStatusNotice(sText)
 		sName = sName,
 		sLogic = sLogic,
 		sTarget = sRest:match("%[on ([^%]]+)%]") or "",
-		sStatus = sStatus,
+		sStatus = tStatus.sPhrase,
+		bStatusFirst = tStatus.bStatusFirst or false,
 	};
 end
 
