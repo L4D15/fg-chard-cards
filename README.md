@@ -64,12 +64,15 @@ decision log — lives in [`Design/`](Design/README.md).
   `ActionsManager.performMultiAction` — the path `PowerManager.performAction`
   funnels all power rolls through — and `ActionsManager.performAction`;
   custom `rRoll` string fields survive the throw). A *volley* is one press: per-target entries of the same
-  volley aggregate on the row ("17 · 9", coloured by outcome), and the next
-  press replaces them. The 5E resolve hooks read the marker back and
-  broadcast a `chatcards_result` OOB (attack: total + Crit/Fumble, coloured
-  hit/miss; save: each target's total, green = saved; damage/heal: the
-  shared total, mode `set` so per-target resolves don't repeat it; effect:
-  "Applied", reported from the diceless effect roll's resolution). Row
+  volley aggregate on the row, and the next press replaces them. Results sit
+  inline after the row's description behind a middot ("Attack Mace +5 · 22"),
+  bold, middot-separated between entries; outcome-carrying entries are tinted
+  and marked with `cc_icon_success`/`cc_icon_failure`. The 5E resolve hooks
+  read the marker back and broadcast a `chatcards_result` OOB (attack: total
+  + Crit/Fumble, tinted + marked by hit/miss; save: each target's total,
+  green check = saved; damage/heal: the shared plain total, mode `set` so
+  per-target resolves don't repeat it; effect: a textless entry — just the
+  success mark — reported from the diceless effect roll's resolution). Row
   buttons also drag like the sheet's: the marked rolls are encoded into the
   draginfo at drag start and resolve wherever the drop lands (a token to
   attack/damage/save that target, the chat for a plain roll) — a cancelled

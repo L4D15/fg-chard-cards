@@ -83,6 +83,11 @@
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
 	<icon name="cc_portrait_unknown" file="graphics/icons/cc_portrait_unknown.png" />
 
+	<!-- Outcome marks on the power card's action rows (success check /
+	     failure cross), drawn beside the row's result numbers -->
+	<icon name="cc_icon_success" file="graphics/icons/cc_icon_success.png" />
+	<icon name="cc_icon_failure" file="graphics/icons/cc_icon_failure.png" />
+
 	<!-- Die result glyphs (native-chat-style black silhouettes) -->
 	<icon name="cc_die_d4" file="graphics/icons/cc_die_d4.png" />
 	<icon name="cc_die_d6" file="graphics/icons/cc_die_d6.png" />

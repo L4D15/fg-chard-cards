@@ -356,8 +356,9 @@ function onResolveAction(rSource, rTarget, rRoll)
 	-- reports from its resolution, which covers the click (resolves
 	-- immediately) and a drag (resolves on drop — or never, if cancelled).
 	-- "set": applying to several targets resolves once per target.
+	-- Textless: a performed-only action shows just the success mark.
 	if rRoll.sType == "effect" then
-		ChatCardsManager.sendActionResult(rRoll, "set", "Applied", "positive");
+		ChatCardsManager.sendActionResult(rRoll, "set", "", "positive");
 	end
 
 	if _tDedicatedTypes[rRoll.sType or ""] then
@@ -512,9 +513,10 @@ function onHealRoll(rSource, rTarget, rRoll)
 		{ rSource = rSource, rTarget = rTarget, rRoll = rRoll, sLabel = sLabel });
 	ChatCardsManager.sendCardOOB(tCard, ChatCardsManager.isRollSecret(rRoll));
 
-	-- One shared total, like damage.
+	-- One shared total, like damage — and styled like it: a heal has no
+	-- success or failure, and the row marks/tints are outcome semantics.
 	ChatCardsManager.sendActionResult(rRoll, "set",
-		tostring(rRoll.nTotal or ActionsManager.total(rRoll)), "positive");
+		tostring(rRoll.nTotal or ActionsManager.total(rRoll)), "");
 end
 
 --
