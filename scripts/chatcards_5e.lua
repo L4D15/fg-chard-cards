@@ -19,6 +19,7 @@ local _fUsePower = nil;
 local _tDedicatedTypes = {
 	attack = true, damage = true, heal = true,
 	save = true, check = true, skill = true,
+	table = true,
 };
 
 function onInit()
@@ -41,6 +42,11 @@ function onInit()
 		ActionsManager.registerResultHandler("damage", onDamageRoll);
 		-- Healing shares the damage handler in the ruleset.
 		ActionsManager.registerResultHandler("heal", onHealRoll);
+	end
+	-- Table rolls: the drawn rows the ruleset prints as follow-up chat
+	-- lines move into the roll card instead (see onTableRoll).
+	if TableManager and TableManager.onTableRoll then
+		ActionsManager.registerResultHandler("table", onTableRoll);
 	end
 	-- Single hook point for every other roll type (basic dice, saves,
 	-- checks, skills, init, ...): runs on the rolling client only.
@@ -327,6 +333,127 @@ function getWeaponProperties(rSource, sLabel)
 		end
 	end
 	return tProps;
+end
+
+--
+--	TABLE ROLLS
+--
+
+-- A table roll's card should carry what the roll actually produced.
+-- CoreRPG's TableManager.onTableRoll both computes the drawn rows AND
+-- outputs them itself — as follow-up chat messages (chat output) or as a
+-- record link on the roll message (story/parcel/encounter outputs) — with no
+-- seam between the two. So the Comm delivery calls are intercepted for the
+-- duration of the original handler: the follow-up result lines are captured
+-- into the card and dropped from chat, while the roll message passes through
+-- (receiving clients already skip its "[TABLE]" text) after donating any
+-- record link it carries.
+--
+-- Cascading table links resolve synchronously inside the parent's handler
+-- (CoreRPG disables dice rolling around them), so rolls nest: each roll
+-- captures into its own frame on the stack, and a parent's card is flushed
+-- right before its first sub-roll so cards keep the rolling order.
+
+local MAX_TABLE_RESULTS = 10;
+local _tTableFrames = {};
+local _fCommDeliver = nil;
+local _fCommAdd = nil;
+
+function onTableRoll(rSource, rTarget, rRoll)
+	for _, tParent in ipairs(_tTableFrames) do
+		flushTableCard(tParent);
+	end
+
+	local tFrame = { rRoll = rRoll, rSource = rSource, tResults = {} };
+	table.insert(_tTableFrames, tFrame);
+	if #_tTableFrames == 1 then
+		_fCommDeliver = Comm.deliverChatMessage;
+		Comm.deliverChatMessage = onTableMessageDeliver;
+		_fCommAdd = Comm.addChatMessage;
+		Comm.addChatMessage = onTableMessageAdd;
+	end
+
+	local bOK, vError = pcall(TableManager.onTableRoll, rSource, rTarget, rRoll);
+
+	table.remove(_tTableFrames);
+	if #_tTableFrames == 0 then
+		Comm.deliverChatMessage = _fCommDeliver;
+		Comm.addChatMessage = _fCommAdd;
+	end
+	if not bOK then
+		Debug.console("ChatCards5E.onTableRoll: ", vError);
+	end
+	flushTableCard(tFrame);
+end
+
+-- Comm stand-ins while a table roll resolves; anything not recognized as
+-- table output passes through untouched.
+function onTableMessageDeliver(msg, ...)
+	if not captureTableMessage(msg) then
+		return _fCommDeliver(msg, ...);
+	end
+end
+
+function onTableMessageAdd(msg, ...)
+	if not captureTableMessage(msg) then
+		return _fCommAdd(msg, ...);
+	end
+end
+
+-- Sort one delivery into the current roll's frame. The roll message itself
+-- is recognized by its dice (or its text, which opens with the roll desc on
+-- the error paths): it stays in chat, but its shortcuts — the record a
+-- story/parcel/encounter output created — become the card's result. The
+-- follow-up systemfont result lines become results too, and are consumed.
+-- Returns true when the message should not reach chat.
+function captureTableMessage(msg)
+	local tFrame = _tTableFrames[#_tTableFrames];
+	if not tFrame or (type(msg) ~= "table") then
+		return false;
+	end
+	if (#(msg.dice or {}) > 0)
+			or StringManager.startsWith(msg.text or "", tFrame.rRoll.sDesc or "") then
+		for _, tShortcut in ipairs(msg.shortcuts or {}) do
+			-- "[RESULT] Camp Events" -> "Camp Events"
+			local sText = tShortcut.description or "";
+			local sTag = "[" .. Interface.getString("table_result_tag") .. "] ";
+			if StringManager.startsWith(sText, sTag) then
+				sText = sText:sub(#sTag + 1);
+			end
+			addTableResult(tFrame, sText, tShortcut);
+		end
+		return false;
+	end
+	addTableResult(tFrame, msg.text or "", (msg.shortcuts or {})[1]);
+	return true;
+end
+
+function addTableResult(tFrame, sText, tShortcut)
+	sText = StringManager.trim(sText or "");
+	if (sText == "") and tShortcut then
+		sText = StringManager.trim(tShortcut.description or "");
+	end
+	if (sText == "") or (#tFrame.tResults >= MAX_TABLE_RESULTS) then
+		return;
+	end
+	table.insert(tFrame.tResults, {
+		sText = sText,
+		sClass = tShortcut and tShortcut.class or "",
+		sRecord = tShortcut and tShortcut.recordname or "",
+	});
+end
+
+-- Send the frame's card, once: a roll card whose extras carry the drawn
+-- results. Called after the original resolves — or, for a parent table,
+-- right before its first sub-roll's own card (its output is complete by
+-- then: results go out before the cascade starts).
+function flushTableCard(tFrame)
+	if tFrame.bFlushed then
+		return;
+	end
+	tFrame.bFlushed = true;
+	ChatCardsManager.sendRollCard(tFrame.rSource, tFrame.rRoll,
+		{ tResults = tFrame.tResults });
 end
 
 function onResolveAction(rSource, rTarget, rRoll)

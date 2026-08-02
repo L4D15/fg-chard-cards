@@ -531,7 +531,7 @@ function sendRollCard(rSource, rRoll, tExtra)
 	end
 
 	local tPortrait = getActorPortrait(rActor);
-	sendCardOOB({
+	local tFields = {
 		sCardType = "roll",
 		sName = sName or "",
 		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
@@ -547,7 +547,16 @@ function sendRollCard(rSource, rRoll, tExtra)
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
 		sTags = buildTags("roll", { rSource = rSource, rRoll = rRoll, sTitle = sTitle }),
-	}, isRollSecret(rRoll));
+	};
+	-- What the roll resolved into (a table roll's drawn rows): indexed flat
+	-- fields, since OOB payloads carry no nesting. The card reads sResultN
+	-- until the first missing index.
+	for i, tResult in ipairs(tExtra.tResults or {}) do
+		tFields["sResult" .. i] = tResult.sText or "";
+		tFields["sResultClass" .. i] = tResult.sClass or "";
+		tFields["sResultRecord" .. i] = tResult.sRecord or "";
+	end
+	sendCardOOB(tFields, isRollSecret(rRoll));
 end
 
 -- Types without a dedicated hook (basic tray dice, initiative, ...).
@@ -1007,7 +1016,7 @@ end
 -- cannot be one string control: it is drawn as one widget per word, measured
 -- and positioned by hand. Segments arrive as
 -- { sText = "Elara Brightwood", sFont = "cc_bodybold" } and every word of a
--- segment keeps that font.
+-- segment keeps that font; a segment with bNewLine set starts its own line.
 --
 -- The words do NOT reflow by themselves, so the caller has to render again
 -- when its width changes (see chatcard_effect.lua's onLayoutSizeChanged).
@@ -1072,6 +1081,13 @@ function setRichText(cControl, tSegments, nWidth, nLineHeight, nTopPad)
 	local nLines = 1;
 	local nIndex = 0;
 	for nSegment, tSegment in ipairs(tSegments or {}) do
+		-- A segment marked bNewLine starts on a line of its own (the action
+		-- card's one-result-per-line list).
+		if tSegment.bNewLine and (nX > 0) then
+			nX = 0;
+			nY = nY + nLineHeight;
+			nLines = nLines + 1;
+		end
 		-- Line breaks inside a segment's text are honoured (the power
 		-- description's paragraphs); segment boundaries still flow inline.
 		local bFirstLine = true;

@@ -536,40 +536,52 @@
 				</anchored>
 			</genericcontrol>
 
+			<!-- What the roll drew (table rolls): one "Result: ..." line per
+			     entry, rich text so the entry can link its record. Collapsed
+			     (height 0, zero top offset) on cards without results, so the
+			     chips sit where they always did. -->
+			<cc_rich_sentence name="results">
+				<anchored height="0">
+					<top parent="line2" anchor="bottom" offset="0" />
+					<left offset="17" />
+					<right parent="resultbox" anchor="left" offset="-8" />
+				</anchored>
+			</cc_rich_sentence>
+
 			<!-- Keyword chips -->
 			<cc_chip name="chip1">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left offset="17" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip2">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left parent="chip1" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip3">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left parent="chip2" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip4">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left parent="chip3" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip5">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left parent="chip4" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>
 			<cc_chip name="chip6">
 				<anchored>
-					<top parent="line2" anchor="bottom" offset="2" />
+					<top parent="results" anchor="bottom" offset="2" />
 					<left parent="chip5" anchor="right" offset="6" />
 				</anchored>
 			</cc_chip>

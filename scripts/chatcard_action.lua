@@ -6,6 +6,17 @@
 local GLYPH = 22;    -- die glyph size
 local GAP = 2;       -- spacing between glyphs
 local PER_ROW = 4;   -- glyphs per row inside the 110px result box
+local INSET = 5;     -- the card art's shadow border; all content sits inside
+
+-- Result-list rendering (table rolls): body-line height plus a gap above the
+-- first line, in the fonts the body lines use.
+local RESULT_LINE_HEIGHT = 16;
+local RESULT_TOP_PAD = 4;
+-- The results control's horizontal surroundings, for deriving its width from
+-- the card's before the first layout: 17 left inset + 8 gap + 110 result box
+-- + 5 right offset (see the windowclass anchors).
+local RESULT_SIDES = 140;
+local RESULT_FALLBACK_WIDTH = 160;
 
 -- The die art is white so it can be tinted here; without a tint it would be
 -- invisible on the card. Normal dice sit a step darker than the neutral tag
@@ -19,7 +30,7 @@ local DIE_LABEL_DROPPED = "80FFFFFF";
 -- No weak tables in FG's sandbox: the manager's link state is released by
 -- hand when the card closes.
 function onClose()
-	ChatCardsManager.releaseControlState(name);
+	ChatCardsManager.releaseControlState(name, results);
 end
 
 -- The rolled result drags back out of the result box, like a rolled entry in
@@ -27,6 +38,16 @@ end
 -- roll cards), so those simply don't drag.
 local _tDragRoll = nil;
 local _sDragActorNode = "";
+
+-- Pieces of the card-height computation (see updateCardHeight): the results
+-- render at the card's current width, so their height — and with it the card
+-- height — settles on the first layout rather than in setData.
+local _tResults = nil;
+local _nRenderedWidth = nil;
+local _nResultsHeight = 0;
+local _nLeftBase = 0;
+local _bChips = false;
+local _nBoxContent = 0;
 
 function setData(t)
 	_tDragRoll = buildDragRoll(t);
@@ -65,33 +86,118 @@ function setData(t)
 
 	-- Result-area content: dice rows + 30 total + outcome line when there is
 	-- one (its row overlaps the total's by 4px).
-	local nBoxContent = nDiceHeight + 30;
+	_nBoxContent = nDiceHeight + 30;
 	if sOutcome ~= "" then
-		nBoxContent = nBoxContent + 12;
+		_nBoxContent = _nBoxContent + 12;
 	end
 
-	-- Window height each column needs, mirroring the windowclass anchors.
-	-- INSET is the card art's shadow border, which all content sits inside.
-	local INSET = 5;
 	local nLine1 = ((t.sLine1 or "") ~= "") and 16 or 0;
 	local nLine2 = (bMods or ((t.sLine2 or "") ~= "")) and 16 or 0;
-	-- Name block stacked flush (namebar 16 + subtitle 15 + roll-type 15),
-	-- then 4 + line1, + 2 + line2, + 2 + chips, + 4 bottom pad, keeping the
-	-- body rows at y=55. They cannot start above y=49 anyway: they sit
-	-- under the 44px avatar, which is the floor for this column.
-	local nLeftNeeds = INSET + 16 + 15 + 15 + 4 + nLine1 + 2 + nLine2 + 2
-		+ (bChips and 14 or 0) + 4 + INSET;
+	-- Left column above the results, mirroring the windowclass anchors: name
+	-- block stacked flush (namebar 16 + subtitle 15 + roll-type 15), then
+	-- 4 + line1, + 2 + line2, keeping the body rows at y=55. They cannot
+	-- start above y=49 anyway: they sit under the 44px avatar, which is the
+	-- floor for this column.
+	_nLeftBase = INSET + 16 + 15 + 15 + 4 + nLine1 + 2 + nLine2;
+	_bChips = bChips;
+
+	-- Renders the results (if any) and sets the card heights either way; the
+	-- first layout re-renders at the card's real width.
+	_tResults = decodeResults(t);
+	_nResultsHeight = 0;
+	_nRenderedWidth = nil;
+	renderSentence();
+end
+
+-- Window height each column needs. The result area spans the card's full
+-- inner height, so it stretches when the left column is taller and drives
+-- the card height otherwise. Re-run whenever the results re-render: their
+-- height depends on the card's width.
+function updateCardHeight()
+	-- ... + results, + 2 + chips, + 4 bottom pad.
+	local nLeftNeeds = _nLeftBase + _nResultsHeight + 2
+		+ (_bChips and 14 or 0) + 4 + INSET;
 	-- 4px of padding above and below the contents when the box is at its
 	-- minimum size.
-	local nBoxNeeds = INSET + 4 + nBoxContent + 4 + INSET;
+	local nBoxNeeds = INSET + 4 + _nBoxContent + 4 + INSET;
 
-	-- The result area spans the card's full inner height, so it stretches
-	-- when the left column is taller and drives the card height otherwise.
 	local nCardHeight = math.max(nLeftNeeds, nBoxNeeds);
 	local nBoxHeight = nCardHeight - (2 * INSET);
 	resultbox.setAnchoredHeight(nBoxHeight);
 	-- Split the box's free space evenly above and below the contents.
-	boxpad.setAnchoredHeight(math.max(4, math.floor((nBoxHeight - nBoxContent) / 2)));
+	boxpad.setAnchoredHeight(math.max(4, math.floor((nBoxHeight - _nBoxContent) / 2)));
+end
+
+-- Table-roll results ride the payload as indexed flat fields (sResult1,
+-- sResultClass1, sResultRecord1, ...) — OOB payloads carry no nesting.
+function decodeResults(t)
+	local tResults = {};
+	local i = 1;
+	while ((t["sResult" .. i] or "") ~= "") do
+		table.insert(tResults, {
+			sText = t["sResult" .. i],
+			sClass = t["sResultClass" .. i] or "",
+			sRecord = t["sResultRecord" .. i] or "",
+		});
+		i = i + 1;
+	end
+	return tResults;
+end
+
+-- Draw (or redraw) the result list at the card's current width; the
+-- cc_rich_sentence template calls this again from its layout events, since
+-- text widgets do not reflow (the effect card's pattern). The width check
+-- keeps the height change made here from bouncing back as another render.
+function renderSentence()
+	if not _tResults then
+		return;
+	end
+	local nWidth = getResultsWidth();
+	if nWidth == _nRenderedWidth then
+		return;
+	end
+	_nRenderedWidth = nWidth;
+
+	_nResultsHeight = 0;
+	if #_tResults > 0 then
+		_nResultsHeight = ChatCardsManager.setRichText(results,
+			getResultSegments(), nWidth, RESULT_LINE_HEIGHT, RESULT_TOP_PAD);
+	end
+	results.setAnchoredHeight(_nResultsHeight);
+	updateCardHeight();
+end
+
+function getResultsWidth()
+	local nWidth = results.getSize();
+	if (nWidth or 0) > 0 then
+		return nWidth;
+	end
+	-- This is a windowclass script, so the window's own methods are globals
+	-- here ("window" only exists in control scripts).
+	local nCardWidth = getSize();
+	if (nCardWidth or 0) > RESULT_SIDES then
+		return nCardWidth - RESULT_SIDES;
+	end
+	return RESULT_FALLBACK_WIDTH;
+end
+
+-- One "Result: <text>" line per drawn row — the label in bold, the text
+-- linked to the row's record when it carried one (link handling lives in
+-- the manager).
+function getResultSegments()
+	local tSegments = {};
+	for _, tResult in ipairs(_tResults) do
+		table.insert(tSegments, {
+			sText = "Result:", sFont = "cc_bodybold", bNewLine = true,
+		});
+		local tValue = { sText = tResult.sText, sFont = "cc_body" };
+		if (tResult.sClass ~= "") and (tResult.sRecord ~= "") then
+			tValue.sLinkClass = tResult.sClass;
+			tValue.sLinkPath = tResult.sRecord;
+		end
+		table.insert(tSegments, tValue);
+	end
+	return tSegments;
 end
 
 -- Rebuild the roll a draggable card carries. sDice's "type:result" entries
