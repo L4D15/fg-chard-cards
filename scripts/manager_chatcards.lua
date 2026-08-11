@@ -18,6 +18,107 @@ local MAX_CARDS = 150;
 local _cList = nil;
 local _tPending = {};
 
+-- ===== Slash-command help =====
+-- The engine answers /help by writing straight into the native chat control
+-- — never through Comm's receive event — so with that control hidden the
+-- reply is invisible. The same information is rebuilt here from three
+-- sources, and processHelp answers /help (and /commands) with a card:
+--  1. A wrap of Comm.registerSlashHandler, installed at the top of onInit,
+--     captures registrations with the usage text /help would have shown.
+--     It CANNOT run earlier: engine globals like Comm do not exist until
+--     the onInit phase (indexing Comm at script load time is a nil error
+--     that kills the whole script). By our onInit the ruleset's own
+--     registrations already happened — ruleset onInits run first — and so
+--     have extensions with a lower loadorder, hence the static lists below;
+--     what the wrap really catches is this extension's commands and any
+--     extension loading after us.
+--  2. A static list of CoreRPG's registrations (shared by every ruleset we
+--     load on, curated from its manager scripts, 2026-08).
+--  3. A static list of the engine's own commands, which never pass through
+--     registerSlashHandler at all (curated from the client docs, 2026-08).
+-- Live capture wins the dedupe, so a re-registered command shows its
+-- current usage text. Adapters or plugins can add entries for anything the
+-- static lists miss via registerSlashHelp.
+local _tRegisteredCommands = {};
+local _fRegisterSlashHandler = nil;
+
+function registerSlashHelp(sCommand, sHelp)
+	if tostring(sCommand or "") ~= "" then
+		_tRegisteredCommands[tostring(sCommand)] = tostring(sHelp or "");
+	end
+end
+
+function onRegisterSlashHandler(sCommand, fHandler, sHelp, ...)
+	registerSlashHelp(sCommand, sHelp);
+	return _fRegisterSlashHandler(sCommand, fHandler, sHelp, ...);
+end
+
+-- CoreRPG's registrations (manager_chat.lua and friends). bGM marks the
+-- host-gated ones; a wrong flag here only hides or shows a listing line.
+local _tCoreCommands = {
+	{ sUsage = "/w [charactername] [message]" },
+	{ sUsage = "/r [message]" },
+	{ sUsage = "/mod [number] <message>" },
+	{ sUsage = "/option [option_name] <option_value>" },
+	{ sUsage = "/rollon [table name] <-c [column name]> <-d dice> <-hide>" },
+	{ sUsage = "/afk" },
+	{ sUsage = "/exportchar" },
+	{ sUsage = "/export", bGM = true },
+	{ sUsage = "/exportnpc", bGM = true },
+	{ sUsage = "/importchar", bGM = true },
+	{ sUsage = "/importnpc", bGM = true },
+	{ sUsage = "/flushdb", bGM = true },
+	{ sUsage = "/gmid [name]", bGM = true },
+	{ sUsage = "/id [name]", bGM = true },
+};
+
+-- The engine's own commands (chat modes, dice, client functions).
+local _tEngineCommands = {
+	{ sUsage = "/act [message]" },
+	{ sUsage = "/clear", bGM = true },
+	{ sUsage = "/console" },
+	{ sUsage = "/day", bGM = true },
+	{ sUsage = "/die [NdN+N] [description]" },
+	{ sUsage = "/emote [message]" },
+	{ sUsage = "/help" },
+	{ sUsage = "/mood [mood] [message]" },
+	{ sUsage = "/night", bGM = true },
+	{ sUsage = "/ooc [message]" },
+	{ sUsage = "/reload", bGM = true },
+	{ sUsage = "/save", bGM = true },
+	{ sUsage = "/scaleui [50-200]" },
+	{ sUsage = "/story [message]", bGM = true },
+	{ sUsage = "/vote [description]" },
+};
+
+-- One system card listing every command: the live registrations first (they
+-- carry usage text and win the dedupe), then the static lists, GM-only
+-- entries filtered out for players. Local-only, like the native /help reply.
+function processHelp()
+	local tLines = {};
+	local tSeen = {};
+	local function addLine(sLine)
+		local sKey = sLine:match("^(/%S+)") or sLine;
+		if not tSeen[sKey] then
+			tSeen[sKey] = true;
+			table.insert(tLines, sLine);
+		end
+	end
+	for sCommand, sHelp in pairs(_tRegisteredCommands) do
+		addLine(StringManager.trim("/" .. sCommand .. " " .. sHelp));
+	end
+	for _, tList in ipairs({ _tCoreCommands, _tEngineCommands }) do
+		for _, tCmd in ipairs(tList) do
+			if Session.IsHost or not tCmd.bGM then
+				addLine(tCmd.sUsage);
+			end
+		end
+	end
+	table.sort(tLines);
+	table.insert(tLines, 1, "Available chat commands:");
+	addSystemCard(table.concat(tLines, "\r"));
+end
+
 -- Cards addressable after creation (action-row results): card window by the
 -- sCardId its payload carried. Entries are released from the card's onClose
 -- (the card cap, /clear, list teardown), like the control-link state below.
@@ -29,6 +130,11 @@ local _nNextCardId = 0;
 local _nNextVolley = 0;
 
 function onInit()
+	-- Slash-help capture first, so this extension's own registrations below
+	-- (and every extension initializing after this one) are recorded.
+	_fRegisterSlashHandler = Comm.registerSlashHandler;
+	Comm.registerSlashHandler = onRegisterSlashHandler;
+
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CARDRESULT, handleCardResultOOB);
 	-- Every roll a card's action row triggers passes through one of these
@@ -58,6 +164,12 @@ function onInit()
 	-- handler of our own covers the card list; the card list's radial menu
 	-- offers the same thing, in case the engine consumes the command first.
 	Comm.registerSlashHandler("clear", processClear);
+	-- /help has the same problem in reverse: the engine's reply is drawn
+	-- into the hidden native control (see the slash-command help section).
+	-- /commands is the fallback name, in case the engine consumes /help
+	-- before registered handlers get a look.
+	Comm.registerSlashHandler("help", processHelp);
+	Comm.registerSlashHandler("commands", processHelp, "- list chat commands");
 end
 
 -- ===== Ruleset adapters =====

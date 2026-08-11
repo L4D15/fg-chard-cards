@@ -29,7 +29,8 @@ their own card, in the spirit of modern VTT chat streams.
 - **System messages, readable** — turn and round changes, applied and expired
   effects, and "takes N damage" results are rewritten as plain sentences on
   compact banners instead of bracket-tag chatter. Table rolls show their
-  drawn results right on the roll card.
+  drawn results right on the roll card, and `/help` (or `/commands`) lists
+  every chat command — including ones other extensions add.
 - **Nothing breaks** — the engine's real chat log stays alive underneath
   (hidden), so `/log` export, secret-roll handling and other extensions keep
   working. Secret rolls and GM-only messages keep their reach.
