@@ -42,7 +42,7 @@ ChatCards is built on CoreRPG with per-system adapters:
 | Ruleset | Support |
 | --- | --- |
 | [5E](Docs/DnD5E.md) | Full: dedicated attack/damage/heal/save/check cards, spell cards with action rows, effect origins |
-| [Daggerheart](Docs/Daggerheart.md) | Full rolls: duality action/attack cards (Hope/Fear die tints, tags and crits), reaction, damage and heal cards, effect origins. No spell/power cards — the system announces abilities through their rolls |
+| [Daggerheart](Docs/Daggerheart.md) | Full: duality action/attack cards (Hope/Fear die tints, tags and crits), reaction, damage, heal and experience cards, effect origins, and ability cards with rollable action rows via a "send to chat" button added to the character sheet |
 | Other CoreRPG-based rulesets | Generic: speech, story, system and table cards, plus a generic card for every dice roll |
 
 Support for another system means writing one adapter script — see

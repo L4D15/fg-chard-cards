@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root>
+	<!-- Daggerheart sheet additions: a "send to chat" button on the power
+	     rows of the character sheet's Abilities tab (domain cards and
+	     class / subclass / ancestry / community features). Daggerheart has
+	     no power-use flow (nothing calls PowerManagerCore.usePower), so
+	     this button is the announce moment that sends a power card
+	     (ChatCardsDH.sendSheetPowerCard). On other rulesets these
+	     windowclasses do not exist, so the merges only define orphan
+	     classes nothing ever instantiates.
+
+	     Anchoring — the goal is ONE straight button column across card and
+	     feature rows, so the button lives on the ITEM windowclasses (not
+	     the header subwindow) anchored to the window's horizontal CENTER:
+	     the feature sublists are indented symmetrically (+40 left, -40
+	     right), so item centers coincide across nesting levels, and window
+	     edges don't move with the gear/choice buttons' visibility. Every
+	     header-relative scheme failed: the header's width (and centre)
+	     varies with its right-chain buttons, *_listitem_right templates
+	     drift with the action count, and the actions list itself anchors
+	     to that unstable header centre. The 44 lines the button up just
+	     left of the action clusters (header centre +80, shifted by the
+	     header's chains, minus the button and gap). -->
+	<windowclass name="power_item_dh" merge="join">
+		<sheetdata>
+			<buttoncontrol name="chatcards_send">
+				<anchored width="20" height="20">
+					<top offset="0" />
+					<left anchor="center" offset="44" />
+				</anchored>
+				<icon normal="cc_send_chat" pressed="cc_send_chat_down" />
+				<tooltip text="Send to chat" />
+				<script>
+					function onButtonPress()
+						local node = window.getDatabaseNode();
+						-- The class the row's own name link opens (see the
+						-- ruleset's power_item_dh_header name.activate).
+						local sClass = DB.getPath(node):match("cardlist") and "card" or "feature";
+						ChatCardsDH.sendSheetPowerCard(node, sClass);
+						return true;
+					end
+				</script>
+			</buttoncontrol>
+		</sheetdata>
+	</windowclass>
+	<!-- The sub-feature rows copy power_item_dh, and controls named alike
+	     merge over the copied ones — so declaring the button here too both
+	     covers the case where the copy resolved before the merge above,
+	     and swaps in the class a sub-feature's own name link opens. -->
+	<windowclass name="power_subitem_dh" merge="join">
+		<sheetdata>
+			<buttoncontrol name="chatcards_send">
+				<anchored width="20" height="20">
+					<top offset="0" />
+					<left anchor="center" offset="44" />
+				</anchored>
+				<icon normal="cc_send_chat" pressed="cc_send_chat_down" />
+				<tooltip text="Send to chat" />
+				<script>
+					function onButtonPress()
+						ChatCardsDH.sendSheetPowerCard(window.getDatabaseNode(), "subfeature");
+						return true;
+					end
+				</script>
+			</buttoncontrol>
+		</sheetdata>
+	</windowclass>
+</root>

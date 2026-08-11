@@ -27,6 +27,19 @@ function onInit()
 	});
 	-- The power card's title links to 5E's power record class.
 	ChatCardsCore.setPowerRecordClass("power");
+	-- Power-card rows: a cast action is compound (the sheet's full Actions
+	-- view splits it the same way), so it contributes an Attack and/or a
+	-- Save row rather than a full-cast button — the card itself is the
+	-- cast announcement, and rows whose sub-roll the action does not
+	-- define are dropped by the card. Other types keep the default row.
+	ChatCardsCore.setPowerRowBuilder(function(_, sType)
+		if sType == "cast" then
+			return {
+				{ sSubRoll = "atk", sLabel = "Attack" },
+				{ sSubRoll = "save", sLabel = "Save" },
+			};
+		end
+	end);
 
 	-- 5E's message vocabulary, for the manager's chat classification: roll
 	-- texts to skip beyond the common d20 set, apply labels whose outcome a

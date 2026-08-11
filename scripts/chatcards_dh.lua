@@ -14,9 +14,10 @@
 --    [12][vs. DC 14] -> ...") carries no bracketed tag, so it is dropped by
 --    a skip pattern rather than the roll-tag vocabulary.
 --  - There is no power-use flow (nothing calls PowerManagerCore.usePower;
---    abilities roll straight from their action buttons), so this system
---    sends no power cards. Effect origins are still stamped, via the
---    ActionPower.performAction wrap.
+--    abilities roll straight from their action buttons), so power cards
+--    are sent from a "send to chat" button merged into the sheet's power
+--    rows instead (sendSheetPowerCard, common/sheet_chatcards_dh.xml).
+--    Effect origins are stamped via the ActionPower.performAction wrap.
 --
 
 local _fAttackResolve = nil;
@@ -60,6 +61,30 @@ function onInit()
 		h = COLOR_HOPE_DIE,
 		f = COLOR_FEAR_DIE,
 	});
+
+	-- Power-card rows: a Daggerheart action node is already a single sheet
+	-- button whose meaning rides the node's own fields — attack actions
+	-- carry a "subroll" ("", "save", "mod"), damage and heal a "resource"
+	-- (hp/stress/armor/hope/fear) — mirroring the sheet's
+	-- power_action_mini.getActionData.
+	ChatCardsCore.setPowerRowBuilder(function(nodeAction, sType)
+		local sSubRoll = DB.getValue(nodeAction, "subroll", "");
+		if (sType == "damage") or (sType == "heal") then
+			sSubRoll = DB.getValue(nodeAction, "resource", "");
+		end
+		local sLabel = StringManager.capitalize(sType);
+		if sType == "attack" then
+			if sSubRoll == "save" then
+				sLabel = "Save";
+			elseif sSubRoll == "mod" then
+				sLabel = "Modifier";
+			end
+		end
+		return { {
+			sSubRoll = (sSubRoll ~= "") and sSubRoll or nil,
+			sLabel = sLabel,
+		} };
+	end);
 
 	if ActionAttack and ActionAttack.onAttackResolve then
 		_fAttackResolve = ActionAttack.onAttackResolve;
@@ -123,6 +148,26 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodeAction)
 		end
 	end
 	return _fPowerPerformAction(draginfo, rActor, rAction, nodeAction);
+end
+
+--
+--	SHEET POWER CARDS
+--
+
+-- The "send to chat" button merged into the sheet's power rows (see
+-- common/sheet_chatcards_dh.xml): Daggerheart has no power-use flow of its
+-- own, so the button is the announce moment that sends the power card —
+-- name, description and rollable action rows, like a 5E cast. sClass is
+-- the windowclass the row's own name link opens (card / feature /
+-- subfeature), for the card's title link.
+function sendSheetPowerCard(nodePower, sClass)
+	if not nodePower then
+		return;
+	end
+	local rActor = ActorManager.resolveActor(PowerManagerDH.getPowerActorNode(nodePower));
+	-- Mirror the sheet's reach: nodes owned by NPC records stay GM-only.
+	local bSecret = not (rActor and ActorManager.isPC(rActor));
+	ChatCardsCore.sendPowerCard(rActor, nodePower, bSecret, sClass);
 end
 
 --

@@ -70,9 +70,10 @@ commits, commit messages prefixed with the branch name).
   unnamed effects) — the stamp itself (`rAction.sChatCardsPower`) is the
   adapter's job. Also holds `setPowerRecordClass` (the windowclass a power
   card's title link opens, since the power record class is a system's, not
-  CoreRPG's) and `registerDieStyles` (die glyph accents keyed by a
-  one-letter type prefix in a card's encoded dice — Daggerheart's hope/fear
-  dice).
+  CoreRPG's), `setPowerRowBuilder` (how one action node splits into a power
+  card's rows — 5E's cast split, Daggerheart's subroll/resource fields) and
+  `registerDieStyles` (die glyph accents keyed by a one-letter type prefix
+  in a card's encoded dice — Daggerheart's hope/fear dice).
 - **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — the 5E adapter, and the
   template for adapters to other systems. Gates itself on
   `ChatCardsManager.isRuleset("5E")` — the action-manager globals it hooks
@@ -270,6 +271,8 @@ All art is placeholder. Regenerate or replace:
   `Design/fit_pill_art.py` for fitting exported art)
 - `cc_banner.png` — one-line banner bar
 - `cc_portraitframe.png` — portrait border
+- `graphics/buttons/cc_send_chat.png` (+`_down`) — the "send to chat"
+  sheet button (regenerate with `Design/gen_send_button.py`)
 
 Frame offsets are in bitmap pixels and border bands draw 1:1 — see the
 comments in `graphics/graphics_chatcards.xml` for the geometry each frame
