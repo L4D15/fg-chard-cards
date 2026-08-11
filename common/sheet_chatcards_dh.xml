@@ -23,6 +23,20 @@
 	     header's chains, minus the button and gap). -->
 	<windowclass name="power_item_dh" merge="join">
 		<sheetdata>
+			<!-- The ruleset indents the features sublist on both sides
+			     (+40/-40). The LEFT indent is what nests the names; the
+			     RIGHT one only pushes the sub-rows' whole right-anchor
+			     chain (gear, choice buttons) 40px out of line with the
+			     item rows'. Zeroing it aligns the right-side buttons into
+			     one column; the two centre-anchored controls in the
+			     sub-rows are compensated below (the window centre moves
+			     +20). -->
+			<list_content_top name="features">
+				<anchored>
+					<right parent="" offset="0" />
+				</anchored>
+			</list_content_top>
+
 			<buttoncontrol name="chatcards_send">
 				<anchored width="20" height="20">
 					<top offset="0" />
@@ -50,9 +64,11 @@
 	<windowclass name="power_subitem_dh" merge="join">
 		<sheetdata>
 			<buttoncontrol name="chatcards_send">
+				<!-- 24, not 44: the features sublist right-indent removal
+				     above moves this window's centre +20. -->
 				<anchored width="20" height="20">
 					<top offset="0" />
-					<left anchor="center" offset="44" />
+					<left anchor="center" offset="24" />
 				</anchored>
 				<icon normal="cc_send_chat" pressed="cc_send_chat_down" />
 				<tooltip text="Send to chat" />
@@ -63,6 +79,19 @@
 					end
 				</script>
 			</buttoncontrol>
+		</sheetdata>
+	</windowclass>
+	<!-- Same compensation for the sub-rows' action buttons: actionsmini
+	     anchors to the header's centre +80, and the header widened with
+	     its window (+20 centre shift), so 60 keeps the coloured action
+	     buttons in the same column as the item rows'. -->
+	<windowclass name="power_subitem_dh_header" merge="join">
+		<sheetdata>
+			<list_poweraction_mini name="actionsmini">
+				<anchored>
+					<left offset="60" />
+				</anchored>
+			</list_poweraction_mini>
 		</sheetdata>
 	</windowclass>
 </root>
