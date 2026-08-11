@@ -25,6 +25,22 @@ function registerDedicatedRollTypes(tTypes)
 	end
 end
 
+-- Die glyph accents beyond the engine's advantage/disadvantage prefixes,
+-- keyed by a one-letter type prefix in a card's encoded dice string and
+-- holding the glyph tint in AARRGGBB (Daggerheart marks its hope/fear dice
+-- "hd12"/"fd12"). Consulted by the action card's getDieColor.
+local _tDieStyles = {};
+
+function registerDieStyles(tStyles)
+	for sPrefix, sColor in pairs(tStyles or {}) do
+		_tDieStyles[sPrefix] = sColor;
+	end
+end
+
+function getDieStyle(sPrefix)
+	return _tDieStyles[sPrefix];
+end
+
 -- Windowclass the power card's title link opens — the system's power record
 -- class ("power" on 5E), which CoreRPG does not define. Empty (no adapter
 -- set one) leaves the title as plain text.

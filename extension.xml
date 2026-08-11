@@ -4,7 +4,7 @@
 		<name>ChatCards</name>
 		<version>0.1</version>
 		<author>Jose Ladislao</author>
-		<description>Card-style chat message display (CoreRPG-based rulesets; 5E adapter included)</description>
+		<description>Card-style chat message display (CoreRPG-based rulesets; 5E and Daggerheart adapters included)</description>
 		<!-- No <ruleset> block: the launcher matches ruleset tags against the
 		     campaign's own ruleset name only — "CoreRPG" would never match a
 		     5E campaign — so universal extensions omit the gate instead (the
@@ -25,5 +25,6 @@
 		<script name="ChatCardsManager" file="scripts/manager_chatcards.lua" />
 		<script name="ChatCardsCore" file="scripts/chatcards_core.lua" />
 		<script name="ChatCards5E" file="scripts/chatcards_5e.lua" />
+		<script name="ChatCardsDH" file="scripts/chatcards_dh.lua" />
 	</base>
 </root>

@@ -72,9 +72,10 @@ function setData(t)
 	local sOutcome = t.sOutcome or "";
 	outcome.setValue(sOutcome);
 	outcome.setAnchoredHeight((sOutcome ~= "") and 16 or 0);
-	if sOutcome == "Success" or sOutcome == "Critical!" then
+	-- Prefix match, so system flavours ("Critical Success!") keep the tint.
+	if sOutcome:match("^Success") or sOutcome:match("^Critical") then
 		outcome.setFont("cc_success");
-	elseif sOutcome == "Failure" or sOutcome == "Fumble" then
+	elseif sOutcome:match("^Failure") or sOutcome:match("^Fumble") then
 		outcome.setFont("cc_failure");
 	else
 		outcome.setFont("cc_outcome");
@@ -219,7 +220,7 @@ function buildDragRoll(t)
 			});
 		end
 	end
-	return {
+	local rRoll = {
 		sType = t.sRollType,
 		sDesc = t.sRollDesc or "",
 		aDice = aDice,
@@ -229,6 +230,13 @@ function buildDragRoll(t)
 		-- card it again — the roll was carded when it was rolled.
 		sChatCardsRedrop = "1",
 	};
+	-- Encoded clause data, where the sending hook carried it (Daggerheart's
+	-- damage/heal types live in the clauses, not the desc): the drop's mod
+	-- phase decodes sClauseData exactly as it does for a fresh roll.
+	if (t.sRollClauses or "") ~= "" then
+		rRoll.sClauseData = t.sRollClauses;
+	end
+	return rRoll;
 end
 
 -- The drag affordance: a hand cursor over the result area when the card's
@@ -385,12 +393,17 @@ function getDieSides(sType)
 end
 
 -- Tint for a die: the kept die of an advantage/disadvantage roll carries the
--- same colour as its tag pill. Dropped dice stay dimmed.
+-- same colour as its tag pill. Adapter-registered accents win first
+-- (Daggerheart's hope/fear dice, prefixed "h"/"f"). Dropped dice stay dimmed.
 function getDieColor(sType, bDropped)
 	if bDropped then
 		return DIE_COLOR_DROPPED;
 	end
 	local sPrefix = (sType or ""):sub(1, 1);
+	local sStyle = ChatCardsCore.getDieStyle(sPrefix);
+	if sStyle then
+		return sStyle;
+	end
 	if sPrefix == "g" then
 		return ChatCardsManager.COLOR_POSITIVE;
 	elseif sPrefix == "r" then
