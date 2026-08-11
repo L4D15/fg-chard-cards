@@ -207,9 +207,12 @@ function sendCardOOB(tFields, bSecret)
 end
 
 -- Card classes by OOB card type; rolls of every kind share the action card.
+-- Next-roll modifiers (Daggerheart's experiences) ride the effect card,
+-- which renders their sentence variant (see chatcard_effect.lua).
 local _tCardClasses = {
 	power = "chatcard_power",
 	link = "chatcard_link",
+	nextrollmod = "chatcard_effect",
 };
 
 function handleCardOOB(msgOOB)
@@ -1068,6 +1071,9 @@ end
 -- and positioned by hand. Segments arrive as
 -- { sText = "Elara Brightwood", sFont = "cc_bodybold" } and every word of a
 -- segment keeps that font; a segment with bNewLine set starts its own line.
+-- An sColor (AARRGGBB) tints the segment's words over the font's colour —
+-- for values styled like the roll cards' modifiers; don't combine it with a
+-- link, whose hover would repaint the words.
 --
 -- The words do NOT reflow by themselves, so the caller has to render again
 -- when its width changes (see chatcard_effect.lua's onLayoutSizeChanged).
@@ -1158,6 +1164,9 @@ function setRichText(cControl, tSegments, nWidth, nLineHeight, nTopPad)
 					position = "topleft", x = 0, y = 0,
 				});
 				if wWord then
+					if tSegment.sColor then
+						wWord.setColor(tSegment.sColor);
+					end
 					local nWordWidth = wWord.getSize() or 0;
 					-- Wrap before a word that would overrun, unless it is the
 					-- first on its line: a word wider than the card has
