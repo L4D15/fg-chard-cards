@@ -36,10 +36,12 @@ commits, commit messages prefixed with the branch name).
   which is where notice icons come from. Also defines the `chatcards_card`
   OOB message that carries structured card data to every client, and the
   adapter registration surface: `isRuleset`, `registerTagProvider`, and
-  `registerRollTags` / `registerRedundantApplies` / `registerApplyBanners`,
-  which extend the message-classification vocabulary (the defaults carry only
-  the labels shared across the d20 family; a system's own terms come from its
-  adapter).
+  `registerRollTags` / `registerRedundantApplies` / `registerApplyBanners` /
+  `registerSkipPatterns`, which extend the message-classification vocabulary
+  (the defaults carry only the labels shared across the d20 family; a
+  system's own terms come from its adapter — skip patterns cover system
+  output with no bracketed tag to classify by, and are never applied to
+  speech).
 - **`scripts/chatcards_core.lua`** (`ChatCardsCore`) — CoreRPG-level hooks,
   active on every ruleset. Wraps `ActionsManager.resolveAction`: any
   dice-carrying roll whose type no adapter claimed (via
@@ -55,9 +57,11 @@ commits, commit messages prefixed with the branch name).
   effect-origin plumbing (CoreRPG's `onEffectRollEncode`/`Decode` hooks, the
   `onEffectAddNotify` override that adds the `[from Mage Armor]` line for
   unnamed effects) — the stamp itself (`rAction.sChatCardsPower`) is the
-  adapter's job. Also holds `setPowerRecordClass`: the windowclass a power
+  adapter's job. Also holds `setPowerRecordClass` (the windowclass a power
   card's title link opens, since the power record class is a system's, not
-  CoreRPG's.
+  CoreRPG's) and `registerDieStyles` (die glyph accents keyed by a
+  one-letter type prefix in a card's encoded dice — Daggerheart's hope/fear
+  dice).
 - **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — the 5E adapter, and the
   template for adapters to other systems. Gates itself on
   `ChatCardsManager.isRuleset("5E")` — the action-manager globals it hooks
@@ -88,6 +92,25 @@ commits, commit messages prefixed with the branch name).
   treatment character names get on every card, see below) are sent from two
   paths: full casts here, and the sheet's "use" button in `ChatCardsCore`
   (the `performDefaultPowerUse` wrap).
+- **`scripts/chatcards_dh.lua`** (`ChatCardsDH`) — the Daggerheart adapter.
+  Duality rolls ride the "attack" type (targeted = attack vs defense,
+  untargeted = action roll vs DC), so one `ActionAttack.onAttackResolve`
+  wrap cards both; `rRoll.sDuality` ("hope"/"fear") and `rRoll.bCritical`
+  (doubles) become pills, and the hope/fear dice are marked with "h"/"f"
+  type prefixes in the card's dice string, tinted through the die styles
+  registered with `ChatCardsCore.registerDieStyles`. Reactions (type
+  "save") resolve and apply inside `ActionSave.onSave`, so the wrapper
+  cards after it returns; their result line ("Reaction [12][vs. DC 14]
+  -> ...") carries no bracketed tag, so it is dropped via
+  `registerSkipPatterns` rather than the roll-tag vocabulary. Damage and
+  healing share CoreRPG's `ActionDamageD20.onRoll` handler exactly as on
+  5E; their types (including resources: stress, armor, hope, fear) come
+  from `rRoll.clauses`, which also ride the card re-encoded
+  (`sRollClauses` -> `sClauseData`) so drag-to-apply keeps working. Effect
+  origins are stamped in an `ActionPower.performAction` wrap (the action
+  node's grandparent is the owning power). No power cards: nothing in
+  Daggerheart calls `PowerManagerCore.usePower` — abilities roll straight
+  from their action buttons.
 - **Action-row results** — rolls made from a power card's rows report back
   into that card, on every client. Power cards carry a `sCardId` minted by
   the sender; each client files its copy in `ChatCardsManager`'s id

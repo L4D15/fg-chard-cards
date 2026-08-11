@@ -671,6 +671,18 @@ function registerApplyBanners(tBanners)
 	end
 end
 
+-- Lua patterns for system output that carries no bracketed tag to classify
+-- by (Daggerheart's "Reaction [12][vs. DC 14] -> ..." result lines); a
+-- match drops the message, like a recognized roll tag. Never applied to
+-- speech-mode messages, so a player saying "Reaction speed!" is safe.
+local _tSkipPatterns = {};
+
+function registerSkipPatterns(tPatterns)
+	for _, sPattern in ipairs(tPatterns or {}) do
+		table.insert(_tSkipPatterns, sPattern);
+	end
+end
+
 function onReceiveMessage(msg)
 	if not msg then
 		return;
@@ -690,6 +702,14 @@ function onReceiveMessage(msg)
 	local sTag = sText:match("^%[(%u+)");
 	if sTag and _tRollTags[sTag] then
 		return;
+	end
+
+	if not _tSpeechModes[msg.mode or ""] then
+		for _, sPattern in ipairs(_tSkipPatterns) do
+			if sText:match(sPattern) then
+				return;
+			end
+		end
 	end
 
 	-- Apply-result messages from ActionCore.applyMessage use mixed-case labels
