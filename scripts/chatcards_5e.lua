@@ -1,28 +1,47 @@
 --
--- ChatCards: 5E hooks.
--- Captures structured attack/damage data at resolution time (before it is
--- flattened into chat text) and broadcasts it to every client as a card.
+-- ChatCards: 5E adapter.
+-- Captures structured attack/damage/save/check data at resolution time
+-- (before it is flattened into chat text) and broadcasts it to every client
+-- as a card. Everything here touches 5E's own action managers, so the whole
+-- script gates itself on the ruleset; the system-agnostic hooks live in
+-- ChatCardsCore, and an adapter for another system would mirror this file.
 --
 
 local _fAttackResolve = nil;
 local _fSaveResolve = nil;
-local _fResolveAction = nil;
 local _fPowerPerformAction = nil;
-local _fEffectRollEncode = nil;
-local _fEffectRollDecode = nil;
-local _fEffectAddNotify = nil;
-local _fUsePower = nil;
-
--- Roll types with a dedicated card hook; everything else gets a generic
--- roll card from the resolveAction wrap. Types that roll no dice produce
--- no card either way.
-local _tDedicatedTypes = {
-	attack = true, damage = true, heal = true,
-	save = true, check = true, skill = true,
-	table = true,
-};
 
 function onInit()
+	-- Adapter gate: without it the hooks below would grab same-named but
+	-- incompatible globals on other systems (PFRPG2 and SavageWorlds both
+	-- define their own ActionAttack, with different signatures).
+	if not ChatCardsManager.isRuleset("5E") then
+		return;
+	end
+
+	-- Roll types the hooks below card themselves, so the core resolveAction
+	-- wrap must not card them again ("table" is claimed by ChatCardsCore's
+	-- own capture).
+	ChatCardsCore.registerDedicatedRollTypes({
+		"attack", "damage", "heal", "save", "check", "skill",
+	});
+	-- The power card's title links to 5E's power record class.
+	ChatCardsCore.setPowerRecordClass("power");
+
+	-- 5E's message vocabulary, for the manager's chat classification: roll
+	-- texts to skip beyond the common d20 set, apply labels whose outcome a
+	-- card already reports, and apply labels that become banners.
+	ChatCardsManager.registerRollTags({
+		"DEATH", "CAST", "CONCENTRATION", "RECHARGE", "RECOVERY", "POWERSAVE",
+	});
+	ChatCardsManager.registerRedundantApplies({ "Concentration", "System Shock" });
+	ChatCardsManager.registerApplyBanners({
+		["Temporary hit points"] = { sVerb = "gains", sUnit = "temporary hit points" },
+		["Fast healing"] = { sVerb = "recovers", sUnit = "hit points" },
+		Regeneration = { sVerb = "recovers", sUnit = "hit points" },
+		Recovery = { sVerb = "recovers", sUnit = "hit points" },
+	});
+
 	if ActionAttack and ActionAttack.onAttackResolve then
 		_fAttackResolve = ActionAttack.onAttackResolve;
 		ActionAttack.onAttackResolve = onAttackResolve;
@@ -43,44 +62,16 @@ function onInit()
 		-- Healing shares the damage handler in the ruleset.
 		ActionsManager.registerResultHandler("heal", onHealRoll);
 	end
-	-- Table rolls: the drawn rows the ruleset prints as follow-up chat
-	-- lines move into the roll card instead (see onTableRoll).
-	if TableManager and TableManager.onTableRoll then
-		ActionsManager.registerResultHandler("table", onTableRoll);
-	end
-	-- Single hook point for every other roll type (basic dice, saves,
-	-- checks, skills, init, ...): runs on the rolling client only.
-	_fResolveAction = ActionsManager.resolveAction;
-	ActionsManager.resolveAction = onResolveAction;
 
-	-- Effect origin. Every power use (PC, NPC, record sheet) funnels through
-	-- PowerManager.performAction, the only point that still holds the power
-	-- node an effect action belongs to; the name is tagged onto the action
-	-- there and carried to the host on custom fields — rRoll string fields
-	-- survive the dice throw, and the add-effect OOB is a JSON dump of the
-	-- whole effect table. The roll <-> effect copies use CoreRPG's official
-	-- hook points, chained in case another extension registered them first.
+	-- Effect origin and cast cards. Every power use (PC, NPC, record sheet)
+	-- funnels through PowerManager.performAction, the only point that still
+	-- holds the power node an effect action belongs to: the power's name is
+	-- stamped onto effect actions there (rAction.sChatCardsPower — carried
+	-- to the host by ChatCardsCore's encode/decode chain), and a full cast
+	-- announces itself as a power card.
 	if PowerManager and PowerManager.performAction then
 		_fPowerPerformAction = PowerManager.performAction;
 		PowerManager.performAction = onPowerPerformAction;
-
-		_fEffectRollEncode = GameManager.getFunction("onEffectRollEncode");
-		EffectManager.setCustomOnEffectRollEncode(onEffectRollEncode);
-		_fEffectRollDecode = GameManager.getFunction("onEffectRollDecode");
-		EffectManager.setCustomOnEffectRollDecode(onEffectRollDecode);
-
-		_fEffectAddNotify = EffectManager.onEffectAddNotify;
-		EffectManager.onEffectAddNotify = onEffectAddNotify;
-	end
-
-	-- Power-use card. The "use" button funnels through
-	-- PowerManagerCore.usePower(node) with the power record itself, whose
-	-- default output is just the power name as text; the card replaces it
-	-- (see onUsePower). Cast actions get their card in onPowerPerformAction:
-	-- their "[CAST] ..." text was already being skipped as a roll tag.
-	if PowerManagerCore and PowerManagerCore.usePower then
-		_fUsePower = PowerManagerCore.usePower;
-		PowerManagerCore.usePower = onUsePower;
 	end
 
 	-- This ruleset's card tags. The manager knows nothing about them; other
@@ -93,7 +84,7 @@ function onInit()
 end
 
 --
---	EFFECT ORIGIN
+--	POWER USE
 --
 
 -- The square brackets would collide with the notice's own [from ...] markers.
@@ -109,138 +100,9 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodePower)
 	-- or save part) announces the power. Its "[CAST] ..." text message is
 	-- one of the skipped roll tags, so the card is the announcement.
 	if bResult and rAction and (rAction.type == "cast") and ((rAction.subtype or "") == "") then
-		sendPowerCard(rActor, nodePower);
+		ChatCardsCore.sendPowerCard(rActor, nodePower);
 	end
 	return bResult;
-end
-
---
---	POWER-USE CARDS
---
-
--- The 5E ruleset registers no fnUsePower handler, so the original's only
--- work is PowerManagerCore.performDefaultPowerUse: the power name as a text
--- message. When a card is sent the original is skipped — its message would
--- show as a duplicate notice, and unlike the roll texts it carries no tag a
--- receiving client could suppress it by. If the card cannot be built the
--- original runs unchanged.
-function onUsePower(node)
-	local rActor = ActorManager.resolveActor(PowerManagerCore.getPowerActorNode(node));
-	-- Mirror the default output's reach: NPC power use stays GM-only.
-	local bSecret = not (rActor and ActorManager.isPC(rActor));
-	if sendPowerCard(rActor, node, bSecret) then
-		return;
-	end
-	_fUsePower(node);
-end
-
--- Broadcast a power card: who (actor + player, as on the roll cards), the
--- power's name and its description text.
-function sendPowerCard(rActor, nodePower, bSecret)
-	if not nodePower then
-		return false;
-	end
-	local sPowerName = StringManager.trim(DB.getValue(nodePower, "name", ""));
-	if sPowerName == "" then
-		return false;
-	end
-
-	local tPortrait = ChatCardsManager.getActorPortrait(rActor);
-	ChatCardsManager.sendCardOOB({
-		sCardType = "power",
-		-- Filed under this id on every client, so the action rows' results
-		-- can address the card after the fact.
-		sCardId = ChatCardsManager.nextCardId(),
-		-- The rows' own rolls must keep the card's reach: a GM-only card's
-		-- results stay GM-only.
-		sSecret = bSecret and "1" or "",
-		sName = ChatCardsManager.getActorName(rActor, nil),
-		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
-		-- The header's player line, as on the roll cards: the card is sent
-		-- by the acting client.
-		sSub = Session.IsHost and "Gamemaster" or (Session.UserName or ""),
-		sPower = sPowerName,
-		sDesc = getPowerDescription(nodePower),
-		-- For the card's action rows. A path, not data: each receiving
-		-- client resolves it itself, so the rows only appear where the
-		-- node is readable AND owned (the caster's client, the GM).
-		sPowerNode = DB.getPath(nodePower),
-		sIconAsset = tPortrait.sIconAsset,
-		sTokenAsset = tPortrait.sTokenAsset,
-		sIsGM = (not rActor and Session.IsHost) and "1" or "",
-	}, bSecret or false);
-	return true;
-end
-
--- Description text for the card. PC powers and library spells carry a
--- formattedtext "description" (an XML string when read through getValue);
--- NPC spells a plain "desc". Formatting is flattened: paragraph breaks
--- become line breaks and the remaining markup is stripped.
-function getPowerDescription(nodePower)
-	local s = DB.getValue(nodePower, "description", "");
-	if s == "" then
-		s = DB.getValue(nodePower, "desc", "");
-	end
-	s = s:gsub("</p>%s*<p>", "\r"):gsub("<br%s*/?>", "\r"):gsub("<[^>]->", "");
-	s = s:gsub("&amp;", "&"):gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&quot;", "\""):gsub("&#39;", "'");
-	return StringManager.trim(s);
-end
-
-function onEffectRollEncode(rRoll, rAction)
-	if _fEffectRollEncode then
-		_fEffectRollEncode(rRoll, rAction);
-	end
-	rRoll.sChatCardsPower = rAction.sChatCardsPower;
-end
-
-function onEffectRollDecode(rRoll, rEffect)
-	if _fEffectRollDecode then
-		_fEffectRollDecode(rRoll, rEffect);
-	end
-	rEffect.sChatCardsPower = rRoll.sChatCardsPower;
-end
-
--- Runs on the host for every applied effect. When the effect opens straight
--- with a rules tag ("AC: 3") and its originating power is known, the notice
--- gets a "[from Mage Armor]" line, which the card parser prefers as the
--- effect's name. Named effects and effects from outside a power (typed or
--- dragged onto the CT) keep the stock notice, built by the original.
---
--- The tagged branch reproduces CoreRPG's message construction and delivery
--- (manager_effect.lua onEffectAddNotify, checked against CoreRPG 2025-06):
--- there is no seam to add a line to the message the original builds, since it
--- delivers the message itself.
-function onEffectAddNotify(rActor, nodeEffect, rEffect)
-	local sPower = StringManager.trim(rEffect.sChatCardsPower or "");
-	if (sPower == "") or ChatCardsManager.hasEffectName(rEffect.sName or "") then
-		return _fEffectAddNotify(rActor, nodeEffect, rEffect);
-	end
-	if rEffect.bSkipAnnounce then
-		return;
-	end
-
-	local msg = { font = "msgfont", icon = "action_effect" };
-	msg.text = string.format("%s ['%s']\r-> [to %s]",
-		Interface.getString("effect_label"), rEffect.sName, ActorManager.getDisplayName(rActor));
-	if (rEffect.sSource or "") ~= "" then
-		msg.text = msg.text .. string.format("\r[by %s]", ActorManager.getDisplayName(DB.findNode(rEffect.sSource)));
-	end
-	msg.text = msg.text .. string.format("\r[from %s]", sPower);
-
-	if (rEffect.nGMOnly or 0) == 1 then
-		msg.secret = true;
-		Comm.addChatMessage(msg);
-	elseif CombatManager.isCTHidden(ActorManager.getCTNode(rActor)) then
-		if (rEffect.sUser or "") == "" then
-			msg.secret = true;
-			Comm.addChatMessage(msg);
-		else
-			Comm.addChatMessage(msg);
-			Comm.deliverChatMessage(msg, rEffect.sUser);
-		end
-	else
-		Comm.deliverChatMessage(msg);
-	end
 end
 
 --
@@ -336,146 +198,8 @@ function getWeaponProperties(rSource, sLabel)
 end
 
 --
---	TABLE ROLLS
+--	ATTACKS
 --
-
--- A table roll's card should carry what the roll actually produced.
--- CoreRPG's TableManager.onTableRoll both computes the drawn rows AND
--- outputs them itself — as follow-up chat messages (chat output) or as a
--- record link on the roll message (story/parcel/encounter outputs) — with no
--- seam between the two. So the Comm delivery calls are intercepted for the
--- duration of the original handler: the follow-up result lines are captured
--- into the card and dropped from chat, while the roll message passes through
--- (receiving clients already skip its "[TABLE]" text) after donating any
--- record link it carries.
---
--- Cascading table links resolve synchronously inside the parent's handler
--- (CoreRPG disables dice rolling around them), so rolls nest: each roll
--- captures into its own frame on the stack, and a parent's card is flushed
--- right before its first sub-roll so cards keep the rolling order.
-
-local MAX_TABLE_RESULTS = 10;
-local _tTableFrames = {};
-local _fCommDeliver = nil;
-local _fCommAdd = nil;
-
-function onTableRoll(rSource, rTarget, rRoll)
-	for _, tParent in ipairs(_tTableFrames) do
-		flushTableCard(tParent);
-	end
-
-	local tFrame = { rRoll = rRoll, rSource = rSource, tResults = {} };
-	table.insert(_tTableFrames, tFrame);
-	if #_tTableFrames == 1 then
-		_fCommDeliver = Comm.deliverChatMessage;
-		Comm.deliverChatMessage = onTableMessageDeliver;
-		_fCommAdd = Comm.addChatMessage;
-		Comm.addChatMessage = onTableMessageAdd;
-	end
-
-	local bOK, vError = pcall(TableManager.onTableRoll, rSource, rTarget, rRoll);
-
-	table.remove(_tTableFrames);
-	if #_tTableFrames == 0 then
-		Comm.deliverChatMessage = _fCommDeliver;
-		Comm.addChatMessage = _fCommAdd;
-	end
-	if not bOK then
-		Debug.console("ChatCards5E.onTableRoll: ", vError);
-	end
-	flushTableCard(tFrame);
-end
-
--- Comm stand-ins while a table roll resolves; anything not recognized as
--- table output passes through untouched.
-function onTableMessageDeliver(msg, ...)
-	if not captureTableMessage(msg) then
-		return _fCommDeliver(msg, ...);
-	end
-end
-
-function onTableMessageAdd(msg, ...)
-	if not captureTableMessage(msg) then
-		return _fCommAdd(msg, ...);
-	end
-end
-
--- Sort one delivery into the current roll's frame. The roll message itself
--- is recognized by its dice (or its text, which opens with the roll desc on
--- the error paths): it stays in chat, but its shortcuts — the record a
--- story/parcel/encounter output created — become the card's result. The
--- follow-up systemfont result lines become results too, and are consumed.
--- Returns true when the message should not reach chat.
-function captureTableMessage(msg)
-	local tFrame = _tTableFrames[#_tTableFrames];
-	if not tFrame or (type(msg) ~= "table") then
-		return false;
-	end
-	if (#(msg.dice or {}) > 0)
-			or StringManager.startsWith(msg.text or "", tFrame.rRoll.sDesc or "") then
-		for _, tShortcut in ipairs(msg.shortcuts or {}) do
-			-- "[RESULT] Camp Events" -> "Camp Events"
-			local sText = tShortcut.description or "";
-			local sTag = "[" .. Interface.getString("table_result_tag") .. "] ";
-			if StringManager.startsWith(sText, sTag) then
-				sText = sText:sub(#sTag + 1);
-			end
-			addTableResult(tFrame, sText, tShortcut);
-		end
-		return false;
-	end
-	addTableResult(tFrame, msg.text or "", (msg.shortcuts or {})[1]);
-	return true;
-end
-
-function addTableResult(tFrame, sText, tShortcut)
-	sText = StringManager.trim(sText or "");
-	if (sText == "") and tShortcut then
-		sText = StringManager.trim(tShortcut.description or "");
-	end
-	if (sText == "") or (#tFrame.tResults >= MAX_TABLE_RESULTS) then
-		return;
-	end
-	table.insert(tFrame.tResults, {
-		sText = sText,
-		sClass = tShortcut and tShortcut.class or "",
-		sRecord = tShortcut and tShortcut.recordname or "",
-	});
-end
-
--- Send the frame's card, once: a roll card whose extras carry the drawn
--- results. Called after the original resolves — or, for a parent table,
--- right before its first sub-roll's own card (its output is complete by
--- then: results go out before the cascade starts).
-function flushTableCard(tFrame)
-	if tFrame.bFlushed then
-		return;
-	end
-	tFrame.bFlushed = true;
-	ChatCardsManager.sendRollCard(tFrame.rSource, tFrame.rRoll,
-		{ tResults = tFrame.tResults });
-end
-
-function onResolveAction(rSource, rTarget, rRoll)
-	_fResolveAction(rSource, rTarget, rRoll);
-
-	-- Effects apply through a diceless roll; a power card's Effect row
-	-- reports from its resolution, which covers the click (resolves
-	-- immediately) and a drag (resolves on drop — or never, if cancelled).
-	-- "set": applying to several targets resolves once per target.
-	-- Textless: a performed-only action shows just the success mark.
-	if rRoll.sType == "effect" then
-		ChatCardsManager.sendActionResult(rRoll, "set", "", "positive");
-	end
-
-	if _tDedicatedTypes[rRoll.sType or ""] then
-		return;
-	end
-	if #(rRoll.aDice or {}) == 0 then
-		return;
-	end
-	ChatCardsManager.sendGenericRollCard(rSource, rRoll);
-end
 
 function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	_fAttackResolve(rSource, rTarget, rRoll, rMessage);
@@ -530,6 +254,10 @@ function outcomeStyle(sResult)
 	end
 	return "";
 end
+
+--
+--	DAMAGE AND HEALING
+--
 
 -- The card goes out BEFORE the original resolves: resolution applies the
 -- damage when the roll landed on a target, and its "takes N damage" banner

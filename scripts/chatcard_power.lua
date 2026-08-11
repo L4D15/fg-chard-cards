@@ -49,10 +49,13 @@ function setData(t)
 	subtitle.setValue(t.sSub or "");
 	title.setValue(t.sPower or "");
 	-- The power's name opens its record where the node resolves (the
-	-- caster's client, the GM, loaded library records).
+	-- caster's client, the GM, loaded library records). The record class is
+	-- the system adapter's ("power" on 5E — a 5E class, not a CoreRPG one);
+	-- without an adapter the title stays plain text.
 	local sPowerNode = t.sPowerNode or "";
-	if (sPowerNode ~= "") and DB.findNode(sPowerNode) then
-		ChatCardsManager.setControlLink(title, "power", sPowerNode, TITLE_COLOR);
+	local sPowerClass = ChatCardsCore.getPowerRecordClass();
+	if (sPowerNode ~= "") and (sPowerClass ~= "") and DB.findNode(sPowerNode) then
+		ChatCardsManager.setControlLink(title, sPowerClass, sPowerNode, TITLE_COLOR);
 	end
 	ChatCardsManager.setCardPortrait(porticon, tokenview, portraitframe, t);
 

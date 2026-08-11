@@ -60,6 +60,19 @@ function onInit()
 	Comm.registerSlashHandler("clear", processClear);
 end
 
+-- ===== Ruleset adapters =====
+-- This manager and ChatCardsCore stay ruleset-agnostic. A system's adapter
+-- script (chatcards_5e.lua) gates itself on isRuleset, hooks its own action
+-- managers, and registers the system's vocabulary here: extra roll tags,
+-- apply labels (registerRollTags and friends, next to the tables they
+-- extend) and tag providers (registerTagProvider).
+
+function isRuleset(sName)
+	local sCurrent = (Session and Session.RulesetName)
+		or (User and User.getRulesetName and User.getRulesetName()) or "";
+	return sCurrent:lower() == tostring(sName or ""):lower();
+end
+
 function processClear()
 	clearCards();
 end
@@ -615,30 +628,48 @@ local _tSpeechModes = { chat = true, emote = true, ooc = true, whisper = true };
 -- cards via the resolveAction hook, so their text messages are skipped.
 -- NOTE: dice data is NOT available on received messages (msg.dice arrives
 -- empty), so classification is text-based.
+-- These defaults are the tags shared across the d20 family; an adapter
+-- registers its system's own on top (registerRollTags).
 local _tRollTags = {
-	ATTACK = true, DAMAGE = true, SAVE = true, CHECK = true, SKILL = true,
-	INIT = true, DEATH = true, CAST = true, CONCENTRATION = true,
-	TABLE = true, HEAL = true, RECHARGE = true, RECOVERY = true,
-	POWERSAVE = true,
+	ATTACK = true, DAMAGE = true, HEAL = true, SAVE = true, CHECK = true,
+	SKILL = true, INIT = true, TABLE = true,
 };
 
 -- Apply-result labels whose outcome a card already reports, so their chat
--- message would only repeat it.
+-- message would only repeat it. Adapters add their system's labels
+-- (registerRedundantApplies).
 local _tRedundantApplies = {
-	Attack = true, Save = true, Concentration = true, ["System Shock"] = true,
+	Attack = true, Save = true,
 };
 
 -- Applies that report a change to an actor instead: what a card shows is the
 -- roll, while these carry the amount that actually landed after resistances,
--- caps and the like, so they become a banner in plain words.
+-- caps and the like, so they become a banner in plain words. Adapters add
+-- their system's labels (registerApplyBanners).
 local _tApplyBanners = {
 	Damage = { sVerb = "takes", sUnit = "damage" },
 	Heal = { sVerb = "recovers", sUnit = "hit points" },
-	["Temporary hit points"] = { sVerb = "gains", sUnit = "temporary hit points" },
-	["Fast healing"] = { sVerb = "recovers", sUnit = "hit points" },
-	Regeneration = { sVerb = "recovers", sUnit = "hit points" },
-	Recovery = { sVerb = "recovers", sUnit = "hit points" },
 };
+
+-- Adapter registration for the three tables above. Labels never expire, so
+-- registering is enough — there is no unregister.
+function registerRollTags(tTags)
+	for _, sTag in ipairs(tTags or {}) do
+		_tRollTags[sTag] = true;
+	end
+end
+
+function registerRedundantApplies(tLabels)
+	for _, sLabel in ipairs(tLabels or {}) do
+		_tRedundantApplies[sLabel] = true;
+	end
+end
+
+function registerApplyBanners(tBanners)
+	for sLabel, tPhrase in pairs(tBanners or {}) do
+		_tApplyBanners[sLabel] = tPhrase;
+	end
+end
 
 function onReceiveMessage(msg)
 	if not msg then

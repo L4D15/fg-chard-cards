@@ -1,6 +1,12 @@
 # ChatCards (v0.1 scaffold)
 
-Card-style chat message display for Fantasy Grounds Unity, 5E ruleset.
+Card-style chat message display for Fantasy Grounds Unity. Declares no
+`<ruleset>` gate — the launcher only matches ruleset tags against the
+campaign's own ruleset name, so "CoreRPG" would never match a 5E campaign;
+universal extensions omit the gate instead. The manager and the CoreRPG-level
+hooks (`ChatCardsCore`) are system-agnostic, and a per-system adapter script
+adds the structured capture (5E included; on CoreRPG-based systems without an
+adapter, rolls still get generic roll cards).
 Replaces the visible chat log with a scrolling list of custom card windows
 (attack cards, damage cards, speech cards, and one-line banners) while keeping
 the engine's real chat display alive but hidden, so `/log` export and other
@@ -26,20 +32,47 @@ decision log — lives in [`Design/`](Design/README.md).
   `formatSystemNotice`), everything else → frameless notice. Received messages
   carry their icon in `msg.assets` (`msg.icon` doesn't survive the trip),
   which is where notice icons come from. Also defines the `chatcards_card`
-  OOB message that carries structured card data to every client.
-- **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — 5E hooks. Wraps
-  `ActionAttack.onAttackResolve` and re-registers the `damage` result handler
-  around `ActionDamageD20.onRoll` to capture structured data (`rRoll.nTotal`,
-  `nDefenseVal`, `sResult`, target, modifiers) *before* it is flattened into
-  chat text, then broadcasts a card OOB. The flattened `[ATTACK ...]` /
-  `[DAMAGE ...]` text messages are suppressed on the card side to avoid
-  duplicates (they still reach the hidden real chat log). Also tags effect
-  actions with their originating power's name (wrapping
-  `PowerManager.performAction`, carried roll→effect through CoreRPG's
-  `onEffectRollEncode`/`Decode` hooks and the JSON add-effect OOB); when an
-  unnamed effect ("AC: 3") lands, the host's notice gains a `[from Mage
-  Armor]` line that the effect card uses as the effect's name. Power use is
-  carded too (`chatcard_power`: the roll cards' header — portrait, actor
+  OOB message that carries structured card data to every client, and the
+  adapter registration surface: `isRuleset`, `registerTagProvider`, and
+  `registerRollTags` / `registerRedundantApplies` / `registerApplyBanners`,
+  which extend the message-classification vocabulary (the defaults carry only
+  the labels shared across the d20 family; a system's own terms come from its
+  adapter).
+- **`scripts/chatcards_core.lua`** (`ChatCardsCore`) — CoreRPG-level hooks,
+  active on every ruleset. Wraps `ActionsManager.resolveAction`: any
+  dice-carrying roll whose type no adapter claimed (via
+  `registerDedicatedRollTypes`) becomes a generic roll card, and diceless
+  `effect` rolls report into the power card's Effect row. Captures table
+  rolls (re-registers the `table` result handler and intercepts the Comm
+  calls for the duration of `TableManager.onTableRoll`, so the drawn rows
+  land inside the roll card instead of as follow-up chat lines). Cards power
+  use by wrapping `PowerManagerCore.performDefaultPowerUse` — only the
+  default output (the power name as a text message, which carries no tag
+  receivers could suppress it by) is replaced by the card, so a ruleset with
+  its own registered `fnUsePower` handler keeps its mechanics. Owns the
+  effect-origin plumbing (CoreRPG's `onEffectRollEncode`/`Decode` hooks, the
+  `onEffectAddNotify` override that adds the `[from Mage Armor]` line for
+  unnamed effects) — the stamp itself (`rAction.sChatCardsPower`) is the
+  adapter's job. Also holds `setPowerRecordClass`: the windowclass a power
+  card's title link opens, since the power record class is a system's, not
+  CoreRPG's.
+- **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — the 5E adapter, and the
+  template for adapters to other systems. Gates itself on
+  `ChatCardsManager.isRuleset("5E")` — the action-manager globals it hooks
+  are same-named but incompatible on other systems (PFRPG2 and SavageWorlds
+  both define their own `ActionAttack`). Registers its dedicated roll types
+  (attack/damage/heal/save/check/skill), the 5E message vocabulary, the
+  power record class, and its tag providers. Wraps
+  `ActionAttack.onAttackResolve` / `ActionSave.onSaveResolve` and
+  re-registers the `check`/`skill`/`damage`/`heal` result handlers to capture
+  structured data (`rRoll.nTotal`, `nDefenseVal`, `sResult`, target,
+  modifiers) *before* it is flattened into chat text, then broadcasts a card
+  OOB. The flattened `[ATTACK ...]` / `[DAMAGE ...]` text messages are
+  suppressed on the card side to avoid duplicates (they still reach the
+  hidden real chat log). Also stamps effect actions with their originating
+  power's name (wrapping `PowerManager.performAction`, which is also where a
+  full cast announces itself as a power card — its `[CAST]` text was already
+  skipped as a roll tag). Power cards (`chatcard_power`: the roll cards' header — portrait, actor
   name, player name — with the power's name in the title slot, its
   description folded behind a "Show description" toggle at the bottom,
   and the power's actions between them as a vertical row list — button,
@@ -50,12 +83,9 @@ decision log — lives in [`Design/`](Design/README.md).
   the caster and the GM;
   the power name is also a link that opens the record wherever the node
   resolves, with a hand cursor and a colour shift on hover — the same link
-  treatment character names get on every card, see below):
-  full casts from the `PowerManager.performAction` wrap (their
-  `[CAST]` text was already skipped as a roll tag), and the sheet's "use"
-  button by wrapping `PowerManagerCore.usePower` — there the card *replaces*
-  the default power-name text message, which carries no tag receivers could
-  suppress it by.
+  treatment character names get on every card, see below) are sent from two
+  paths: full casts here, and the sheet's "use" button in `ChatCardsCore`
+  (the `performDefaultPowerUse` wrap).
 - **Action-row results** — rolls made from a power card's rows report back
   into that card, on every client. Power cards carry a `sCardId` minted by
   the sender; each client files its copy in `ChatCardsManager`'s id
