@@ -120,6 +120,9 @@ commits, commit messages prefixed with the branch name).
   `ChatCardsManager.setRichText`; those widgets don't reflow, so the card
   re-renders from the sentence control's `onFirstLayout` /
   `onLayoutSizeChanged` (the only place a resolved width is available).
+  Also renders the `nextrollmod` card type (Daggerheart's experiences):
+  a sentence variant with a colour-tinted bonus segment (rich-text
+  segments accept an `sColor` over the font's colour).
 - **Result drag & drop** — damage and heal cards drag like a rolled entry in
   native chat: the 5E hooks put the roll's raw pieces on the card OOB
   (`sRollType`, `sRollDesc`, `sRollMod`; the dice with results already travel

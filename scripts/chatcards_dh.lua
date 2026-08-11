@@ -21,6 +21,7 @@
 
 local _fAttackResolve = nil;
 local _fPowerPerformAction = nil;
+local _fModResolve = nil;
 
 -- The ruleset's own hope/fear die tints (dicebodycolor in
 -- manager_action_attack.lua), reused for the card's die glyphs.
@@ -42,12 +43,12 @@ function onInit()
 	});
 
 	-- Daggerheart's message vocabulary. Attack/action rolls are tagged
-	-- "[ACTION ...]" and reaction rolls "[REACTION ...]" (the ruleset
-	-- overrides CoreRPG's tag strings); reaction *results* are plain
-	-- "Reaction [12][vs. DC 14] -> ..." lines with no bracketed tag, so
-	-- they need a skip pattern instead. Regeneration applies become a
-	-- banner like the other recovery labels.
-	ChatCardsManager.registerRollTags({ "ACTION", "REACTION" });
+	-- "[ACTION ...]", reaction rolls "[REACTION ...]" and next-roll
+	-- modifiers "[MOD] ..." (the ruleset overrides CoreRPG's tag strings);
+	-- reaction *results* are plain "Reaction [12][vs. DC 14] -> ..." lines
+	-- with no bracketed tag, so they need a skip pattern instead.
+	-- Regeneration applies become a banner like the other recovery labels.
+	ChatCardsManager.registerRollTags({ "ACTION", "REACTION", "MOD" });
 	ChatCardsManager.registerSkipPatterns({ "^Reaction%s" });
 	ChatCardsManager.registerApplyBanners({
 		Regeneration = { sVerb = "recovers", sUnit = "hit points" },
@@ -86,6 +87,15 @@ function onInit()
 		ActionPower.performAction = onPowerPerformAction;
 	end
 
+	-- Next-roll modifiers (an experience spent onto the modifier stack).
+	-- ActionMod.onRoll runs outside ActionsManager.resolveAction, so no
+	-- generic card fires; the delivery seam is onModResolve, right after
+	-- checkModResult decided whether the bonus reaches the stack.
+	if ActionMod and ActionMod.onModResolve then
+		_fModResolve = ActionMod.onModResolve;
+		ActionMod.onModResolve = onModResolve;
+	end
+
 	-- This ruleset's card tags. Duality (Hope/Fear/Critical) rides every
 	-- card type; sendRollCard-based cards (reactions, generic rolls) get it
 	-- through the "roll" providers.
@@ -113,6 +123,40 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodeAction)
 		end
 	end
 	return _fPowerPerformAction(draginfo, rActor, rAction, nodeAction);
+end
+
+--
+--	NEXT-ROLL MODIFIERS
+--
+
+-- An experience spent onto the modifier stack ("[MOD] Bodyguard [ADDED TO
+-- MODIFIER STACK]"): the message is skipped by the MOD roll tag, and an
+-- effect-style card announces it instead — "Bodyguard experience will
+-- apply +1 to next roll of Romualda", with the name bold, the bonus
+-- coloured like other bonuses and the actor linked. A DC-gated mod that
+-- missed gets the failed wording (nothing reached the stack). The card
+-- broadcasts, like the message it replaces; the stack itself only changed
+-- on the rolling client.
+function onModResolve(rSource, rTarget, rRoll, rMessage)
+	_fModResolve(rSource, rTarget, rRoll, rMessage);
+
+	local sLabel = StringManager.trim(rRoll.sLabel or "");
+	if (sLabel == "") and ActionMod.decodeLabelText then
+		sLabel = StringManager.trim(ActionMod.decodeLabelText(rRoll.sDesc or "") or "");
+	end
+	if sLabel == "" then
+		return;
+	end
+
+	ChatCardsManager.sendCardOOB({
+		sCardType = "nextrollmod",
+		sName = sLabel,
+		sKind = "experience",
+		sBonus = string.format("%+d", rRoll.nTotal or 0),
+		sFailed = (rRoll.sResult == "fail") and "1" or "",
+		sActorName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+		sActorNode = rSource and ActorManager.getCreatureNodeName(rSource) or "",
+	}, ChatCardsManager.isRollSecret(rRoll) or rMessage.secret);
 end
 
 --

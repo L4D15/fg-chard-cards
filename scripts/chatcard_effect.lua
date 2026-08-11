@@ -85,6 +85,33 @@ end
 
 function getSentenceSegments()
 	local sName = _tData.sName or "";
+	-- Next-roll modifier variant ("**Bodyguard** experience will apply
+	-- **+1** to next roll of **Romualda**."): sBonus is the signed amount,
+	-- coloured like the roll cards' modifier values; sKind is the system's
+	-- word for the source ("experience"); sFailed marks a DC-gated
+	-- application that missed (nothing reached the modifier stack). The
+	-- actor node travels on the payload, so the name links directly.
+	local sBonus = _tData.sBonus or "";
+	if sBonus ~= "" then
+		local sApply = (_tData.sFailed == "1") and "failed to apply" or "will apply";
+		if (_tData.sKind or "") ~= "" then
+			sApply = _tData.sKind .. " " .. sApply;
+		end
+		return {
+			{ sText = sName, sFont = FONT_BOLD },
+			{ sText = sApply, sFont = FONT_TEXT },
+			{
+				sText = sBonus, sFont = FONT_BOLD,
+				sColor = sBonus:match("^%-") and ChatCardsManager.COLOR_NEGATIVE
+					or ChatCardsManager.COLOR_POSITIVE,
+			},
+			{ sText = "to next roll of", sFont = FONT_TEXT },
+			ChatCardsManager.applyActorLink(
+				{ sText = (_tData.sActorName or "") .. ".", sFont = FONT_BOLD },
+				_tData.sActorNode or ""),
+		};
+	end
+
 	local sSource = _tData.sSource or "";
 	local sTarget = _tData.sTarget or "";
 	-- Status notice, phrased by the parser: "The effect **Bless** on
