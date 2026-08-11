@@ -44,7 +44,15 @@ commits, commit messages prefixed with the branch name).
   (the defaults carry only the labels shared across the d20 family; a
   system's own terms come from its adapter — skip patterns cover system
   output with no bracketed tag to classify by, and are never applied to
-  speech).
+  speech). Also rebuilds `/help`: the engine's reply is drawn straight into
+  the hidden native control (never through Comm's receive event), so
+  `/help` (plus `/commands`, in case the engine consumes `/help` first)
+  answers with a system card built from three sources — an onInit-time wrap
+  of `Comm.registerSlashHandler` (catches this extension and extensions
+  loading after it; it cannot catch the ruleset or earlier extensions,
+  whose registrations precede our onInit), plus curated static lists of
+  CoreRPG's and the engine's own commands. `registerSlashHelp` adds
+  anything the lists miss.
 - **`scripts/chatcards_core.lua`** (`ChatCardsCore`) — CoreRPG-level hooks,
   active on every ruleset. Wraps `ActionsManager.resolveAction`: any
   dice-carrying roll whose type no adapter claimed (via
@@ -193,6 +201,13 @@ manager and `ChatCardsCore`.
 
 ## Code conventions
 
+- **Engine globals do not exist at script load time.** `Comm`, `DB`,
+  `Interface` and friends are injected before the `onInit` phase; indexing
+  them from a script's top level is a nil error that kills the whole
+  script (and everything that references its global). Top-level code may
+  only build plain Lua data; every engine touch belongs in `onInit` or
+  later. Init order: ruleset scripts' `onInit` first, then extensions by
+  loadorder.
 - **FG's Lua sandbox has no `setmetatable`** (so no weak tables): any
   per-control state registered with the manager (links, rich text) MUST be
   released from the card's `onClose` via `releaseControlState`, and cards
@@ -226,6 +241,13 @@ manager and `ChatCardsCore`.
    untouched; secret rolls intentionally produce no card for players
    (apply-result banners, e.g. "takes N damage", still show to whoever FG
    delivers them to).
+2. **Engine-drawn chat output** (written straight into the native control,
+   bypassing Comm's receive event) is invisible with that control hidden.
+   `/help` is rebuilt from the registration wrap, and connect/disconnect
+   and load announcements are reproduced from their APIs — but slash
+   usage errors and unknown-command replies still answer into the void.
+   There is no read/notify API on the chat control (extensions that read
+   history resort to the campaign's `chatlog.html` on disk).
 2. **Theming**: the placeholder art doesn't follow the loaded theme. Planned:
    reuse CoreRPG's theme-overridden assets (`chatframe_*` frames, chat
    fonts, `d4icon`..`d20icon`, the `chat` portraitset) for the outer chrome
