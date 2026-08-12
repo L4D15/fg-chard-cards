@@ -78,6 +78,13 @@
 		<bitmap file="graphics/frames/cc_portraitframe.png" />
 		<offset>6,6,6,6</offset>
 	</framedef>
+	<!-- Sheet-row stripe: flat black at 10% opacity, overlaid on every
+	     other list row (Design/gen_rowshade.py). A plain fill, so the
+	     offsets are nominal. -->
+	<framedef name="cc_rowshade">
+		<bitmap file="graphics/frames/cc_rowshade.png" />
+		<offset>2,2,2,2</offset>
+	</framedef>
 
 	<!-- ===== ICONS ===== -->
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />

@@ -171,6 +171,48 @@ function sendSheetPowerCard(nodePower, sClass)
 end
 
 --
+--	SHEET ROW STRIPES
+--
+
+-- Alternating shade for the sheet's power lists (the stripe control merged
+-- into the rows, see common/sheet_chatcards_dh.xml): every other row shows
+-- a translucent black over its header row. The shade alternates over the
+-- rows AS THE EYE READS THEM — a card's nested feature rows continue the
+-- count, not their own — so the restripe walks depth-first from the
+-- outermost list. Each stripe's onFirstLayout restripes the whole tree;
+-- the last row to lay out sets the final parity, which also covers rows
+-- added while the sheet is open. A deletion restripes when the sheet
+-- reopens.
+
+-- Depth-first: the entry takes the next slot, then its sub-rows (the
+-- features sublist on card rows) continue the count. Returns the count.
+local function stripeList(cList, n)
+	for _, w in ipairs(cList.getWindows() or {}) do
+		n = n + 1;
+		if w.chatcards_stripe then
+			w.chatcards_stripe.setVisible((n % 2) == 0);
+		end
+		if w.features and w.features.getWindows then
+			n = stripeList(w.features, n);
+		end
+	end
+	return n;
+end
+
+function updateListStripes(cList)
+	if not cList then
+		return;
+	end
+	-- Climb to the outermost list: a feature row's list sits inside a
+	-- cards-list entry, whose own window belongs to the section and has
+	-- no list above it.
+	while cList.window and cList.window.windowlist do
+		cList = cList.window.windowlist;
+	end
+	stripeList(cList, 0);
+end
+
+--
 --	NEXT-ROLL MODIFIERS
 --
 

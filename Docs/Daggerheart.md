@@ -33,6 +33,14 @@ and `resource` on damage/heal), mirroring the sheet's
 `power_action_mini.getActionData`, through
 `ChatCardsCore.setPowerRowBuilder`.
 
+The same file carries two more sheet adjustments: the features sublist's
+right indent is zeroed so sub-row gears align with the item rows' (the
+centre-anchored controls are compensated), and every other list row gets
+a translucent black stripe (`cc_rowshade`, 10% opacity — restriped from
+`ChatCardsDH.updateListStripes` on layout, walking the row tree
+depth-first so the shade alternates over the rows as the eye reads
+them, nested feature rows continuing their card's count).
+
 ## Duality rendering
 
 The system's signature mechanic gets the card treatment:

@@ -37,6 +37,28 @@
 				</anchored>
 			</list_content_top>
 
+			<!-- Alternating row shade: spans the full row width at the
+			     header row's height (a card's nested features stripe
+			     through their own list). Parity is computed in
+			     ChatCardsDH.updateListStripes from the stripe's layout
+			     events; disabled so clicks pass through to the row. -->
+			<genericcontrol name="chatcards_stripe">
+				<anchored>
+					<top parent="header" anchor="top" offset="0" />
+					<bottom parent="header" anchor="bottom" offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+				</anchored>
+				<frame name="cc_rowshade" offset="0,0,0,0" />
+				<disabled />
+				<invisible />
+				<script>
+					function onFirstLayout()
+						ChatCardsDH.updateListStripes(window.windowlist);
+					end
+				</script>
+			</genericcontrol>
+
 			<buttoncontrol name="chatcards_send">
 				<anchored width="20" height="20">
 					<top offset="0" />
@@ -63,6 +85,28 @@
 	     and swaps in the class a sub-feature's own name link opens. -->
 	<windowclass name="power_subitem_dh" merge="join">
 		<sheetdata>
+			<!-- Alternating row shade: spans the full row width at the
+			     header row's height (a card's nested features stripe
+			     through their own list). Parity is computed in
+			     ChatCardsDH.updateListStripes from the stripe's layout
+			     events; disabled so clicks pass through to the row. -->
+			<genericcontrol name="chatcards_stripe">
+				<anchored>
+					<top parent="header" anchor="top" offset="0" />
+					<bottom parent="header" anchor="bottom" offset="0" />
+					<left offset="0" />
+					<right offset="0" />
+				</anchored>
+				<frame name="cc_rowshade" offset="0,0,0,0" />
+				<disabled />
+				<invisible />
+				<script>
+					function onFirstLayout()
+						ChatCardsDH.updateListStripes(window.windowlist);
+					end
+				</script>
+			</genericcontrol>
+
 			<buttoncontrol name="chatcards_send">
 				<!-- 24, not 44: the features sublist right-indent removal
 				     above moves this window's centre +20. -->
