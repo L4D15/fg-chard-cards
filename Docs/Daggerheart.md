@@ -16,13 +16,30 @@ Written against the Daggerheart ruleset build 2026-08-09.
 | Damage roll | Damage card | Weapon/action label, type pills including resources (Stress, Armor, Hope, Fear), result drags onto a token to apply |
 | Healing / clearing | Heal card | Same shape; the resource pill says what is restored |
 | Effect applied / expired | Effect card | Unnamed effects are named after their owning power (`[from ...]` via the `ActionPower.performAction` stamp) |
+| "Send to chat" sheet button | Power card | A speech-bubble button merged into the sheet's power rows (domain-card features, class/subclass/ancestry/community features): name, description, rollable action rows reporting results back onto the card, title linking to the record (card/feature/subfeature per node kind) |
 | Everything else | Core cards | Generic rolls, table rolls, speech, story, system notices — manager + `ChatCardsCore` |
 
-**No power/ability cards on this system** — nothing in Daggerheart calls
-`PowerManagerCore.usePower` (abilities roll straight from their action
-buttons), so there is no announcement moment to card. Power-card action
-rows are therefore unused here; the row-report calls in the adapter are
-kept so they light up if a power-card flow ever appears.
+**Power cards have no native trigger on this system** — nothing in
+Daggerheart calls `PowerManagerCore.usePower` (abilities roll straight
+from their action buttons), so there is no announcement moment to hook.
+Instead the extension merges its own "send to chat" button into the
+sheet's power rows (`power_item_dh` / `power_subitem_dh`, see
+`common/sheet_chatcards_dh.xml` — anchored to the item window's centre,
+the one reference that lines up across nesting levels and ignores the
+right-chain buttons' visibility), which sends the card via
+`ChatCardsDH.sendSheetPowerCard`. Row splitting reads
+the action node's own fields (`subroll` on attacks — "", save, mod —
+and `resource` on damage/heal), mirroring the sheet's
+`power_action_mini.getActionData`, through
+`ChatCardsCore.setPowerRowBuilder`.
+
+The same file carries two more sheet adjustments: the features sublist's
+right indent is zeroed so sub-row gears align with the item rows' (the
+centre-anchored controls are compensated), and every other list row gets
+a translucent black stripe (`cc_rowshade`, 10% opacity — restriped from
+`ChatCardsDH.updateListStripes` on layout, walking the row tree
+depth-first so the shade alternates over the rows as the eye reads
+them, nested feature rows continuing their card's count).
 
 ## Duality rendering
 
@@ -80,6 +97,11 @@ The system's signature mechanic gets the card treatment:
 - `DataCommon.rolls_resources` = hp, stress, armor, hope, fear; damage
   and heal clauses can name resources as their type, which is where the
   resource pills come from.
+- Domain **card** records carry no rules text of their own — the text and
+  the actions live on their `.features` children (each opening the
+  "subfeature" class from the sheet). The sheet row's name link opens
+  "card" for `cardlist` entries and "feature" otherwise, which is where
+  the power card's title-link class comes from.
 - Damage converts to HP marks via thresholds
   (`ActionDamage.collectConvertedDamage`: minor 1 / major 2 / severe 3,
   massive 4 with the homebrew option) — the card shows the rolled total,
@@ -103,6 +125,11 @@ The system's signature mechanic gets the card treatment:
 - Untargeted Fear spend/gain messages (`applyFearAndMessage`: "[FEAR]
   Spends 2") fall through to a plain system card, not a phrased banner.
 - Countdowns and dice trackers get no dedicated cards.
+- A power card sent for a domain **card** row (the card node itself, not
+  one of its features) shows name only: the card record carries no text or
+  actions of its own — send the feature rows for the full experience.
+  Aggregating a card's features onto one power card is a candidate
+  improvement.
 - Rerolled damage/heal update the applied result but not the card (see
   above).
 - Colossus segment subtargets (`sSubtargetPath` thresholds) untested.

@@ -14,9 +14,10 @@
 --    [12][vs. DC 14] -> ...") carries no bracketed tag, so it is dropped by
 --    a skip pattern rather than the roll-tag vocabulary.
 --  - There is no power-use flow (nothing calls PowerManagerCore.usePower;
---    abilities roll straight from their action buttons), so this system
---    sends no power cards. Effect origins are still stamped, via the
---    ActionPower.performAction wrap.
+--    abilities roll straight from their action buttons), so power cards
+--    are sent from a "send to chat" button merged into the sheet's power
+--    rows instead (sendSheetPowerCard, common/sheet_chatcards_dh.xml).
+--    Effect origins are stamped via the ActionPower.performAction wrap.
 --
 
 local _fAttackResolve = nil;
@@ -60,6 +61,30 @@ function onInit()
 		h = COLOR_HOPE_DIE,
 		f = COLOR_FEAR_DIE,
 	});
+
+	-- Power-card rows: a Daggerheart action node is already a single sheet
+	-- button whose meaning rides the node's own fields — attack actions
+	-- carry a "subroll" ("", "save", "mod"), damage and heal a "resource"
+	-- (hp/stress/armor/hope/fear) — mirroring the sheet's
+	-- power_action_mini.getActionData.
+	ChatCardsCore.setPowerRowBuilder(function(nodeAction, sType)
+		local sSubRoll = DB.getValue(nodeAction, "subroll", "");
+		if (sType == "damage") or (sType == "heal") then
+			sSubRoll = DB.getValue(nodeAction, "resource", "");
+		end
+		local sLabel = StringManager.capitalize(sType);
+		if sType == "attack" then
+			if sSubRoll == "save" then
+				sLabel = "Save";
+			elseif sSubRoll == "mod" then
+				sLabel = "Modifier";
+			end
+		end
+		return { {
+			sSubRoll = (sSubRoll ~= "") and sSubRoll or nil,
+			sLabel = sLabel,
+		} };
+	end);
 
 	if ActionAttack and ActionAttack.onAttackResolve then
 		_fAttackResolve = ActionAttack.onAttackResolve;
@@ -123,6 +148,68 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodeAction)
 		end
 	end
 	return _fPowerPerformAction(draginfo, rActor, rAction, nodeAction);
+end
+
+--
+--	SHEET POWER CARDS
+--
+
+-- The "send to chat" button merged into the sheet's power rows (see
+-- common/sheet_chatcards_dh.xml): Daggerheart has no power-use flow of its
+-- own, so the button is the announce moment that sends the power card —
+-- name, description and rollable action rows, like a 5E cast. sClass is
+-- the windowclass the row's own name link opens (card / feature /
+-- subfeature), for the card's title link.
+function sendSheetPowerCard(nodePower, sClass)
+	if not nodePower then
+		return;
+	end
+	local rActor = ActorManager.resolveActor(PowerManagerDH.getPowerActorNode(nodePower));
+	-- Mirror the sheet's reach: nodes owned by NPC records stay GM-only.
+	local bSecret = not (rActor and ActorManager.isPC(rActor));
+	ChatCardsCore.sendPowerCard(rActor, nodePower, bSecret, sClass);
+end
+
+--
+--	SHEET ROW STRIPES
+--
+
+-- Alternating shade for the sheet's power lists (the stripe control merged
+-- into the rows, see common/sheet_chatcards_dh.xml): every other row shows
+-- a translucent black over its header row. The shade alternates over the
+-- rows AS THE EYE READS THEM — a card's nested feature rows continue the
+-- count, not their own — so the restripe walks depth-first from the
+-- outermost list. Each stripe's onFirstLayout restripes the whole tree;
+-- the last row to lay out sets the final parity, which also covers rows
+-- added while the sheet is open. A deletion restripes when the sheet
+-- reopens.
+
+-- Depth-first: the entry takes the next slot, then its sub-rows (the
+-- features sublist on card rows) continue the count. Returns the count.
+local function stripeList(cList, n)
+	for _, w in ipairs(cList.getWindows() or {}) do
+		n = n + 1;
+		if w.chatcards_stripe then
+			w.chatcards_stripe.setVisible((n % 2) == 0);
+		end
+		if w.features and w.features.getWindows then
+			n = stripeList(w.features, n);
+		end
+	end
+	return n;
+end
+
+function updateListStripes(cList)
+	if not cList then
+		return;
+	end
+	-- Climb to the outermost list: a feature row's list sits inside a
+	-- cards-list entry, whose own window belongs to the section and has
+	-- no list above it.
+	while cList.window and cList.window.windowlist do
+		cList = cList.window.windowlist;
+	end
+	stripeList(cList, 0);
 end
 
 --

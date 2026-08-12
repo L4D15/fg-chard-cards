@@ -49,11 +49,15 @@ function setData(t)
 	subtitle.setValue(t.sSub or "");
 	title.setValue(t.sPower or "");
 	-- The power's name opens its record where the node resolves (the
-	-- caster's client, the GM, loaded library records). The record class is
-	-- the system adapter's ("power" on 5E — a 5E class, not a CoreRPG one);
-	-- without an adapter the title stays plain text.
+	-- caster's client, the GM, loaded library records). The record class
+	-- rides the payload when the sender knew it (Daggerheart's sheet rows),
+	-- else it is the system adapter's ("power" on 5E — a 5E class, not a
+	-- CoreRPG one); without either the title stays plain text.
 	local sPowerNode = t.sPowerNode or "";
-	local sPowerClass = ChatCardsCore.getPowerRecordClass();
+	local sPowerClass = t.sPowerClass or "";
+	if sPowerClass == "" then
+		sPowerClass = ChatCardsCore.getPowerRecordClass();
+	end
 	if (sPowerNode ~= "") and (sPowerClass ~= "") and DB.findNode(sPowerNode) then
 		ChatCardsManager.setControlLink(title, sPowerClass, sPowerNode, TITLE_COLOR);
 	end
@@ -110,10 +114,11 @@ function renderDescription()
 end
 
 -- One row per rollable piece of the power, through the same
--- PowerActionManagerCore handlers the sheet uses. A cast action is compound
--- (the sheet's full Actions view splits it the same way), so it contributes
--- an Attack and/or a Save row rather than a full-cast button — the card
--- itself is the cast announcement. The rows only appear where the power
+-- PowerActionManagerCore handlers the sheet uses. How an action node splits
+-- into rows is the system adapter's call (ChatCardsCore.getPowerActionRows:
+-- 5E splits a compound cast into Attack and Save rows, Daggerheart reads
+-- the node's own subroll/resource fields; the default is one row per
+-- action, labelled by its type). The rows only appear where the power
 -- node is readable and the local user may act for it: the caster's own
 -- client and the GM. Other clients get the path but cannot resolve (or
 -- don't own) the node, and the list collapses.
@@ -123,18 +128,8 @@ function buildActionRows(sPowerNode)
 	if nodePower and (Session.IsHost or DB.isOwner(nodePower)) then
 		for _, nodeAction in ipairs(UtilityManager.getNodeSortedChildren(nodePower, "actions")) do
 			local sType = DB.getValue(nodeAction, "type", "");
-			if sType == "cast" then
-				addActionRow(nodeAction, "atk", "Attack");
-				addActionRow(nodeAction, "save", "Save");
-			elseif sType == "damage" then
-				addActionRow(nodeAction, nil, "Damage");
-			elseif sType == "heal" then
-				addActionRow(nodeAction, nil, "Heal");
-			elseif sType == "effect" then
-				addActionRow(nodeAction, nil, "Effect");
-			elseif sType ~= "" then
-				-- Types from other extensions keep their single row.
-				addActionRow(nodeAction, nil, StringManager.capitalize(sType));
+			for _, tSpec in ipairs(ChatCardsCore.getPowerActionRows(nodeAction, sType)) do
+				addActionRow(nodeAction, tSpec.sSubRoll, tSpec.sLabel);
 			end
 		end
 	end

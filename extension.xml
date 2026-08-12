@@ -20,6 +20,7 @@
 		<includefile source="graphics/graphics_chatcards.xml" />
 		<includefile source="common/template_chatcards.xml" />
 		<includefile source="common/windowclass_chatcards.xml" />
+		<includefile source="common/sheet_chatcards_dh.xml" />
 		<includefile source="desktop/desktop_chatcards.xml" />
 
 		<script name="ChatCardsManager" file="scripts/manager_chatcards.lua" />

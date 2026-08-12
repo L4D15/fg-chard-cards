@@ -34,9 +34,9 @@ The 5E-specific richness sits on the power card:
 - Rows are built from the power's actions through the same
   `PowerActionManagerCore` handlers as the sheet's Actions tab. A compound
   `cast` action splits into Attack and Save rows (the sheet's full view
-  does the same); damage, heal and effect actions get one row each. Rows
-  appear only where the power node resolves *and* is owned — the caster's
-  client and the GM.
+  does the same — registered via `ChatCardsCore.setPowerRowBuilder`);
+  damage, heal and effect actions get one row each. Rows appear only where
+  the power node resolves *and* is owned — the caster's client and the GM.
 - Rolls made from a row report back into the card on every client (the
   volley system — see COLLABORATING.md "Action-row results"). The resolve
   hooks in this adapter broadcast the entries: attack = total +

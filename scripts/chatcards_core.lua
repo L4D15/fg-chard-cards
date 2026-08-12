@@ -54,6 +54,32 @@ function getPowerRecordClass()
 	return _sPowerRecordClass;
 end
 
+-- Power-card action rows: how one action node splits into the card's rows.
+-- The default is one row per action, labelled by its type; a system whose
+-- sheet buttons carry more information registers a builder (5E splits a
+-- compound cast into Attack and Save rows; Daggerheart reads the action
+-- node's own subroll/resource fields). A builder returns a list of
+-- { sSubRoll, sLabel } — sSubRoll rides into the PowerActionManagerCore
+-- handlers — or nil to fall back to the default.
+local _fPowerRowBuilder = nil;
+
+function setPowerRowBuilder(fn)
+	_fPowerRowBuilder = fn;
+end
+
+function getPowerActionRows(nodeAction, sType)
+	if _fPowerRowBuilder then
+		local tRows = _fPowerRowBuilder(nodeAction, sType);
+		if tRows then
+			return tRows;
+		end
+	end
+	if sType ~= "" then
+		return { { sLabel = StringManager.capitalize(sType) } };
+	end
+	return {};
+end
+
 function onInit()
 	-- Single hook point for every roll type without a dedicated card hook
 	-- (basic tray dice, init, and everything an adapter did not claim):
@@ -138,8 +164,11 @@ end
 
 -- Broadcast a power card: who (actor + player, as on the roll cards), the
 -- power's name and its description text. Also the seam a system adapter
--- cards its own power announcements through (5E's full casts).
-function sendPowerCard(rActor, nodePower, bSecret)
+-- cards its own power announcements through (5E's full casts, Daggerheart's
+-- sheet button). sPowerClass names the windowclass the card's title link
+-- opens when the sender knows a better one than the adapter default
+-- (Daggerheart's sheet rows open a different class per node kind).
+function sendPowerCard(rActor, nodePower, bSecret, sPowerClass)
 	if not nodePower then
 		return false;
 	end
@@ -168,6 +197,7 @@ function sendPowerCard(rActor, nodePower, bSecret)
 		-- client resolves it itself, so the rows only appear where the
 		-- node is readable AND owned (the caster's client, the GM).
 		sPowerNode = DB.getPath(nodePower),
+		sPowerClass = sPowerClass or "",
 		sIconAsset = tPortrait.sIconAsset,
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rActor and Session.IsHost) and "1" or "",
@@ -177,12 +207,16 @@ end
 
 -- Description text for the card. PC powers and library spells carry a
 -- formattedtext "description" (an XML string when read through getValue);
--- NPC spells a plain "desc". Formatting is flattened: paragraph breaks
--- become line breaks and the remaining markup is stripped.
+-- NPC spells a plain "desc"; Daggerheart features a formattedtext "text".
+-- Formatting is flattened: paragraph breaks become line breaks and the
+-- remaining markup is stripped.
 function getPowerDescription(nodePower)
 	local s = DB.getValue(nodePower, "description", "");
 	if s == "" then
 		s = DB.getValue(nodePower, "desc", "");
+	end
+	if s == "" then
+		s = DB.getValue(nodePower, "text", "");
 	end
 	s = s:gsub("</p>%s*<p>", "\r"):gsub("<br%s*/?>", "\r"):gsub("<[^>]->", "");
 	s = s:gsub("&amp;", "&"):gsub("&lt;", "<"):gsub("&gt;", ">"):gsub("&quot;", "\""):gsub("&#39;", "'");
