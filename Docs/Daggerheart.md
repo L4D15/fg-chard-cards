@@ -12,6 +12,9 @@ Written against the Daggerheart ruleset build 2026-08-09.
 | Trait / action roll (untargeted duality) | Attack-type card | Title "Action Roll", trait on the modifier line, DC line when the roll had one, outcome Success/Failure/Critical! |
 | Attack against a target | Attack-type card | Title "Attack", target line, formula "d12+d12+2 vs 14" against the defense value |
 | Reaction roll | Roll card | Title "Reaction Roll", DC line, outcome Success/Failure/Partial (half save)/Critical! |
+| Hope / fear gained or spent | Resource card | "**Adolfoss** has gained **1 hope**" on gold card art, "**The GM** has spent **2 fear**" on dark indigo (light text) — from duality-roll riders, the GM fear pool, actor-held pools, and the manual trackers (`stepResourceAdjustment` / `stepFearAdjustment` wraps, carding the actual clamped change read before/after). Adjacent cards with the same name, verb and resource merge their amounts ("gained 1 fear" twice reads "gained 2 fear"); any other card in between breaks the run, and prompts never merge |
+| HP / stress marked or cleared (manual trackers) | System-style card | "**Adolfoss** has marked **2 stress**" — same sentence shape and adjacent-merge rule, on the neutral system card (bookkeeping, not economy) |
+| Roll with fear (auto-gain off) | Fear card, GM-only prompt | "**Adolfoss** has rolled with **fear**" plus a bank-a-fear button (the ruleset's gain-fear tile); pressing adds the point (capped like the ruleset's HRAG auto-gain) and turns the card into the gained notice in place |
 | Experience spent (next-roll modifier) | Effect-style card | "**Bodyguard** experience will apply **+1** to next roll of **Romualda**" — name bold, bonus coloured like other bonuses, actor linked; a DC-gated mod that missed reads "failed to apply" |
 | Damage roll | Damage card | Weapon/action label, type pills including resources (Stress, Armor, Hope, Fear), result drags onto a token to apply |
 | Healing / clearing | Heal card | Same shape; the resource pill says what is restored |
@@ -66,6 +69,8 @@ The system's signature mechanic gets the card treatment:
 | Result handler `save` (re-registered around `ActionSave.onSave`) | Reactions resolve AND apply inside `onSave` (`applySave` sets `sResult`, including `half_success`), so the card is sent after it returns |
 | Result handlers `damage` / `heal` (re-registered around `ActionDamageD20.onRoll`) | Same CoreRPG seam as 5E — Daggerheart wires damage and heal through `registerStandardDamageHealHandlers`. Card before resolution, so the roll precedes its apply banner |
 | `ActionPower.performAction` (wrap) | Effect-origin stamp. The wrap receives the *action node*; its owning power is the grandparent (power → actions list → action) |
+| `ActionHealthDH.applyFearAndMessage` (wrap) | The GM fear pool: fear-resource damage spends from it, fear healing feeds it. Called late-bound (via the package table), so a wrap works; runs on the host |
+| `onHealthApplySetHealth` (GameManager function re-registered) | Actor-held pools (a PC's hope). The ruleset registered `applySetHealthDefault` by REFERENCE at init, so wrapping the global would miss — the GameManager function is re-registered with a wrapper that calls the original and re-reads the leftover `nPrevWounds`/`nWounds` pairs |
 | `ActionMod.onModResolve` (wrap) | Next-roll modifiers. `ActionMod.onRoll` runs outside `ActionsManager.resolveAction` (no generic card fires); this seam runs right after `checkModResult` decided whether `rRoll.nTotal` reached the modifier stack (`sResult` "fail" = DC-gated miss). The stack change is local to the rolling client; the card broadcasts like the message it replaces |
 
 ## Message vocabulary registered
@@ -75,6 +80,11 @@ The system's signature mechanic gets the card treatment:
   = REACTION), so its roll texts don't match the d20-family defaults;
   `MOD` drops the "[MOD] Bodyguard [ADDED TO MODIFIER STACK]" message the
   experience card replaces.
+- **Skip patterns for resource texts**: `[FEAR] Spends/Gains` (literals
+  in `applyFearAndMessage`) and the localized `[Hope]`/`[Fear]`
+  `Gains`/`Spends` notifications — the resource cards replace them. Note
+  a message combining a wound mark with a hope change is dropped whole
+  (rare: hope actions are usually pure).
 - **Skip pattern**: `^Reaction%s` — reaction *results* are plain
   "Reaction [12][vs. DC 14] -> [for X]" lines with no bracketed tag, so
   they can't ride the roll-tag vocabulary. Skip patterns are never
@@ -116,14 +126,6 @@ The system's signature mechanic gets the card treatment:
 
 ## Known gaps
 
-- **Hope/Fear resource changes are invisible on cards.** "[GAINS 1
-  HOPE]" / "[GM GAINS 1 FEAR]" ride the roll message (suppressed by the
-  ACTION tag) or the attack apply message (suppressed as a redundant
-  apply), so the adjustment happens mechanically but no card says so —
-  the Hope/Fear pill only implies it. Candidate fix: read
-  `rRoll.aMessages` in `onAttackResolve` and surface them on the card.
-- Untargeted Fear spend/gain messages (`applyFearAndMessage`: "[FEAR]
-  Spends 2") fall through to a plain system card, not a phrased banner.
 - Countdowns and dice trackers get no dedicated cards.
 - A power card sent for a domain **card** row (the card node itself, not
   one of its features) shows name only: the card record carries no text or

@@ -23,6 +23,9 @@
 local _fAttackResolve = nil;
 local _fPowerPerformAction = nil;
 local _fModResolve = nil;
+local _fApplyFearAndMessage = nil;
+local _fStepResourceAdjustment = nil;
+local _fStepFearAdjustment = nil;
 
 -- The ruleset's own hope/fear die tints (dicebodycolor in
 -- manager_action_attack.lua), reused for the card's die glyphs.
@@ -121,6 +124,63 @@ function onInit()
 		ActionMod.onModResolve = onModResolve;
 	end
 
+	-- Hope/fear economy cards ("Adolfoss has gained 2 hope"), on their own
+	-- card art. Three sources: the duality riders on action rolls (read in
+	-- onAttackResolve), the GM fear pool (applyFearAndMessage, called
+	-- late-bound so a wrap works), and actor-held pools
+	-- (applySetHealthDefault — the ruleset registered its REFERENCE at
+	-- init, so the GameManager function is re-registered with the wrapper
+	-- instead). Both apply seams run on the host. The raw "[Hope] Spends
+	-- 1" / "[FEAR] Gains 2" apply texts are dropped by the skip patterns
+	-- below; the cards replace them.
+	ChatCardsManager.registerCardClass("hope", "chatcard_hope");
+	ChatCardsManager.registerCardClass("fear", "chatcard_fear");
+	-- HP and stress share the sentence shape on the neutral system card.
+	ChatCardsManager.registerCardClass("hp", "chatcard_resource_system");
+	ChatCardsManager.registerCardClass("stress", "chatcard_resource_system");
+	if ActionHealthDH and ActionHealthDH.applyFearAndMessage then
+		_fApplyFearAndMessage = ActionHealthDH.applyFearAndMessage;
+		ActionHealthDH.applyFearAndMessage = onApplyFearAndMessage;
+	end
+	if ActionHealthDH and ActionHealthDH.applySetHealthDefault
+			and GameManager and GameManager.setFunction then
+		GameManager.setFunction("onHealthApplySetHealth", onApplySetHealth);
+	end
+	-- Manual adjustments: the sheet trackers (hope, and the sheet's fear
+	-- counter) funnel through CharManager.stepResourceAdjustment, the
+	-- desktop fear tracker through stepFearAdjustment — both called
+	-- package-qualified, so wraps work.
+	if CharManager and CharManager.stepResourceAdjustment then
+		_fStepResourceAdjustment = CharManager.stepResourceAdjustment;
+		CharManager.stepResourceAdjustment = onStepResourceAdjustment;
+	end
+	if CharManager and CharManager.stepFearAdjustment then
+		_fStepFearAdjustment = CharManager.stepFearAdjustment;
+		CharManager.stepFearAdjustment = onStepFearAdjustment;
+	end
+	-- applyFearAndMessage writes its notifications as literals; the
+	-- per-actor pools go through the localized resource strings. The last
+	-- block drops the manual trackers' own texts ("'Adolfoss' gains
+	-- 'hope'", "Fear Gained"/"Fear Marked") that the cards replace.
+	local sHope = Interface.getString("resource_title_hope");
+	local sFear = Interface.getString("resource_title_fear");
+	local sGains = Interface.getString("resource_adjustment_gains");
+	local sSpends = Interface.getString("resource_adjustment_spends");
+	local sHopeV = Interface.getString("resource_value_hope");
+	local sFearV = Interface.getString("resource_value_fear");
+	local sHpV = Interface.getString("resource_value_hp");
+	local sStressV = Interface.getString("resource_value_stress");
+	ChatCardsManager.registerSkipPatterns({
+		"%[FEAR%] Spends", "%[FEAR%] Gains",
+		"%[" .. sHope .. "%] " .. sGains, "%[" .. sHope .. "%] " .. sSpends,
+		"%[" .. sFear .. "%] " .. sGains, "%[" .. sFear .. "%] " .. sSpends,
+		"^'[^']+' gains '" .. sHopeV .. "'", "^'[^']+' spends '" .. sHopeV .. "'",
+		"^'[^']+' gains '" .. sFearV .. "'", "^'[^']+' spends '" .. sFearV .. "'",
+		"^'[^']+' marks '" .. sHpV .. "'", "^'[^']+' clears '" .. sHpV .. "'",
+		"^'[^']+' marks '" .. sStressV .. "'", "^'[^']+' clears '" .. sStressV .. "'",
+		"^Fear Gained$", "^Fear Marked$",
+	});
+
 	-- This ruleset's card tags. Duality (Hope/Fear/Critical) rides every
 	-- card type; sendRollCard-based cards (reactions, generic rolls) get it
 	-- through the "roll" providers.
@@ -148,6 +208,106 @@ function onPowerPerformAction(draginfo, rActor, rAction, nodeAction)
 		end
 	end
 	return _fPowerPerformAction(draginfo, rActor, rAction, nodeAction);
+end
+
+--
+--	HOPE AND FEAR CARDS
+--
+
+-- Broadcast one resource card ("{name} has {verb} {n} {resource}"). rActor
+-- may be nil (the GM's fear pool); sFallback names the card then, plain.
+function sendResourceCard(rActor, sFallback, sVerb, nAmount, sResource, bSecret)
+	ChatCardsManager.sendCardOOB({
+		sCardType = sResource,
+		sName = rActor and ChatCardsManager.getActorName(rActor, nil) or (sFallback or ""),
+		sActorNode = rActor and ActorManager.getCreatureNodeName(rActor) or "",
+		sVerb = sVerb,
+		sAmount = tostring(nAmount or 0),
+		sResource = sResource,
+	}, bSecret or false);
+end
+
+-- The GM fear pool (fear-resource damage and heals from powers): the
+-- original applies the change and outputs the "[FEAR] Spends 2" apply
+-- message (dropped by the skip patterns); the card replaces it. Fear
+-- damage spends from the pool, fear healing feeds it.
+function onApplyFearAndMessage(rSource, rRoll)
+	local bResult = _fApplyFearAndMessage(rSource, rRoll);
+	if (rRoll.nFear or 0) > 0 then
+		sendResourceCard(rSource, "The GM",
+			(rRoll.sType == "damage") and "spent" or "gained", rRoll.nFear, "fear");
+	end
+	return bResult;
+end
+
+-- Actor-held pools (a PC's hope, mostly): the original computes, applies
+-- and words the adjustments (its "[Hope] Spends 1" notification is dropped
+-- by the skip patterns), and leaves the nPrevWounds/nWounds pairs behind,
+-- which are re-read here for the cards. Both pools count upward, so a
+-- positive adjustment is a gain — the ruleset words it the same way.
+function onApplySetHealth(rActor, rRoll, tApplyData)
+	ActionHealthDH.applySetHealthDefault(rActor, rRoll, tApplyData);
+
+	for _, sResource in ipairs({ "hope", "fear" }) do
+		local tRes = (tApplyData.tHealth or {})[sResource];
+		if tRes and tRes.nPrevWounds and ((tRes.nWounds or 0) ~= tRes.nPrevWounds) then
+			local nAdj = (tRes.nWounds or 0) - tRes.nPrevWounds;
+			sendResourceCard(rActor, nil,
+				(nAdj > 0) and "gained" or "spent", math.abs(nAdj), sResource);
+		end
+	end
+end
+
+-- The pools the tracker wrap cards, with where each lives and its verb
+-- pair — hope/fear speak the economy's language (gained/spent), hp/stress
+-- the ruleset's bookkeeping one (marked/cleared; their wounds count UP as
+-- they are marked). Fear is the one global pool. Armor is left alone.
+local _tTrackedPools = {
+	hope = { sPath = "hope.value", sGain = "gained", sLose = "spent" },
+	fear = { sPath = "fear.value", sGain = "gained", sLose = "spent", bGlobal = true },
+	hp = { sPath = "hp.wounds", sGain = "marked", sLose = "cleared" },
+	stress = { sPath = "stress.wounds", sGain = "marked", sLose = "cleared" },
+};
+
+-- Manual pool adjustments from the sheet trackers: the original clamps and
+-- writes the value and outputs the "'Adolfoss' gains 'hope'" / "'Adolfoss'
+-- marks 'hp'" text (dropped by the skip patterns); the card reports the
+-- ACTUAL change, read as a before/after of the pool, so a click at the cap
+-- or the floor cards nothing. Untracked resources pass through untouched.
+function onStepResourceAdjustment(nodeChar, sResource, nAdjustment)
+	local tPool = _tTrackedPools[sResource];
+	if not tPool then
+		return _fStepResourceAdjustment(nodeChar, sResource, nAdjustment);
+	end
+
+	local function readPool()
+		if tPool.bGlobal then
+			return DB.getValue(tPool.sPath, 0);
+		end
+		return DB.getValue(nodeChar, tPool.sPath, 0);
+	end
+	local nBefore = readPool();
+	_fStepResourceAdjustment(nodeChar, sResource, nAdjustment);
+	local nDelta = readPool() - nBefore;
+	if nDelta == 0 then
+		return;
+	end
+
+	local rActor = (not tPool.bGlobal) and ActorManager.resolveActor(nodeChar) or nil;
+	sendResourceCard(rActor, "The GM",
+		(nDelta > 0) and tPool.sGain or tPool.sLose, math.abs(nDelta), sResource);
+end
+
+-- The desktop fear tracker, same treatment ("Fear Gained" / "Fear Marked"
+-- — marked meaning spent — dropped by the skip patterns).
+function onStepFearAdjustment(nAdjustment)
+	local nBefore = DB.getValue("fear.value", 0);
+	_fStepFearAdjustment(nAdjustment);
+	local nDelta = DB.getValue("fear.value", 0) - nBefore;
+	if nDelta ~= 0 then
+		sendResourceCard(nil, "The GM",
+			(nDelta > 0) and "gained" or "spent", math.abs(nDelta), "fear");
+	end
 end
 
 --
@@ -451,6 +611,36 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 		sEntry = sEntry .. " Crit";
 	end
 	ChatCardsManager.sendActionResult(rRoll, "add", sEntry, outcomeStyle(rRoll));
+
+	-- Hope/fear from the duality result. With the auto-gain option (HRAG)
+	-- on, the ruleset adjusted the pools itself and left riders on the
+	-- roll message (suppressed with it by the ACTION tag), so the
+	-- adjustments get resource cards of their own. The marker strings are
+	-- literals in the ruleset (manager_action_attack.lua).
+	local bAutoFear = false;
+	for _, sMsg in ipairs(rRoll.aMessages or {}) do
+		if sMsg == "[GAINS 1 HOPE]" then
+			sendResourceCard(rSource, nil, "gained", 1, "hope", bSecret);
+		elseif sMsg == "[GM GAINS 1 FEAR]" then
+			bAutoFear = true;
+			sendResourceCard(nil, "The GM", "gained", 1, "fear", bSecret);
+		end
+	end
+
+	-- Without the auto-gain, a roll with fear is the GM's cue to bank a
+	-- fear point by hand: a GM-only prompt card whose button does it (see
+	-- chatcard_resource.onFearApply — pressing turns the prompt into the
+	-- gained notice, in place). Only PC duality rolls carry sDuality.
+	if (rRoll.sDuality == "fear") and not bAutoFear then
+		ChatCardsManager.sendCardOOB({
+			sCardType = "fear",
+			sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+			sActorNode = rSource and ActorManager.getCreatureNodeName(rSource) or "",
+			sVerb = "rolled with",
+			sResource = "fear",
+			sPrompt = "1",
+		}, true);
+	end
 end
 
 --

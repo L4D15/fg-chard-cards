@@ -85,6 +85,18 @@
 		<bitmap file="graphics/frames/cc_rowshade.png" />
 		<offset>2,2,2,2</offset>
 	</framedef>
+	<!-- Hope / fear economy cards (Daggerheart): gold and dark indigo card
+	     art, 256px with rounded corners — the offset bands must contain
+	     the corner radius and edge shadow. The fear card is dark, so its
+	     text uses the cc_*_light fonts. -->
+	<framedef name="cc_card_hope">
+		<bitmap file="graphics/frames/cc_card_hope.png" />
+		<offset>12,12,12,12</offset>
+	</framedef>
+	<framedef name="cc_card_fear">
+		<bitmap file="graphics/frames/cc_card_fear.png" />
+		<offset>12,12,12,12</offset>
+	</framedef>
 
 	<!-- ===== ICONS ===== -->
 	<icon name="cc_portrait_gm" file="graphics/icons/cc_portrait_gm.png" />
@@ -143,6 +155,17 @@
 	<font name="cc_bodybold">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
 		<color value="#1A1A1A" />
+	</font>
+	<!-- Light variants of the body pair, for text on dark card art (the
+	     fear card). A linked segment in these must carry sColor #FFFFFF so
+	     the hover restore keeps it light (see setRichText). -->
+	<font name="cc_body_light">
+		<ttf file="graphics/fonts/NotoSans-Regular.ttf" name="Noto Sans" size="14" />
+		<color value="#FFFFFF" />
+	</font>
+	<font name="cc_bodybold_light">
+		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="14" />
+		<color value="#FFFFFF" />
 	</font>
 	<font name="cc_chip">
 		<ttf file="graphics/fonts/NotoSans-Bold.ttf" name="Noto Sans Bold" size="10" />
