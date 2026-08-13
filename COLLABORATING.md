@@ -38,13 +38,17 @@ commits, commit messages prefixed with the branch name).
   carry their icon in `msg.assets` (`msg.icon` doesn't survive the trip),
   which is where notice icons come from. Also defines the `chatcards_card`
   OOB message that carries structured card data to every client, and the
-  adapter registration surface: `isRuleset`, `registerTagProvider`, and
+  adapter registration surface: `isRuleset`, `registerTagProvider`,
+  `registerCardClass` (map an adapter's own card types to windowclasses —
+  Daggerheart's hope/fear cards), and
   `registerRollTags` / `registerRedundantApplies` / `registerApplyBanners` /
   `registerSkipPatterns`, which extend the message-classification vocabulary
   (the defaults carry only the labels shared across the d20 family; a
   system's own terms come from its adapter — skip patterns cover system
   output with no bracketed tag to classify by, and are never applied to
-  speech). Also rebuilds `/help`: the engine's reply is drawn straight into
+  speech). A card class may also define `absorbCard(sClass, tData)`:
+  `addCard` offers each payload to the list's LAST card first, which is
+  how Daggerheart's adjacent resource cards merge their amounts. Also rebuilds `/help`: the engine's reply is drawn straight into
   the hidden native control (never through Comm's receive event), so
   `/help` (plus `/commands`, in case the engine consumes `/help` first)
   answers with a system card built from three sources — an onInit-time wrap

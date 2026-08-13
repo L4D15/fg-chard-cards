@@ -61,6 +61,84 @@
 		</sheetdata>
 	</windowclass>
 
+	<!-- Hope / fear economy notices (Daggerheart): one sentence on the
+	     resource's own card art — gold for hope, dark indigo for fear. Two
+	     classes for one layout (a windowclass frame is static); the shared
+	     script renders the fear card's sentence in the light fonts. -->
+	<windowclass name="chatcard_hope">
+		<frame>cc_card_hope</frame>
+		<script file="scripts/chatcard_resource.lua" />
+		<sheetdata>
+			<cc_rich_sentence name="sentence">
+				<anchored height="18">
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+			</cc_rich_sentence>
+			<genericcontrol name="sizer">
+				<anchored to="sentence" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+	<!-- HP / stress tracker notices (Daggerheart), same sentence shape on
+	     the system card: hit points and stress are bookkeeping, not
+	     economy, so they read as background next to the hope/fear art. -->
+	<windowclass name="chatcard_resource_system">
+		<frame>cc_system_card</frame>
+		<script file="scripts/chatcard_resource.lua" />
+		<sheetdata>
+			<cc_rich_sentence name="sentence">
+				<anchored height="18">
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-17" />
+				</anchored>
+			</cc_rich_sentence>
+			<genericcontrol name="sizer">
+				<anchored to="sentence" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
+	<windowclass name="chatcard_fear">
+		<frame>cc_card_fear</frame>
+		<script file="scripts/chatcard_resource.lua" />
+		<sheetdata>
+			<cc_rich_sentence name="sentence">
+				<anchored height="18">
+					<top offset="8" />
+					<left offset="17" />
+					<right offset="-40" />
+				</anchored>
+			</cc_rich_sentence>
+			<!-- The GM prompt's bank-a-fear button ("X has rolled with fear"):
+			     the ruleset's own gain-fear tile; shown by setData only when
+			     the card carries sPrompt, and only the GM ever holds one of
+			     those. Daggerheart-only art is safe here — no other system
+			     sends "fear" cards, so the class never instantiates
+			     elsewhere. -->
+			<buttoncontrol name="applyfear">
+				<anchored width="22" height="22">
+					<top offset="6" />
+					<right offset="-10" />
+				</anchored>
+				<icon normal="button_action_heal_fear" pressed="button_action_heal_fear_down" />
+				<tooltip text="The GM gains 1 Fear" />
+				<invisible />
+				<script>
+					function onButtonPress()
+						window.onFearApply();
+						return true;
+					end
+				</script>
+			</buttoncontrol>
+			<genericcontrol name="sizer">
+				<anchored to="sentence" position="belowleft" height="8" width="1" />
+			</genericcontrol>
+		</sheetdata>
+	</windowclass>
+
 	<!-- Power use / spell cast: the roll cards' header (portrait, actor name,
 	     player name, then the power's name in the title slot, opening its
 	     record), the power's action rows right below, and its description

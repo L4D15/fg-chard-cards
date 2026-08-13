@@ -218,6 +218,18 @@ function addCard(sClass, tData)
 		table.insert(_tPending, { sClass = sClass, tData = tData });
 		return;
 	end
+
+	-- Adjacent same-kind merging: the list's LAST card gets first refusal
+	-- of the payload (a card class opts in by defining absorbCard) — so
+	-- "gained 1 fear" twice becomes "gained 2 fear", while any other card
+	-- in between breaks the run by construction.
+	local tExisting = _cList.getWindows();
+	local wLast = tExisting[#tExisting];
+	if wLast and wLast.absorbCard and wLast.absorbCard(sClass, tData) then
+		_cList.scrollToWindow(wLast, nil, true);
+		return wLast;
+	end
+
 	local w = _cList.createWindowWithClass(sClass);
 	if not w then
 		return;
@@ -320,12 +332,19 @@ end
 
 -- Card classes by OOB card type; rolls of every kind share the action card.
 -- Next-roll modifiers (Daggerheart's experiences) ride the effect card,
--- which renders their sentence variant (see chatcard_effect.lua).
+-- which renders their sentence variant (see chatcard_effect.lua). Adapters
+-- add their own types (registerCardClass — Daggerheart's hope/fear cards).
 local _tCardClasses = {
 	power = "chatcard_power",
 	link = "chatcard_link",
 	nextrollmod = "chatcard_effect",
 };
+
+function registerCardClass(sCardType, sClass)
+	if ((sCardType or "") ~= "") and ((sClass or "") ~= "") then
+		_tCardClasses[sCardType] = sClass;
+	end
+end
 
 function handleCardOOB(msgOOB)
 	addCard(_tCardClasses[msgOOB.sCardType or ""] or "chatcard_action", msgOOB);
@@ -1184,8 +1203,9 @@ end
 -- { sText = "Elara Brightwood", sFont = "cc_bodybold" } and every word of a
 -- segment keeps that font; a segment with bNewLine set starts its own line.
 -- An sColor (AARRGGBB) tints the segment's words over the font's colour —
--- for values styled like the roll cards' modifiers; don't combine it with a
--- link, whose hover would repaint the words.
+-- for values styled like the roll cards' modifiers, and for linked
+-- segments on non-default backgrounds: the link hover restores a
+-- segment to its sColor when it has one (RICH_TEXT_COLOR otherwise).
 --
 -- The words do NOT reflow by themselves, so the caller has to render again
 -- when its width changes (see chatcard_effect.lua's onLayoutSizeChanged).
@@ -1383,7 +1403,8 @@ function onRichTextHover(cControl, x, y)
 		end
 	end
 	if tState.nHoverSegment then
-		tintSegment(tState.nHoverSegment, RICH_TEXT_COLOR);
+		local tPrev = tState.tSegments[tState.nHoverSegment];
+		tintSegment(tState.nHoverSegment, (tPrev and tPrev.sColor) or RICH_TEXT_COLOR);
 	end
 	if nSegment then
 		tintSegment(nSegment, LINK_HOVER_COLOR);
