@@ -73,9 +73,47 @@
 				<anchored height="18">
 					<top offset="8" />
 					<left offset="17" />
-					<right offset="-17" />
+					<right offset="-66" />
 				</anchored>
 			</cc_rich_sentence>
+			<!-- The player prompts' buttons, the ruleset's own action tiles:
+			     take-a-hope on "X has rolled with hope", and the crit prompt
+			     ("X has rolled a critical") shows clear-a-stress beside it.
+			     Shown by setData per its sPrompt/sPromptStress flags, and
+			     only when this client is the GM or owns the rolling
+			     character — the card itself broadcasts to the whole table.
+			     Pressing applies the point and re-points every copy of the
+			     card (onHopeApply / onStressApply). -->
+			<buttoncontrol name="applyhope">
+				<anchored width="22" height="22">
+					<top offset="6" />
+					<right offset="-10" />
+				</anchored>
+				<icon normal="button_action_heal_hope" pressed="button_action_heal_hope_down" />
+				<tooltip text="Gain 1 Hope" />
+				<invisible />
+				<script>
+					function onButtonPress()
+						window.onHopeApply();
+						return true;
+					end
+				</script>
+			</buttoncontrol>
+			<buttoncontrol name="applystress">
+				<anchored width="22" height="22">
+					<top offset="6" />
+					<right offset="-36" />
+				</anchored>
+				<icon normal="button_action_heal_stress" pressed="button_action_heal_stress_down" />
+				<tooltip text="Clear 1 Stress" />
+				<invisible />
+				<script>
+					function onButtonPress()
+						window.onStressApply();
+						return true;
+					end
+				</script>
+			</buttoncontrol>
 			<genericcontrol name="sizer">
 				<anchored to="sentence" position="belowleft" height="8" width="1" />
 			</genericcontrol>
