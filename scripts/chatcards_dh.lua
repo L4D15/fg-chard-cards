@@ -618,8 +618,10 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 	-- adjustments get resource cards of their own. The marker strings are
 	-- literals in the ruleset (manager_action_attack.lua).
 	local bAutoFear = false;
+	local bAutoHope = false;
 	for _, sMsg in ipairs(rRoll.aMessages or {}) do
 		if sMsg == "[GAINS 1 HOPE]" then
+			bAutoHope = true;
 			sendResourceCard(rSource, nil, "gained", 1, "hope", bSecret);
 		elseif sMsg == "[GM GAINS 1 FEAR]" then
 			bAutoFear = true;
@@ -640,6 +642,33 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage)
 			sResource = "fear",
 			sPrompt = "1",
 		}, true);
+	end
+
+	-- The hope side of the same cue: a PC roll with hope — or a doubles
+	-- crit, which grants a hope AND clears a stress (NPC crits set
+	-- bCritical too, hence the PC guard) — prompts the player to take
+	-- what's owed. The prompt shows to the whole table, but its buttons
+	-- only to the GM and the owner of the rolling character (gated in
+	-- chatcard_resource.setData); each press resolves through the
+	-- card-update OOB, which the card id makes addressable. The crit
+	-- prompt carries both buttons; the ruleset's auto-gain covers only the
+	-- hope point (never the stress clear), so with it on a crit still
+	-- prompts, with the stress button alone.
+	local bPromptHope = ((rRoll.sDuality == "hope") or rRoll.bCritical) and not bAutoHope;
+	if (bPromptHope or rRoll.bCritical)
+			and rSource and ActorManager.isPC(rSource) then
+		ChatCardsManager.sendCardOOB({
+			sCardType = "hope",
+			sCardId = ChatCardsManager.nextCardId(),
+			sName = ChatCardsManager.getActorName(rSource, rRoll.sUser),
+			sActorNode = ActorManager.getCreatureNodeName(rSource),
+			sVerb = rRoll.bCritical and "rolled a" or "rolled with",
+			sResource = rRoll.bCritical and "critical" or "hope",
+			sPrompt = bPromptHope and "1" or "",
+			sPromptStress = rRoll.bCritical and "1" or "",
+			sCrit = rRoll.bCritical and "1" or "",
+			sSecret = bSecret and "1" or "",
+		}, bSecret);
 	end
 end
 

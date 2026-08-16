@@ -7,6 +7,7 @@
 
 OOB_MSGTYPE_CHATCARD = "chatcards_card";
 OOB_MSGTYPE_CARDRESULT = "chatcards_result";
+OOB_MSGTYPE_CARDUPDATE = "chatcards_update";
 
 -- Card accent palette, in FG's AARRGGBB form. The advantage/disadvantage die
 -- tints use these, and the positive/negative tag pill art is drawn in the same
@@ -137,6 +138,7 @@ function onInit()
 
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CHATCARD, handleCardOOB);
 	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CARDRESULT, handleCardResultOOB);
+	OOBManager.registerOOBMsgHandler(OOB_MSGTYPE_CARDUPDATE, handleCardUpdateOOB);
 	-- Every roll a card's action row triggers passes through one of these
 	-- (see performMarkedAction), so they are where the row marker is stamped
 	-- on: PowerManager.performAction funnels its rolls through
@@ -235,9 +237,10 @@ function addCard(sClass, tData)
 		return;
 	end
 	w.setData(tData);
-	-- Cards carrying an id stay addressable for later result updates. The
-	-- card MUST release itself via unregisterCard from onClose.
-	if ((tData.sCardId or "") ~= "") and w.applyActionResult then
+	-- Cards carrying an id stay addressable for later result updates
+	-- (applyActionResult) or in-place re-points (updateCard). The card MUST
+	-- release itself via unregisterCard from onClose.
+	if ((tData.sCardId or "") ~= "") and (w.applyActionResult or w.updateCard) then
 		_tCardsById[tData.sCardId] = w;
 	end
 
@@ -348,6 +351,29 @@ end
 
 function handleCardOOB(msgOOB)
 	addCard(_tCardClasses[msgOOB.sCardType or ""] or "chatcard_action", msgOOB);
+end
+
+-- In-place update of an addressable card (a prompt turning into its
+-- resolved notice): every client holding a copy under the id re-points it
+-- through the card's updateCard. Same secret routing as the cards; clients
+-- that never saw the card simply have no window filed under the id.
+function sendCardUpdateOOB(tFields, bSecret)
+	local msgOOB = { type = OOB_MSGTYPE_CARDUPDATE };
+	for k, v in pairs(tFields) do
+		msgOOB[k] = tostring(v);
+	end
+	if bSecret then
+		Comm.deliverOOBMessage(msgOOB, "");
+	else
+		Comm.deliverOOBMessage(msgOOB);
+	end
+end
+
+function handleCardUpdateOOB(msgOOB)
+	local w = _tCardsById[msgOOB.sCardId or ""];
+	if w and w.updateCard then
+		w.updateCard(msgOOB);
+	end
 end
 
 -- ===== Link cards =====

@@ -21,13 +21,15 @@ local _tData = nil;
 local _nRenderedWidth = nil;
 
 -- No weak tables in FG's sandbox: the manager's link state is released by
--- hand when the card closes.
+-- hand when the card closes (and hope prompts leave the id registry).
 function onClose()
+	ChatCardsManager.unregisterCard((_tData or {}).sCardId);
 	ChatCardsManager.releaseControlState(sentence);
 end
 
--- Re-set by the fear prompt's button (onFearApply), so the width memo is
--- cleared for the re-render.
+-- Re-set by the prompt buttons (onFearApply locally, the hope prompt's
+-- card-update OOB via updateCard), so the width memo is cleared for the
+-- re-render.
 function setData(t)
 	_tData = t;
 	_nRenderedWidth = nil;
@@ -36,7 +38,30 @@ function setData(t)
 	if applyfear then
 		applyfear.setVisible(t.sPrompt == "1");
 	end
+	-- The player prompt variants ("X has rolled with hope" with the
+	-- take-a-hope button; the crit prompt "X has rolled a critical" adds
+	-- the clear-a-stress button beside it). The card broadcasts to the
+	-- whole table, so the buttons gate themselves — only the GM and the
+	-- owner of the rolling character get them. Only the hope windowclass
+	-- has the controls.
+	if applyhope or applystress then
+		local nodeChar = DB.findNode(t.sActorNode or "");
+		local bCanApply = Session.IsHost or ((nodeChar ~= nil) and DB.isOwner(nodeChar));
+		if applyhope then
+			applyhope.setVisible((t.sPrompt == "1") and bCanApply);
+		end
+		if applystress then
+			applystress.setVisible((t.sPromptStress == "1") and bCanApply);
+		end
+	end
 	renderSentence();
+end
+
+-- The card-update OOB's entry point (ChatCardsManager.handleCardUpdateOOB):
+-- the hope prompt's button re-points every copy of the card — the
+-- presser's own included — so the whole table sees the prompt resolve.
+function updateCard(t)
+	setData(t);
 end
 
 -- Adjacent same-kind merging (offered by ChatCardsManager.addCard to the
@@ -48,7 +73,8 @@ function absorbCard(sClass, tData)
 	if (sClass ~= getClass()) or not _tData then
 		return false;
 	end
-	if (tData.sPrompt == "1") or (_tData.sPrompt == "1") then
+	if (tData.sPrompt == "1") or (_tData.sPrompt == "1")
+			or (tData.sPromptStress == "1") or (_tData.sPromptStress == "1") then
 		return false;
 	end
 	if (tData.sName ~= _tData.sName) or (tData.sVerb ~= _tData.sVerb)
@@ -75,6 +101,99 @@ function onFearApply()
 	end
 	DB.setValue("fear.value", "number", nFear + 1);
 	setData({ sName = "The GM", sVerb = "gained", sAmount = "1", sResource = "fear" });
+end
+
+-- Resolve one pressed prompt button into tNotice ({ sVerb, sAmount,
+-- sResource }). The single-button hope prompt turns into its notice in
+-- place, like the fear prompt. The crit prompt can't — it carries two
+-- independent buttons and its sentence ("X has rolled a critical") must
+-- survive the first press — so its outcome goes out as a standalone
+-- notice card (sCardType picks the art: hope card or the neutral stress
+-- one) and the update only retires the pressed button, keeping the other
+-- one live on every copy.
+local function resolvePrompt(sFlag, sCardType, tNotice)
+	local bSecret = (_tData.sSecret == "1");
+	if _tData.sCrit == "1" then
+		ChatCardsManager.sendCardOOB({
+			sCardType = sCardType,
+			sName = _tData.sName or "",
+			sActorNode = _tData.sActorNode or "",
+			sVerb = tNotice.sVerb,
+			sAmount = tNotice.sAmount or "",
+			sResource = tNotice.sResource,
+		}, bSecret);
+		-- The update re-sends the card's own fields (never the raw _tData,
+		-- which carries the OOB's type field and would reroute the update)
+		-- with the pressed button's flag cleared.
+		local tUpdate = {
+			sCardId = _tData.sCardId or "",
+			sName = _tData.sName or "",
+			sActorNode = _tData.sActorNode or "",
+			sVerb = _tData.sVerb or "",
+			sAmount = _tData.sAmount or "",
+			sResource = _tData.sResource or "",
+			sPrompt = _tData.sPrompt or "",
+			sPromptStress = _tData.sPromptStress or "",
+			sCrit = _tData.sCrit or "",
+			sSecret = _tData.sSecret or "",
+		};
+		tUpdate[sFlag] = "";
+		ChatCardsManager.sendCardUpdateOOB(tUpdate, bSecret);
+	else
+		ChatCardsManager.sendCardUpdateOOB({
+			sCardId = _tData.sCardId or "",
+			sName = _tData.sName or "",
+			sActorNode = _tData.sActorNode or "",
+			sVerb = tNotice.sVerb,
+			sAmount = tNotice.sAmount or "",
+			sResource = tNotice.sResource,
+		}, bSecret);
+	end
+end
+
+-- The hope prompt's take-a-hope button (only the GM and the rolling
+-- player hold one, and both may write the character's pool — the owner
+-- owns the node, the host owns everything): bank the hope point — capped
+-- by the character's own maximum, like the ruleset's auto-gain
+-- (manager_action_attack.lua) — and resolve the press on every copy of
+-- the card through the card-update OOB. The write is direct, not through
+-- the sheet tracker, so the stepResourceAdjustment wrap doesn't card the
+-- gain a second time.
+function onHopeApply()
+	local nodeChar = DB.findNode(_tData.sActorNode or "");
+	if not nodeChar then
+		return;
+	end
+	local tNotice;
+	local nHope = DB.getValue(nodeChar, "hope.value", 0);
+	if (nHope + 1) > DB.getValue(nodeChar, "hope.total", 0) then
+		tNotice = { sVerb = "reached", sResource = "the hope cap" };
+	else
+		DB.setValue(nodeChar, "hope.value", "number", nHope + 1);
+		tNotice = { sVerb = "gained", sAmount = "1", sResource = "hope" };
+	end
+	resolvePrompt("sPrompt", "hope", tNotice);
+end
+
+-- The crit prompt's clear-a-stress button, same treatment. Stress wounds
+-- count UP as they are marked, so clearing one steps the pool down,
+-- floored at zero — a press with nothing marked reports "has no stress
+-- to clear" instead. The notice rides the stress card type (the neutral
+-- system art the tracker's own stress cards use).
+function onStressApply()
+	local nodeChar = DB.findNode(_tData.sActorNode or "");
+	if not nodeChar then
+		return;
+	end
+	local tNotice;
+	local nStress = DB.getValue(nodeChar, "stress.wounds", 0);
+	if nStress <= 0 then
+		tNotice = { sVerb = "no", sResource = "stress to clear" };
+	else
+		DB.setValue(nodeChar, "stress.wounds", "number", nStress - 1);
+		tNotice = { sVerb = "cleared", sAmount = "1", sResource = "stress" };
+	end
+	resolvePrompt("sPromptStress", "stress", tNotice);
 end
 
 -- Draw (or redraw) the sentence at the card's current width; re-entrant by
