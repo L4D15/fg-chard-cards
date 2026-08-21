@@ -43,6 +43,7 @@ ChatCards is built on CoreRPG with per-system adapters:
 | --- | --- |
 | [5E](Docs/DnD5E.md) | Full: dedicated attack/damage/heal/save/check cards, spell cards with action rows, effect origins |
 | [Daggerheart](Docs/Daggerheart.md) | Full: duality action/attack cards (Hope/Fear die tints, tags and crits), reaction, damage, heal and experience cards, effect origins, and ability cards with rollable action rows via a "send to chat" button added to the character sheet |
+| [Pathfinder 2](Docs/PFRPG2.md) | Full: attack/maneuver, damage/heal, save, skill/ability, activity (Trip, Demoralize), flat-check and recovery cards with four-degree outcomes, applied-damage banners, spell cards with rollable action rows, effect origins |
 | Other CoreRPG-based rulesets | Generic: speech, story, system and table cards, plus a generic card for every dice roll |
 
 Support for another system means writing one adapter script — see

@@ -141,11 +141,11 @@ end
 -- has no attack half, and vice versa) and gets no row.
 function addActionRow(nodeAction, sSubRoll, sLabel)
 	local tData = sSubRoll and { sSubRoll = sSubRoll } or nil;
-	local sIcon = PowerActionManagerCore.getActionButtonIcons(nodeAction, tData);
+	local sIcon = ChatCardsCore.getPowerRowIcon(nodeAction, tData);
 	if (sIcon or "") == "" then
 		return;
 	end
-	local sDetail = PowerActionManagerCore.getActionText(nodeAction, tData) or "";
+	local sDetail = ChatCardsCore.getPowerRowText(nodeAction, tData) or "";
 	if sSubRoll and (sDetail == "") then
 		return;
 	end
@@ -158,7 +158,7 @@ function addActionRow(nodeAction, sSubRoll, sLabel)
 		sIcon = sIcon,
 		sLabel = sLabel,
 		sDetail = sDetail,
-		sTooltip = PowerActionManagerCore.getActionTooltip(nodeAction, tData),
+		sTooltip = ChatCardsCore.getPowerRowTooltip(nodeAction, tData),
 	});
 end
 
@@ -361,7 +361,7 @@ function performRowAction(tRow, draginfo)
 	local sCardId = (_tData or {}).sCardId or "";
 	if sCardId == "" then
 		-- Cards from before result support (or without an id) still roll.
-		PowerActionManagerCore.performAction(draginfo, tRow.nodeAction, tActionData);
+		ChatCardsCore.performPowerRowAction(draginfo, tRow.nodeAction, tActionData);
 		return;
 	end
 
@@ -370,7 +370,7 @@ function performRowAction(tRow, draginfo)
 	local sVolley = ChatCardsManager.nextVolleyId();
 	local bSecret = ((_tData or {}).sSecret == "1");
 	ChatCardsManager.performMarkedAction(sCardId, tRow.sKey, sVolley, bSecret, function()
-		PowerActionManagerCore.performAction(draginfo, tRow.nodeAction, tActionData);
+		ChatCardsCore.performPowerRowAction(draginfo, tRow.nodeAction, tActionData);
 	end);
 end
 

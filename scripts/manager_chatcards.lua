@@ -430,6 +430,17 @@ end
 -- survives (it comes back as rRoll.sSaveDesc on each target's save roll).
 local MARK_TAG = "CCMARK";
 
+-- Roll types whose save-vs crosses clients that way, so their marks must
+-- ride the desc: 5E's powersave by default; other systems register their
+-- own (PFRPG2's castsave/spellsave travel through ActionSpell's OOB).
+local _tMarkDescTypes = { powersave = true };
+
+function registerMarkDescRollTypes(tTypes)
+	for _, sType in ipairs(tTypes or {}) do
+		_tMarkDescTypes[sType] = true;
+	end
+end
+
 -- Local identity slug for ids minted on this client; makes card and volley
 -- ids distinct across clients without any coordination.
 local function getUserSlug()
@@ -504,10 +515,10 @@ local function stampMarkedRoll(rRoll)
 		return;
 	end
 	rRoll.sCCMark = encodeMark(_tPendingMark);
-	-- Save-vs hops to the target's client through ActionPower's OOB,
+	-- Save-vs hops to the target's client through the system's own OOB,
 	-- which only carries the desc; ride along as a bracketed tag (the
 	-- card texts strip bracketed tags, and the native chat is hidden).
-	if rRoll.sType == "powersave" then
+	if _tMarkDescTypes[rRoll.sType or ""] then
 		rRoll.sDesc = (rRoll.sDesc or "") .. " [" .. MARK_TAG .. " " .. rRoll.sCCMark .. "]";
 	end
 end

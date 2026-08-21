@@ -6,7 +6,8 @@ summary lives in [README.md](README.md); design documentation — reference
 mockup, architecture diagram, decision log — in
 [`Design/`](Design/README.md); and each supported ruleset has a living
 document of what's carded and how its adapter is wired in
-[`Docs/`](Docs/) ([DnD5E](Docs/DnD5E.md), [Daggerheart](Docs/Daggerheart.md)).
+[`Docs/`](Docs/) ([DnD5E](Docs/DnD5E.md), [Daggerheart](Docs/Daggerheart.md),
+[PFRPG2](Docs/PFRPG2.md)).
 When an adapter changes, its doc changes with it.
 
 ## Workflow
@@ -75,7 +76,11 @@ commits, commit messages prefixed with the branch name).
   adapter's job. Also holds `setPowerRecordClass` (the windowclass a power
   card's title link opens, since the power record class is a system's, not
   CoreRPG's), `setPowerRowBuilder` (how one action node splits into a power
-  card's rows — 5E's cast split, Daggerheart's subroll/resource fields) and
+  card's rows — 5E's cast split, Daggerheart's subroll/resource fields),
+  `setPowerRowHandlers` (how a row draws and performs — icon, detail text,
+  tooltip, perform call; the defaults go through `PowerActionManagerCore`,
+  and a system whose sheets never touch it registers its own set, the way
+  PFRPG2 routes rows through `SpellManager.onSpellAction`) and
   `registerDieStyles` (die glyph accents keyed by a one-letter type prefix
   in a card's encoded dice — Daggerheart's hope/fear dice).
 - **`scripts/chatcards_5e.lua`** (`ChatCards5E`) — the 5E adapter, and the
@@ -90,6 +95,13 @@ commits, commit messages prefixed with the branch name).
   damage and heal cards, effect origins; no power cards (the system has no
   power-use flow). Details, hook points and ruleset facts:
   [Docs/Daggerheart.md](Docs/Daggerheart.md).
+- **`scripts/chatcards_pf2.lua`** (`ChatCardsPF2`) — the Pathfinder 2
+  adapter: four-degree outcomes on every d20 card, host-side outcome
+  capture for saves and activity checks (the DCs live on the host),
+  applied-damage banners from a `messageDamage` wrap, spell cards whose
+  rows drive `SpellManager.onSpellAction` (the system never touches
+  `PowerManagerCore`). Details, hook points and ruleset facts:
+  [Docs/PFRPG2.md](Docs/PFRPG2.md).
 - **Action-row results** — rolls made from a power card's rows report back
   into that card, on every client. Power cards carry a `sCardId` minted by
   the sender; each client files its copy in `ChatCardsManager`'s id
@@ -113,11 +125,14 @@ commits, commit messages prefixed with the branch name).
   draginfo at drag start and resolve wherever the drop lands (a token to
   attack/damage/save that target, the chat for a plain roll) — a cancelled
   drag never reports. Save-vs is the
-  cross-client case: the marker rides the powersave roll's desc as a
-  `[CCMARK ...]` tag, which `ActionPower`'s save-vs OOB carries into each
-  target's save roll (`rRoll.sSaveDesc`), so whichever client rolls the
-  save reports it. Secret cards (NPC power use) keep their reach: their
-  row results are delivered GM-only.
+  cross-client case: the marker rides the save-vs roll's desc as a
+  `[CCMARK ...]` tag, which the system's save-vs OOB carries into each
+  target's save roll (`rRoll.sSaveDesc`), so whichever client resolves the
+  save reports it. Which roll types need the desc-riding form is per
+  system (`ChatCardsManager.registerMarkDescRollTypes` — `powersave` by
+  default for 5E; PFRPG2 registers `castsave`/`spellsave`). Secret cards
+  (NPC power use) keep their reach: their row results are delivered
+  GM-only.
 - **`common/windowclass_chatcards.xml`** — the card windowclasses:
   `chatcard_action` (attack/damage/roll with header bar, portrait, body lines,
   keyword chips, result box), `chatcard_speech`, `chatcard_story`,

@@ -80,6 +80,48 @@ function getPowerActionRows(nodeAction, sType)
 	return {};
 end
 
+-- How a power-card row shows itself and performs: icon, detail text, tooltip
+-- and the perform call. The defaults go through PowerActionManagerCore — the
+-- handlers the sheets of CoreRPG-power systems (5E, Daggerheart) register —
+-- but a system whose sheet buttons never touch PowerActionManagerCore
+-- (PFRPG2 funnels everything through SpellManager.onSpellAction) registers
+-- its own set here; the card (chatcard_power.lua) only calls these.
+-- Each handler receives (nodeAction, tData) with tData = { sSubRoll = ... }
+-- or nil, matching the PowerActionManagerCore signatures.
+local _tPowerRowHandlers = nil;
+
+function setPowerRowHandlers(tHandlers)
+	_tPowerRowHandlers = tHandlers;
+end
+
+function getPowerRowIcon(nodeAction, tData)
+	if _tPowerRowHandlers and _tPowerRowHandlers.fIcon then
+		return _tPowerRowHandlers.fIcon(nodeAction, tData);
+	end
+	return PowerActionManagerCore.getActionButtonIcons(nodeAction, tData);
+end
+
+function getPowerRowText(nodeAction, tData)
+	if _tPowerRowHandlers and _tPowerRowHandlers.fText then
+		return _tPowerRowHandlers.fText(nodeAction, tData);
+	end
+	return PowerActionManagerCore.getActionText(nodeAction, tData);
+end
+
+function getPowerRowTooltip(nodeAction, tData)
+	if _tPowerRowHandlers and _tPowerRowHandlers.fTooltip then
+		return _tPowerRowHandlers.fTooltip(nodeAction, tData);
+	end
+	return PowerActionManagerCore.getActionTooltip(nodeAction, tData);
+end
+
+function performPowerRowAction(draginfo, nodeAction, tData)
+	if _tPowerRowHandlers and _tPowerRowHandlers.fPerform then
+		return _tPowerRowHandlers.fPerform(draginfo, nodeAction, tData);
+	end
+	return PowerActionManagerCore.performAction(draginfo, nodeAction, tData);
+end
+
 function onInit()
 	-- Single hook point for every roll type without a dedicated card hook
 	-- (basic tray dice, init, and everything an adapter did not claim):
