@@ -10,12 +10,12 @@ untested. Written against the PFRPG2 ruleset build shipped 2026-08.
 
 | In game | Card | Notes |
 | --- | --- | --- |
-| Attack roll / combat maneuver | Attack card | Title "Melee/Ranged Attack" or "Combat Maneuver", weapon on the modifier line, target line, four-degree outcome (Critical Hit!/Hit/Miss/Critical Miss). No "vs AC" figure: the defense value is host-side knowledge the resolve never re-exposes |
+| Attack roll / combat maneuver | Attack card | Title "Melee/Ranged Attack" or "Combat Maneuver", itemized modifiers ("Rapier +12 · Bless +1 · Frightened -2 · MAP #2 -5"), target line, four-degree outcome (Critical Hit!/Hit/Miss/Critical Miss). No "vs AC" figure: the defense value is host-side knowledge the resolve never re-exposes |
 | Miss-chance flat check (concealed/hidden) | Roll card | "Miss Chance", DC line, Hit/Miss/Critical Hit! parsed from the original's message |
 | Damage / healing roll | Damage / heal card | Weapon or spell label, type pills from the clauses (Piercing, Fire, Spell, ...), Critical! pill on crit damage; result drags onto a token to apply (`sRollClauses` re-encodes the clauses for the drop's mod phase) |
 | Applied damage / healing | System banner | "Grig takes 12 damage (resisted)" — from the host's `messageDamage` wrap, replacing PFRPG2's unbracketed "Damage [12] -> [to Grig]" texts (skip patterns drop those). Notifications ([RESISTED], [SHIELD BROKEN], ...) become the parenthesis |
-| Saving throw | Roll card + outcome | Roll card from the target's client ("Fortitude Save", "vs: Fireball" line, DC hidden as in the ruleset); the final degree (hidden DCs, SAVERESULT steps, evasion) resolves host-side in `applySave`, which broadcasts "Elara saves [23] vs Fireball: Success" on a system card |
-| Skill / ability check | Roll card | "Skill Check" / "Ability Check", proficiency-rank pill ([Trained] ... from the desc), Assurance/Assist pills, outcome parsed from the delivered message so SKILLRESULT step effects are honoured. Skill DCs stay hidden (the ruleset hides them too); ability checks show theirs |
+| Saving throw | Roll card + outcome | Roll card from the target's client ("Fortitude Save", "vs: Fireball" line, itemized modifiers, DC hidden as in the ruleset); the final degree (hidden DCs, SAVERESULT steps, evasion) resolves host-side in `applySave`, which broadcasts "Elara saves [23] vs Fireball: Success" on a system card |
+| Skill / ability check | Roll card | "Skill Check" / "Ability Check", itemized modifiers, proficiency-rank pill ([Trained] ... from the desc), Assurance/Assist pills, outcome parsed from the delivered message so SKILLRESULT step effects are honoured. Skill DCs stay hidden (the ruleset hides them too); ability checks show theirs |
 | Activity check (Trip, Demoralize, vsdc actions) | Action card from the host | The unbracketed roll message is swallowed at the source; the host's `applyVsDC` — the only place that knows the DC — sends the card with kept die, total, target, skill pill, traits and the four-degree outcome |
 | Persistent-damage flat check | Roll card | "Flat Check", DC line, effect label on the modifier line, outcome; the effect-removal notice passes through untouched. Friendly-faction checks show to the table, like the original |
 | Recovery check (dying) | Roll card | "Recovery Check", DC 10+dying, outcome, and the actual change ("Dying 2 » 1 (stable, wounded +1)") read before/after the original applies it |
@@ -68,6 +68,46 @@ degree, nat 20/1 steps it up/down. Where each roll type learns its degree:
 | save | HOST (`applySave`: hidden DC, SAVERESULT, evasion) | outcome card from the `applySave` wrap |
 | vsdc | HOST (`applyVsDC`) | whole card from the `applyVsDC` wrap |
 | flatcheck / recovery | rolling client | recomputed with the same inputs |
+
+## Itemized modifier breakdowns
+
+Attack, save, skill and ability cards itemize their modifiers by source
+("Rapier +12 · Bless +1 · Frightened -2 · MAP #2 -5"), like 5E's cards —
+but resolved under **PF2 stacking**: typed candidates (item / status /
+circumstance / proficiency, the `bNoStack` descriptor group) compete per
+(type, sign) bucket and only the biggest bonus and worst penalty of each
+type are listed, since only those applied; untyped modifiers stack and
+all list. Ties keep the first candidate, like `addBonusToType`.
+
+Sources per roll, mirroring the ruleset's mod handlers:
+
+- **Effects**, re-queried at resolve time per effect via
+  `EffectQueryManager.getEffectsDataByTag` + `parseEffectComps` (the same
+  approach as 5E), with the mod handler's filter shape rebuilt from the
+  string fields that survive the throw (`traits`, `proflevel`, desc
+  markers, distance recomputed): ATK + SPELLROLL for attacks, SKILL/PERC
+  for checks, SAVE for saves, ABIL for ability checks, PROF everywhere
+  the ruleset queries it. Effect dice are ignored — the PF2 mod handlers
+  never add effect dice to these rolls (a ruleset TODO).
+- **Conditions**, as named typed-penalty candidates competing in the same
+  buckets: Frightened/Sickened everywhere; Prone (attacks); Fascinated,
+  Blinded/Unconscious and Deafened (perception); Fatigued, Drained,
+  Unconscious and cover-effect bonuses (saves); Enfeebled / Encumbered +
+  Clumsy / Drained / Stupefied gated by the roll's stat (from the
+  `[MOD:x]` marker, with the ruleset's own fallbacks).
+- **Flat desc-marked penalties** on attacks: MAP (`[MULTI ATK #2: -5]`),
+  range increments, volley, beyond-max-range.
+- **The base slot** is the remainder: `rRoll.nMod` minus everything
+  listed, named by the weapon/skill/save. Any divergence between this
+  re-query and what the mod phase actually computed (an effect that
+  expired during resolution, modifier-stack keys, ability-score effects)
+  is absorbed there, so the total always agrees with the roll. The
+  ruleset's weapon-vs-item dedup is mirrored: an item-type effect bonus
+  the weapon's own bonus equals or exceeds is dropped from the list.
+
+Assurance rolls list no modifiers (none apply); activity checks (vsdc)
+keep a single skill+total line — their mod handler runs on the rolling
+client while the card is built host-side (a known gap).
 
 ## Hook points
 
@@ -142,6 +182,10 @@ call time.
 ## Known gaps
 
 - SFRPG2 passes the gate but is untested (scene attacks, Suppressed).
+- Activity-check (vsdc) cards show no itemized breakdown (see above).
+- Breakdown entries re-query effects at resolve time: an effect that
+  expired during the resolution itself folds into the base slot instead
+  of being named.
 - The attack card shows no "vs AC" figure (host-side knowledge).
 - Skill-check cards omit the DC even for the GM (the ruleset hides it in
   chat for both sides).

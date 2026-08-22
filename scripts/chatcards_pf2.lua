@@ -273,6 +273,330 @@ function addTraitTags(tTags, sTraits, tSkip)
 end
 
 --
+--	ITEMIZED MODIFIER BREAKDOWNS
+--
+-- The cards itemize their modifiers by source, like 5E's ("Rapier +12 ·
+-- Bless +1 · Frightened -2 · MAP -5"), but under PF2's stacking rules:
+-- typed bonuses/penalties (item, status, circumstance, proficiency — the
+-- bNoStack descriptor group) compete and only the biggest bonus and worst
+-- penalty of each type apply, while untyped ones stack. Conditions
+-- (Frightened, Sickened, ...) are valued effects the ruleset folds in as
+-- typed penalties, so they compete in the same buckets. The roll's own
+-- bonus is whatever remains of rRoll.nMod after the listed entries — any
+-- divergence between this re-query and what the mod phase actually did is
+-- absorbed there, so the total always agrees with the roll.
+--
+-- Effect dice are ignored on purpose: the PF2 mod handlers never add
+-- effect dice to these rolls (a ruleset TODO), so listing them would show
+-- modifiers that did not apply.
+
+-- Append one candidate per matching effect component. sName is the
+-- effect's display name (first clause), as on 5E's breakdown.
+function collectEffectCandidates(tCandidates, rActor, sTag, tData)
+	if not rActor then
+		return;
+	end
+	for _, tEffectData in ipairs(EffectQueryManager.getEffectsDataByTag(rActor, sTag, tData)) do
+		if (tEffectData.nActive or 0) == 1 then
+			local sName = StringManager.trim((tEffectData.sLabel or ""):match("^([^;]+)") or "") or "";
+			if (sName == "") or sName:match(":") then
+				-- unnamed effect (label starts with a typed component)
+				sName = "Effect";
+			end
+			for _, tComp in ipairs(EffectManager.parseEffectComps(tEffectData)) do
+				if (tComp.type == sTag) and ((tComp.mod or 0) ~= 0) then
+					local sKey, tGroup = EffectQueryManager.getBonusKeyAndGroupFromList(tComp.remainder);
+					table.insert(tCandidates, {
+						sName = sName,
+						nMod = tComp.mod,
+						sKey = sKey or "",
+						bNoStack = (tGroup and tGroup.bNoStack) and true or false,
+					});
+				end
+			end
+		end
+	end
+end
+
+-- Append a condition's candidate: valued conditions (Frightened 2) query
+-- their value, fixed ones (Prone) carry it. All PF2 condition modifiers
+-- are typed penalties, so they compete with same-type effect penalties.
+function addConditionCandidate(tCandidates, rActor, rTarget, sCondition, nFixed, sKey)
+	local nPenalty;
+	if nFixed then
+		if EffectManager.hasCondition(rActor, sCondition) then
+			nPenalty = nFixed;
+		end
+	else
+		local nValue = EffectManagerPFRPG2.getConditionValue(rActor, { sCondition }, true, nil, rTarget);
+		if nValue > 0 then
+			nPenalty = -nValue;
+		end
+	end
+	if nPenalty then
+		table.insert(tCandidates, {
+			sName = sCondition,
+			nMod = nPenalty,
+			sKey = sKey or "status",
+			bNoStack = true,
+		});
+	end
+end
+
+-- The conditions each d20 roll consults, mirrored from the ruleset's mod
+-- handlers (modAttack/modSkill/modSave/modRoll). sStat gates the
+-- stat-linked ones; tFlags carries roll-specific switches.
+function addStatConditionCandidates(tCandidates, rActor, rTarget, sStat)
+	if sStat == "strength" then
+		addConditionCandidate(tCandidates, rActor, rTarget, "Enfeebled");
+	elseif sStat == "dexterity" then
+		addConditionCandidate(tCandidates, rActor, rTarget, "Encumbered", -1);
+		addConditionCandidate(tCandidates, rActor, rTarget, "Clumsy");
+	elseif sStat == "constitution" then
+		addConditionCandidate(tCandidates, rActor, rTarget, "Drained");
+	elseif (sStat == "intelligence") or (sStat == "wisdom") or (sStat == "charisma") then
+		addConditionCandidate(tCandidates, rActor, rTarget, "Stupefied");
+	end
+end
+
+-- Resolve the candidates PF2-style and encode the card's modifier line.
+-- tExtras are flat named entries outside the effect system (MAP, range),
+-- always listed. Base first: sBaseLabel plus what no listed entry claims.
+function buildBreakdown(rRoll, sBaseLabel, tCandidates, tExtras)
+	-- Typed candidates compete per (type, sign) bucket; the winner keeps
+	-- its list position so the line reads in query order.
+	local tBest = {};
+	for _, tCand in ipairs(tCandidates) do
+		if tCand.bNoStack and (tCand.sKey ~= "") then
+			local sBucket = tCand.sKey .. ((tCand.nMod > 0) and "+" or "-");
+			local tCurrent = tBest[sBucket];
+			if not tCurrent
+					or ((tCand.nMod > 0) and (tCand.nMod > tCurrent.nMod))
+					or ((tCand.nMod < 0) and (tCand.nMod < tCurrent.nMod)) then
+				tBest[sBucket] = tCand;
+			end
+		end
+	end
+
+	local tSegments = {};
+	local nListed = 0;
+	local function addSegment(sName, nMod)
+		table.insert(tSegments, {
+			sText = string.format("%s %+d", sName, nMod),
+			sStyle = (nMod < 0) and "negative" or "positive",
+		});
+		nListed = nListed + nMod;
+	end
+	for _, tCand in ipairs(tCandidates) do
+		if tCand.bNoStack and (tCand.sKey ~= "") then
+			if tBest[tCand.sKey .. ((tCand.nMod > 0) and "+" or "-")] == tCand then
+				addSegment(tCand.sName, tCand.nMod);
+			end
+		else
+			addSegment(tCand.sName, tCand.nMod);
+		end
+	end
+	for _, tExtra in ipairs(tExtras or {}) do
+		addSegment(tExtra.sName, tExtra.nMod);
+	end
+
+	if (sBaseLabel or "") == "" then
+		sBaseLabel = "Base";
+	end
+	table.insert(tSegments, 1, {
+		sText = string.format("%s %+d", sBaseLabel, (rRoll.nMod or 0) - nListed),
+	});
+	return ChatCardsManager.encodeTags(tSegments);
+end
+
+-- The stat behind a roll: an explicit [MOD:STR] marker wins, else the
+-- fallback the ruleset uses for that roll type.
+function getRollStat(rRoll, sDefault)
+	local sModStat = (rRoll.sDesc or ""):match("%[MOD:(%w+)%]");
+	return (sModStat and DataCommon.ability_stol[sModStat]) or sDefault;
+end
+
+-- Attack breakdown: ATK (and SPELLROLL for spell attacks) effects vs the
+-- target, PROF effects, the attack's conditions, and the desc-marked flat
+-- penalties (MAP, range increments, volley). The ruleset's weapon-vs-item
+-- dedup is mirrored: the weapon's own item bonus (inside the base) beats
+-- an item-type effect bonus it equals or exceeds.
+function buildAttackModBreakdown(rSource, rTarget, rRoll, sLabel)
+	local sDesc = rRoll.sDesc or "";
+	local sRange = ActionAttackCore.decodeRangeText(sDesc, "M");
+	local sTraits = tostring(rRoll.traits or ""):lower();
+
+	local tFilter = ActionCore.buildEffectFilter({ sRange = sRange, bSpell = rRoll.bSpell });
+	tFilter["__traits"] = EffectManagerPFRPG2.buildTraitFilter(sTraits);
+	local nDistance = (rSource and rTarget) and ActorManager.getDistanceBetween(rSource, rTarget) or 0;
+	if (nDistance or 0) > 0 then
+		tFilter["__distance"] = tostring(nDistance);
+	end
+	local tData = { rTarget = rTarget, tFilter = tFilter };
+
+	local tCandidates = {};
+	collectEffectCandidates(tCandidates, rSource, "ATK", tData);
+	if rRoll.bSpell then
+		collectEffectCandidates(tCandidates, rSource, "SPELLROLL", tData);
+	end
+	collectEffectCandidates(tCandidates, rSource, "PROF", {});
+
+	local sStat = getRollStat(rRoll, (sRange == "R") and "dexterity" or "strength");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Frightened");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Sickened");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Prone", -2, "circumstance");
+	if sStat == "strength" then
+		addConditionCandidate(tCandidates, rSource, rTarget, "Enfeebled");
+	elseif sStat == "dexterity" then
+		addConditionCandidate(tCandidates, rSource, rTarget, "Encumbered", -1);
+		addConditionCandidate(tCandidates, rSource, rTarget, "Clumsy");
+	end
+	if rRoll.bSpell then
+		addConditionCandidate(tCandidates, rSource, rTarget, "Stupefied");
+	end
+
+	-- Weapon item bonus vs item-type effect bonuses: drop the effect entry
+	-- the weapon's own bonus (part of the base) beats.
+	local nWeaponBonus = tonumber(rRoll.nWeaponBonus) or 0;
+	if nWeaponBonus > 0 then
+		for i = #tCandidates, 1, -1 do
+			local tCand = tCandidates[i];
+			if (tCand.sKey == "item") and (tCand.nMod > 0) and (nWeaponBonus >= tCand.nMod) then
+				table.remove(tCandidates, i);
+			end
+		end
+	end
+
+	local tExtras = {};
+	local sMAPOrder, sMAPVal = sDesc:match("%[MULTI ATK (#%d+): (%-?%d+)%]");
+	if sMAPVal then
+		table.insert(tExtras, { sName = "MAP " .. sMAPOrder, nMod = tonumber(sMAPVal) });
+	end
+	local sRangePen = sDesc:match("%[RANGE (%-%d+)%]");
+	if sRangePen then
+		table.insert(tExtras, { sName = "Range", nMod = tonumber(sRangePen) });
+	end
+	local sVolleyPen = sDesc:match("%[VOLLEY (%-%d+)%]");
+	if sVolleyPen then
+		table.insert(tExtras, { sName = "Volley", nMod = tonumber(sVolleyPen) });
+	end
+	local sMaxPen = sDesc:match("%[BEYOND MAX RANGE (%-%d+)%]");
+	if sMaxPen then
+		table.insert(tExtras, { sName = "Max range", nMod = tonumber(sMaxPen) });
+	end
+
+	return buildBreakdown(rRoll, sLabel, tCandidates, tExtras);
+end
+
+-- Skill/perception breakdown: SKILL (or PERC) effects with the same
+-- filter shape the mod handler built, PROF effects, and the check's
+-- conditions. Assurance rolls take no modifiers at all, so the plain
+-- base line is the honest display.
+function buildSkillModBreakdown(rSource, rTarget, rRoll, sSkill)
+	local sDesc = rRoll.sDesc or "";
+	if sDesc:match("%[ASSURANCE%]") then
+		return buildBreakdown(rRoll, sSkill, {}, nil);
+	end
+
+	local sSkillLower = sSkill:lower();
+	local bPerception = (sSkillLower == "perception");
+
+	local tFilter = {};
+	tFilter["__skill"] = sSkillLower;
+	if (rRoll.proflevel or "") ~= "" then
+		table.insert(tFilter, rRoll.proflevel);
+	end
+	if (rRoll.label or "") ~= "" then
+		tFilter["__activityname"] = tostring(rRoll.label):lower();
+	elseif (rRoll.sAbilityTitle or "") ~= "" then
+		tFilter["__activityname"] = tostring(rRoll.sAbilityTitle):lower();
+	end
+	tFilter["__traits"] = EffectManagerPFRPG2.buildTraitFilter(
+		sDesc:match("%[TRAITS ([%w%s,;%.%(%)%+%-]*)%]") or rRoll.traits);
+
+	local tCandidates = {};
+	collectEffectCandidates(tCandidates, rSource, bPerception and "PERC" or "SKILL",
+		{ rTarget = rTarget, tFilter = tFilter });
+	collectEffectCandidates(tCandidates, rSource, "PROF", {});
+
+	addConditionCandidate(tCandidates, rSource, rTarget, "Frightened");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Sickened");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Fascinated", -2);
+	if bPerception then
+		if EffectManager.hasCondition(rSource, "Blinded") or EffectManager.hasCondition(rSource, "Unconscious") then
+			table.insert(tCandidates, { sName = "Blinded/Unconscious", nMod = -4, sKey = "status", bNoStack = true });
+		end
+		addConditionCandidate(tCandidates, rSource, rTarget, "Deafened", -2);
+	end
+	local sStat = getRollStat(rRoll, nil);
+	if not sStat then
+		for sName, tSkillData in pairs(DataCommon.skilldata or {}) do
+			if sName:lower() == sSkillLower then
+				sStat = tSkillData.stat;
+				break;
+			end
+		end
+	end
+	addStatConditionCandidates(tCandidates, rSource, rTarget, sStat);
+
+	return buildBreakdown(rRoll, sSkill, tCandidates, nil);
+end
+
+-- Save breakdown: SAVE effects (filtered by save name and the triggering
+-- action's traits, vs the origin actor when known), PROF effects, and the
+-- save's conditions. Reflex cover bonuses ride the modifier stack, which
+-- does not survive to resolve time — they fold into the base remainder.
+function buildSaveModBreakdown(rSource, rRoll, sSave)
+	local sSaveLower = sSave:lower();
+	local tFilter = {};
+	tFilter["__save"] = sSaveLower;
+	local sTraits = (rRoll.sSaveDesc or ""):match("%[TRAITS ([%w%s,;%.%(%)%+%-]*)%]")
+		or (rRoll.sDesc or ""):match("%[TRAITS ([%w%s,;%.%(%)%+%-]*)%]") or rRoll.traits;
+	tFilter["__traits"] = EffectManagerPFRPG2.buildTraitFilter(sTraits);
+
+	local rOrigin = ((rRoll.sSource or "") ~= "") and ActorManager.resolveActor(rRoll.sSource) or nil;
+
+	local tCandidates = {};
+	collectEffectCandidates(tCandidates, rSource, "SAVE", { rTarget = rOrigin, tFilter = tFilter });
+	collectEffectCandidates(tCandidates, rSource, "PROF", {});
+
+	addConditionCandidate(tCandidates, rSource, rOrigin, "Frightened");
+	addConditionCandidate(tCandidates, rSource, rOrigin, "Sickened");
+	addConditionCandidate(tCandidates, rSource, rOrigin, "Fatigued", -1);
+	if sSaveLower == "fortitude" then
+		addConditionCandidate(tCandidates, rSource, rOrigin, "Drained");
+	elseif sSaveLower == "reflex" then
+		addConditionCandidate(tCandidates, rSource, rOrigin, "Encumbered", -1);
+		addConditionCandidate(tCandidates, rSource, rOrigin, "Clumsy");
+		addConditionCandidate(tCandidates, rSource, rOrigin, "Unconscious", -4);
+		-- Cover effect tags (the modifier-stack cover keys don't survive
+		-- to resolve time and fold into the base); circumstance-typed, so
+		-- the bucket keeps only the best, like the ruleset.
+		if EffectManager.hasTag(rSource, "GCOVER", { rTarget = rOrigin }) then
+			table.insert(tCandidates, { sName = "Greater Cover", nMod = 4, sKey = "circumstance", bNoStack = true });
+		elseif EffectManager.hasTag(rSource, "COVER", { rTarget = rOrigin }) then
+			table.insert(tCandidates, { sName = "Cover", nMod = 2, sKey = "circumstance", bNoStack = true });
+		end
+	elseif sSaveLower == "will" then
+		addConditionCandidate(tCandidates, rSource, rOrigin, "Stupefied");
+	end
+
+	return buildBreakdown(rRoll, StringManager.capitalize(sSave), tCandidates, nil);
+end
+
+-- Ability-check breakdown: ABIL effects plus the general and stat-linked
+-- conditions the ruleset's modRoll consults.
+function buildAbilityModBreakdown(rSource, rTarget, rRoll, sAbility)
+	local sAbilityLower = sAbility:lower();
+	local tCandidates = {};
+	collectEffectCandidates(tCandidates, rSource, "ABIL", { tFilter = { sAbilityLower } });
+	addConditionCandidate(tCandidates, rSource, rTarget, "Frightened");
+	addConditionCandidate(tCandidates, rSource, rTarget, "Sickened");
+	addStatConditionCandidates(tCandidates, rSource, rTarget, sAbilityLower);
+	return buildBreakdown(rRoll, StringManager.capitalize(sAbility), tCandidates, nil);
+end
+
+--
 --	TAGS
 --
 
@@ -461,14 +785,9 @@ function onAttackResolve(rSource, rTarget, rRoll, rMessage, rRoll2, nMissChance)
 		sTokenAsset = tPortrait.sTokenAsset,
 		sIsGM = (not rSource and Session.IsHost) and "1" or "",
 	};
-	-- The weapon or maneuver names the modifier line, as on the other systems.
-	if sLabel ~= "" then
-		local sModLine = sLabel;
-		if (rRoll.nMod or 0) ~= 0 then
-			sModLine = string.format("%s %+d", sLabel, rRoll.nMod);
-		end
-		tCard.sMods = ChatCardsManager.encodeTags({ { sText = sModLine } });
-	end
+	-- Itemized modifiers, the weapon or maneuver naming the base slot
+	-- ("Rapier +12 · Bless +1 · Frightened -2 · MAP #2 -5").
+	tCard.sMods = buildAttackModBreakdown(rSource, rTarget, rRoll, sLabel);
 	if rTarget then
 		tCard.sLine1 = "Target: " .. ChatCardsManager.getActorName(rTarget);
 	end
@@ -655,9 +974,7 @@ function onSaveRoll(rSource, rTarget, rRoll)
 	ChatCardsManager.sendRollCard(rSource, rRoll, {
 		sTitle = StringManager.capitalize(sSave) .. " Save",
 		sLine1 = (sVs ~= "") and ("vs: " .. StringManager.trim(sVs)) or "",
-		sMods = ChatCardsManager.encodeTags({
-			{ sText = string.format("%s %+d", StringManager.capitalize(sSave), rRoll.nMod or 0) },
-		}),
+		sMods = buildSaveModBreakdown(rSource, rRoll, sSave),
 	});
 
 	ActionSave.onSave(rSource, rTarget, rRoll);
@@ -718,9 +1035,7 @@ function onSkillRoll(rSource, rTarget, rRoll)
 	local sSkill = ActionCore.decodeLabelText(rRoll.sDesc or "", "action_skill_tag") or "";
 	ChatCardsManager.sendRollCard(rSource, rRoll, {
 		sTitle = "Skill Check",
-		sMods = ChatCardsManager.encodeTags({
-			{ sText = string.format("%s %+d", sSkill, rRoll.nMod or 0) },
-		}),
+		sMods = buildSkillModBreakdown(rSource, rTarget, rRoll, sSkill),
 		sOutcome = resultWord(parseResultFromText(tSeen[#tSeen])),
 	});
 end
@@ -735,9 +1050,7 @@ function onAbilityRoll(rSource, rTarget, rRoll)
 	ChatCardsManager.sendRollCard(rSource, rRoll, {
 		sTitle = "Ability Check",
 		sLine1 = (nDC > 0) and ("DC: " .. nDC) or "",
-		sMods = ChatCardsManager.encodeTags({
-			{ sText = string.format("%s %+d", StringManager.capitalize(sAbility), rRoll.nMod or 0) },
-		}),
+		sMods = buildAbilityModBreakdown(rSource, rTarget, rRoll, sAbility),
 		sOutcome = resultWord(parseResultFromText(tSeen[#tSeen])),
 	});
 end
