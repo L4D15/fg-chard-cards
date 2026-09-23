@@ -1,0 +1,85 @@
+name: Release
+
+# The version lives in extension.xml — the same string Fantasy Grounds shows
+# in the extension list — so a release is cut by bumping <version> there and
+# pushing to master. A push whose version already has a release is a no-op.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read name and version from extension.xml
+        id: meta
+        run: |
+          read_element() {
+            grep -o "<$1>[^<]*</$1>" extension.xml | head -1 | sed "s/<[^>]*>//g;s/^[[:space:]]*//;s/[[:space:]]*\$//"
+          }
+          name=$(read_element name)
+          version=$(read_element version)
+          if [ -z "$version" ]; then
+            echo "::error file=extension.xml::No <version> element found"
+            exit 1
+          fi
+          # Spaces in the manifest name are fine; spaces in a download URL are not.
+          slug=$(echo "$name" | tr ' ' '-')
+          {
+            echo "name=$name"
+            echo "version=$version"
+            echo "tag=v$version"
+            echo "file=$slug-v$version.ext"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this version was already released
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.meta.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ steps.meta.outputs.tag }} is already released — bump <version> in extension.xml to cut a new one."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the .ext package
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          set -euo pipefail
+          staging="$RUNNER_TEMP/ext"
+          mkdir -p "$staging"
+          # Runtime files only: the manifest, plus every directory it reaches
+          # through <includefile> and <script>. Design/, Docs/ and the markdown
+          # are repo documentation and never loaded by the ruleset.
+          cp extension.xml "$staging/"
+          cp -R common desktop graphics scripts "$staging/"
+          # Affinity sources, Python caches and Finder droppings live alongside
+          # the exported PNGs but mean nothing to FG. -depth so the directory
+          # removals do not yank the ground from under find's own descent.
+          find "$staging" -depth \( -name '*.af' -o -name '.DS_Store' -o -name '__pycache__' \) -exec rm -rf {} +
+          # An .ext is a plain zip with extension.xml at its ROOT — no wrapper
+          # directory, or the launcher will not see the extension.
+          ( cd "$staging" && zip -r -X "$GITHUB_WORKSPACE/${{ steps.meta.outputs.file }}" extension.xml common desktop graphics scripts )
+          echo "--- package contents ---"
+          unzip -l "${{ steps.meta.outputs.file }}"
+
+      - name: Publish the release
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            "${{ steps.meta.outputs.file }}" \
+            --target "${{ github.sha }}" \
+            --title "${{ steps.meta.outputs.name }} ${{ steps.meta.outputs.version }}" \
+            --generate-notes

@@ -4,7 +4,7 @@ A Fantasy Grounds Unity extension that replaces the chat log with a card-style
 message display — rolls, spells, speech and system messages each rendered as
 their own card, in the spirit of modern VTT chat streams.
 
-> **Status: early development (v0.1).** Playable and actively tested in 5E
+> **Status: early development (v0.2).** Playable and actively tested in 5E
 > campaigns, but expect rough edges and visual placeholder art.
 
 ## What you get

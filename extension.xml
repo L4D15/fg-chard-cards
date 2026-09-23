@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<root version="4.8" release="0.1">
+<root version="4.8" release="0.2">
 	<properties>
 		<name>ChatCards</name>
-		<version>0.1</version>
+		<version>0.2</version>
 		<author>Jose Ladislao</author>
 		<description>Card-style chat message display (CoreRPG-based rulesets; 5E and Daggerheart adapters included)</description>
 		<!-- No <ruleset> block: the launcher matches ruleset tags against the
@@ -14,7 +14,7 @@
 		<loadorder>100</loadorder>
 	</properties>
 
-	<announcement text="ChatCards v0.1 loaded" font="emotefont" icon="chat_story" />
+	<announcement text="ChatCards v0.2 loaded" font="emotefont" icon="chat_story" />
 
 	<base>
 		<includefile source="graphics/graphics_chatcards.xml" />
