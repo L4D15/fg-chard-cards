@@ -33,11 +33,15 @@ jobs:
           fi
           # Spaces in the manifest name are fine; spaces in a download URL are not.
           slug=$(echo "$name" | tr ' ' '-')
+          # The asset is deliberately UNVERSIONED: players drop it over the old
+          # copy in their extensions folder, and the same name keeps
+          # releases/latest/download/<slug>.ext a stable permalink. The version
+          # lives in the tag, the release title and the manifest instead.
           {
             echo "name=$name"
             echo "version=$version"
             echo "tag=v$version"
-            echo "file=$slug-v$version.ext"
+            echo "file=$slug.ext"
           } >> "$GITHUB_OUTPUT"
 
       - name: Check whether this version was already released
